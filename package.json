@@ -1,0 +1,80 @@
+{
+  "name": "@fabrix/spool-broadcast",
+  "version": "1.6.0",
+  "description": "Spool: broadcast for Fabrix to implement CQRS and Event Sourcing",
+  "homepage": "https://fabrix.app",
+  "author": {
+    "name": "scott-wyatt",
+    "email": "scottwyatt86@gmail.com",
+    "url": "https://cali-style.com"
+  },
+  "keywords": [
+    "html",
+    "broadcast",
+    "CQRS",
+    "event-sourcing",
+    "rabbitMQ",
+    "postgres",
+    "sequelize",
+    "spool",
+    "fabrix",
+    "trailjs"
+  ],
+  "scripts": {
+    "release": "standard-version",
+    "build": "tsc -p ./lib/tsconfig.release.json",
+    "lint": "tslint -p ./lib",
+    "watch": "tsc -w -p ./lib/tsconfig.release.json",
+    "test": "npm run clean && npm run lint && npm run build && nyc mocha",
+    "test:build:docs": "rimraf docs && typedoc --options typedoc.json lib/",
+    "prepublishOnly": "npm run compile",
+    "compile": "npm run clean && npm run build",
+    "clean": "rm -rf dist",
+    "ci": "cd .. && ci"
+  },
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "pre-commit": [
+    "test"
+  ],
+  "dependencies": {
+    "joi": "^14.3.1",
+    "js-binary": "file:js-binary-1.2.5.tgz",
+    "lodash": "^4.17.15",
+    "rabbot": "^2.1.0"
+  },
+  "devDependencies": {
+    "@fabrix/fabrix": "^1.6.3",
+    "@fabrix/lint": "^1.0.0-alpha.3",
+    "@fabrix/spool-sequelize": "1.6.17",
+    "@fabrix/spool-router": "1.6.2",
+    "@types/node": "~10.3.4",
+    "pg": "^7.12.1",
+    "mocha": "^6",
+    "nyc": "^14.1.1",
+    "smokesignals": "^3.0.4",
+    "source-map-support": "^0.5.13",
+    "standard-version": "^7.0.0",
+    "supertest": "^3.3.0",
+    "tslib": "~1.9.0",
+    "tslint": "~5.14.0",
+    "tslint-microsoft-contrib": "~6.1.0",
+    "tsutils": "~3.9.1",
+    "typedoc": "^0.14.2",
+    "typedoc-plugin-markdown": "^1.2.0",
+    "typescript": "~3.3.4000",
+    "typescript-closure-compiler": "^1.8.11"
+  },
+  "peerDependencies": {
+    "@fabrix/fabrix": "^1.5.3"
+  },
+  "engines": {
+    "node": ">= 7.6.0 =< 12.4.0",
+    "npm": ">= 3.10.0"
+  },
+  "repository": "git@github.com:fabrix-app/spool-broadcast.git",
+  "license": "MIT"
+}

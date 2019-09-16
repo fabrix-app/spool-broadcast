@@ -1,0 +1,17 @@
+{
+  "mode": "modules",
+  "out": "docs",
+  "name": "spool-broadcast",
+  "theme": "markdown",
+  "ignoreCompilerErrors": "true",
+  "experimentalDecorators": "true",
+  "emitDecoratorMetadata": "true",
+  "excludeExternals": "true",
+  "target": "ES6",
+  "moduleResolution": "node",
+  "preserveConstEnums": "true",
+  "stripInternal": "true",
+  "suppressExcessPropertyErrors": "true",
+  "suppressImplicitAnyIndexErrors": "true",
+  "module": "commonjs"
+}
