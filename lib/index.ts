@@ -10,6 +10,11 @@ export { Saga, Story } from './Saga'
 export { Command } from './Command'
 export { Entry, Point } from './Entry'
 
+export { BroadcastResolver } from './BroadcastResolver'
+export { BroadcastModel } from './BroadcastModel'
+export { BroadcastObjectModel } from './BroadcastObjectModel'
+export { broadcaster } from './broadcaster'
+
 export {
   IBroadcastModelResolve,
   IProjectorParams,
