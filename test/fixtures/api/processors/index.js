@@ -1,1 +1,1 @@
-module.exports = {}
+exports.Test = require('./Test')

@@ -1,20 +1,43 @@
+// Main Spool
 export { BroadcastSpool } from './BroadcastSpool'
-export { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
-export { Projector, Project } from './Projector'
-export { Processor, Process } from './Processer'
-export { HookIn, Hook } from './Hook'
+
+// Broadcast Class
 export { Broadcast } from './Broadcast'
+
+// Pipeline Classes
+export { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
+
+// Projector Classes
+export { Projector, Project } from './Projector'
+
+// Processor Classes
+export { Processor, Process } from './Processer'
+
+// Hook Classes
+export { HookIn, Hook } from './Hook'
+
+// Utilities
 export { utils } from './utils/index'
+export { broadcaster } from './broadcaster'
+
+// Validator
 export { Validator } from './validator'
+
+// Saga Classes and Metadata
 export { Saga, Story } from './Saga'
+
+// Command Class and Metadata
 export { Command } from './Command'
+
+// Entry Class and Metadata
 export { Entry, Point } from './Entry'
 
+// Broadcast Model classes
 export { BroadcastResolver } from './BroadcastResolver'
 export { BroadcastModel } from './BroadcastModel'
 export { BroadcastObjectModel } from './BroadcastObjectModel'
-export { broadcaster } from './broadcaster'
 
+// Interfaces
 export {
   IBroadcastModelResolve,
   IProjectorParams,

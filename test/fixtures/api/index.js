@@ -18,7 +18,9 @@
 
 
 exports.broadcasts = require('./broadcasts/index')
-exports.entires = require('./entries/index')
+exports.entries = require('./entries/index')
 exports.hooks = require('./hooks/index')
 exports.processors = require('./processors/index')
 exports.projectors = require('./projectors/index')
+exports.sagas = require('./sagas/index')
+exports.models = require('./models/index')
