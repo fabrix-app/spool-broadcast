@@ -1,4 +1,4 @@
-import { Type } from 'js-binary'
+import { Type } from '../../binary'
 import { isArray, isObject } from 'lodash'
 
 import { BroadcastModel } from '../../BroadcastModel'

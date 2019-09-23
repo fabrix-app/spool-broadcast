@@ -32,6 +32,7 @@ const App = {
     log: {
       logger: new smokesignals.Logger('debug')
     },
+
     broadcasts: {
       auto_transaction: true,
       /**
@@ -53,7 +54,50 @@ const App = {
        * ]
        */
       profiles: {
-        development: [],
+        development: [
+          'Test'
+        ],
+      },
+
+      pipelines: {
+        Test: {
+          broadcasters: {}
+        }
+      },
+      hooks: {
+        Test: {
+          broadcasters: {
+            /**
+             * Broadcaster that the Channel Carts are hooked into
+             */
+            Test: {
+              /**
+               * Commands subscribed to
+               */
+              'test.create': {
+                create: {
+                  lifecycle: 'before',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              }
+            }
+          }
+        }
+      },
+      projectors: {
+        Test: {
+          broadcasters: {}
+        }
+      },
+      processors: {
+        Test: {
+          broadcasters: {}
+        }
       },
     }
   }

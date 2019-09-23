@@ -8,4 +8,14 @@ describe('Entry', () => {
     assert(global.app.entries)
     assert(global.app.entries.Test)
   })
+
+  it('should create', (done) => {
+    global.app.entries.Test.create({}, { name: 'test' }, {})
+      .then(([_event, _options]) => {
+        done()
+      })
+    .catch(err => {
+      done(err)
+    })
+  })
 })

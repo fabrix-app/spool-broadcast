@@ -1,5 +1,6 @@
 // Main Spool
 export { BroadcastSpool } from './BroadcastSpool'
+export { types, Field, ReadState, Type, Data } from './binary'
 
 // Broadcast Class
 export { Broadcast } from './Broadcast'

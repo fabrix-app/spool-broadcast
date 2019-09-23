@@ -1,6 +1,6 @@
 import { FabrixModel as Model} from '@fabrix/fabrix/dist/common'
 import uuid from 'uuid/v4'
-import { Type } from 'js-binary'
+import { Type } from '../../binary'
 import { BroadcastModelResolver } from '../../BroadcastModel'
 
 

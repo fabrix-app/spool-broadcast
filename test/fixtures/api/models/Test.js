@@ -2,6 +2,7 @@
 
 const BroadcastModel = require('../../../../dist').BroadcastModel
 const BroadcastResolver = require('../../../../dist').BroadcastResolver
+
 /**
  * Test
  *
@@ -25,7 +26,9 @@ module.exports = class Test extends BroadcastModel {
   static schema(app, Sequelize) {
     return {
       name: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
       }
     }
   }

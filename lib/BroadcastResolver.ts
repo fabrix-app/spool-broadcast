@@ -2,7 +2,7 @@ import {FabrixModel, FabrixModel as Model} from '@fabrix/fabrix/dist/common'
 import { SequelizeResolver } from '@fabrix/spool-sequelize'
 import { isArray, defaultsDeep } from 'lodash'
 import uuid from 'uuid/v4'
-import { Type } from 'js-binary'
+import { Type } from './binary/index'
 import { utils } from './utils/index'
 import { mapSeries } from 'bluebird'
 
