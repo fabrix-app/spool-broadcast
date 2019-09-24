@@ -26,4 +26,5 @@ export { Type } from './Type'
  * @member {Object}
  */
 import * as types from './types'
+
 export { types }

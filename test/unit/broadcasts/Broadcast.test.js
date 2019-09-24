@@ -7,5 +7,6 @@ describe('Broadcast', () => {
   it('should exist', () => {
     assert(global.app.broadcaster)
     assert(global.app.broadcasts)
+    assert(global.app.broadcasts.Test)
   })
 })

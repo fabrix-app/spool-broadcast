@@ -66,7 +66,7 @@ Type.TYPE = {
   INT: 'int',
   FLOAT: 'float',
   STRING: 'string',
-  BUFFER: '_Buffer',
+  BUFFER: 'Buffer',
   BOOLEAN: 'boolean',
   JSON: 'json',
   OID: 'oid',
@@ -80,7 +80,8 @@ Type.TYPE = {
  * Expose all scalar types (see types.js)
  * @property {Object<Function>}
  */
-Type.types = Type.prototype.types = types
+// Type.types =
+Type.prototype.types = types
 
 /**
  * @param {*} value
