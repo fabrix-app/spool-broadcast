@@ -42,5 +42,10 @@ export { BroadcastObjectModel } from './BroadcastObjectModel'
 export {
   IBroadcastModelResolve,
   IProjectorParams,
-  IProcessorParams
+  IProcessorParams,
+  BroadcastOptions,
+  BroadcastAction,
+  IBroadcastTuple
 } from './Interface'
+
+
