@@ -38,6 +38,15 @@ export { BroadcastResolver } from './BroadcastResolver'
 export { BroadcastModel } from './BroadcastModel'
 export { BroadcastObjectModel } from './BroadcastObjectModel'
 
+export {
+  BroadcastEvent,
+  BroadcastHook,
+  BroadcastProjectionVersion,
+  BroadcastSnapshot,
+  BroadcastStream
+} from './api/models'
+
+
 // Interfaces
 export {
   IBroadcastModelResolve,
