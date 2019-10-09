@@ -111,7 +111,8 @@ export class BroadcastSpool extends ExtensionSpool {
   async validate () {
 
     const requiredSpools = [
-      'sequelize'
+      'sequelize',
+      'realtime'
     ]
 
     const spools = Object.keys(this.app.spools)
