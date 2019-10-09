@@ -1,11 +1,11 @@
 import {FabrixApp} from '@fabrix/fabrix'
-import {FabrixModel} from '@fabrix/fabrix/dist/common'
+import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { get, isArray, isObject } from 'lodash'
 import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
 
-export class Command {
+export class Command extends FabrixGeneric {
   app: FabrixApp
   broadcaster: Broadcast
   req: {[key: string]: any}
@@ -45,6 +45,8 @@ export class Command {
       // event_type = null
     }
   ) {
+    super(app)
+
     if (!(object instanceof FabrixModel)) {
       throw new Error(`Command ${command_type} object is not an instance of a Model`)
     }
@@ -58,7 +60,7 @@ export class Command {
       throw new Error('object is not a valid model')
     }
 
-    this.app = app
+    // this.app = app
     this.broadcaster = broadcaster
     this.req = req
     this.command_uuid = this.generateUUID(correlation_uuid)

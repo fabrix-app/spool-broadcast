@@ -7,7 +7,7 @@ import {Entry} from './Entry'
 // import uuid from 'uuid/v4'
 import { BroadcastAction, BroadcastOptions } from './Interface'
 
-export class Process {
+export class Process extends FabrixGeneric {
   public message: any
   public isAcknowledged: boolean
   public consistency = 'strong'
@@ -19,7 +19,8 @@ export class Process {
     public event: BroadcastEvent,
     public options: BroadcastOptions
   ) {
-    this.app = app
+    super(app)
+
     this.event = event
     this.options = options
 

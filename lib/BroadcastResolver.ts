@@ -109,7 +109,7 @@ export class BroadcastResolver extends SequelizeResolver {
     })
   }
 
-  toPlain(resp) {
+  toPlain(resp): {[key: string]: any} {
     Object.keys(resp).forEach(k => {
       if (resp.hasOwnProperty(k) && resp[k]) {
         if (isArray(resp[k])) {
@@ -199,7 +199,7 @@ export class BroadcastResolver extends SequelizeResolver {
   /**
    * Resolve how to Build Instance(s)
    */
-  stage(data, options: { [key: string]: any} = {}) {
+  stage(data, options: { [key: string]: any} = {}): FabrixModel {
 
     // 0: No data was provided
     if (!data) {

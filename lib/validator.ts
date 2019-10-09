@@ -1,5 +1,5 @@
 import joi from 'joi'
-import {broadcastConfig, hookConfig, processorConfig, projectorConfig, pipeConfig} from './schemas'
+import {broadcastConfig, realtimeConfig, hookConfig, processorConfig, projectorConfig, pipeConfig} from './schemas'
 
 export const Validator = {
 
@@ -29,53 +29,22 @@ export const Validator = {
 
   // Validate Broadcast Config
   validateBroadcastConfig (config) {
-    return new Promise((resolve, reject) => {
-      joi.validate(config, broadcastConfig, (err, value) => {
-        if (err) {
-          return reject(new TypeError('config.broadcast: ' + err))
-        }
-        return resolve(value)
-      })
-    })
+    return Validator.joiPromise(config, broadcastConfig)
+  },
+  // Validate Broadcast Config
+  validateRealtimeConfig (config) {
+    return Validator.joiPromise(config, realtimeConfig)
   },
   validateProjectorConfig (config) {
-    return new Promise((resolve, reject) => {
-      joi.validate(config, projectorConfig, (err, value) => {
-        if (err) {
-          return reject(new TypeError('projector.config: ' + err))
-        }
-        return resolve(value)
-      })
-    })
+    return Validator.joiPromise(config, projectorConfig)
   },
   validateProcessorConfig (config) {
-    return new Promise((resolve, reject) => {
-      joi.validate(config, processorConfig, (err, value) => {
-        if (err) {
-          return reject(new TypeError('projector.config: ' + err))
-        }
-        return resolve(value)
-      })
-    })
+    return Validator.joiPromise(config, processorConfig)
   },
   validateHookConfig (config) {
-    return new Promise((resolve, reject) => {
-      joi.validate(config, hookConfig, (err, value) => {
-        if (err) {
-          return reject(new TypeError('hook.config: ' + err))
-        }
-        return resolve(value)
-      })
-    })
+    return Validator.joiPromise(config, hookConfig)
   },
   validatePipeConfig (config) {
-    return new Promise((resolve, reject) => {
-      joi.validate(config, pipeConfig, (err, value) => {
-        if (err) {
-          return reject(new TypeError('pipe.config: ' + err))
-        }
-        return resolve(value)
-      })
-    })
+    return Validator.joiPromise(config, pipeConfig)
   }
 }

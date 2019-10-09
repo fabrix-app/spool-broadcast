@@ -13,6 +13,7 @@ export class Client extends FabrixGeneric {
     super(app)
 
     app.log.debug('Rabbit Client created', exchangeName)
+
     this.messenger = messenger
     this.exchange_name = exchangeName
     this.active_broadcasts = new Map()

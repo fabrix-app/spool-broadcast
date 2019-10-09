@@ -1,4 +1,4 @@
-import { FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
+import { FabrixGeneric, FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
 import { get, isArray } from 'lodash'
 import { Broadcast } from './Broadcast'
 import { Command } from './Command'
@@ -9,7 +9,7 @@ import { mapSeries } from 'bluebird'
  * @module Hook
  * @description Hook
  */
-export class Hook {
+export class Hook extends FabrixGeneric {
   public app: FabrixApp
   public options
   public command
@@ -20,7 +20,8 @@ export class Hook {
   private _id
 
   constructor(app: FabrixApp, command, options, lifecycle?) {
-    this.app = app
+    super(app)
+
     this.command = command
     this.options = options
     this.lifecycle = lifecycle || this.lifecycle

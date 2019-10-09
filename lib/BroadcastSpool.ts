@@ -5,6 +5,9 @@ import { utils } from './utils/index'
 
 import * as config from './config/index'
 import * as api from './api/index'
+import { FabrixApp } from '@fabrix/fabrix'
+import { Entry } from './Entry'
+import { FabrixModel } from '@fabrix/fabrix/dist/common'
 
 export class BroadcastSpool extends ExtensionSpool {
   public broadcaster
@@ -87,7 +90,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * Get's a model by name
    * @param name
    */
-  models(name) {
+  models(name: string): FabrixModel {
     if (!name || !this.app.models[name]) {
       throw new Error(`${name} is not a valid model`)
     }
@@ -98,7 +101,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * Get's a model by name
    * @param name
    */
-  entries(name) {
+  entries(name: string): Entry {
     if (!name || !this.app.entries[name]) {
       throw new Error(`${name} is not a valid entry`)
     }
@@ -115,19 +118,34 @@ export class BroadcastSpool extends ExtensionSpool {
       'realtime'
     ]
 
+    const oneOfSpools = [
+      'express',
+      'polka',
+      'hapi'
+    ]
+
     const spools = Object.keys(this.app.spools)
 
     if (!spools.some(v => requiredSpools.indexOf(v) >= 0)) {
       return Promise.reject(new Error(`spool-broadcast requires spools: ${ requiredSpools.join(', ') }!`))
     }
 
+    if (!spools.some(v => oneOfSpools.indexOf(v) === -1)) {
+      return Promise.reject(new Error(`spool-broadcast requires at least one of spools: ${ oneOfSpools.join(', ') }!`))
+    }
+
     if (!this.app.config.get('broadcast')) {
       return Promise.reject(new Error('No configuration found at config.broadcast!'))
     }
 
+    if (!this.app.config.get('realtime')) {
+      return Promise.reject(new Error('No configuration found at config.realtime!'))
+    }
+
     // Configs
     return Promise.all([
-      Validator.validateBroadcastConfig(this.app.config.get('broadcast'))
+      Validator.validateBroadcastConfig(this.app.config.get('broadcast')),
+      Validator.validateRealtimeConfig(this.app.config.get('realtime'))
     ])
       .catch(err => {
         return Promise.reject(err)
@@ -138,7 +156,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * Adds Routes, Policies, and Agenda
    */
   async configure () {
-    return Promise.all([
+    await Promise.all([
       broadcaster.configure(this.app),
       broadcaster.discoverPipelines(this.app),
       broadcaster.discoverHooks(this.app),
@@ -157,7 +175,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * TODO document method
    */
   async initialize () {
-    return Promise.all([
+    await Promise.all([
       broadcaster.addBroadcasts(this.app),
       broadcaster.makeProjectorMap(this.app)
     ])

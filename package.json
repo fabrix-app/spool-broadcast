@@ -46,7 +46,7 @@
     "rabbot": "^2.1.0"
   },
   "devDependencies": {
-    "@fabrix/fabrix": "^1.6.3",
+    "@fabrix/fabrix": "^1.6.4",
     "@fabrix/lint": "^1.0.0-alpha.3",
     "@fabrix/spool-express": "^1.6.3",
     "@fabrix/spool-realtime": "^1.6.5",
