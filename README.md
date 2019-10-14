@@ -22,11 +22,11 @@ $ npm install --save @fabrix/spool-broadcast
 
 ```js
 // config/main.ts
-import { broadcastSpool } from '@fabrix/spool-broadcast'
+import { BroadcastSpool } from '@fabrix/spool-broadcast'
 export const main = {
   spools: [
     // ... other spools
-    broadcastSpool
+    BroadcastSpool
   ]
 }
 ```
