@@ -260,7 +260,7 @@ export class Saga extends Generic  {
     const sagas = new Map([])
     const ran = new Map()
     const cancelled = new Map()
-    this.app.log.warn('BRK todo prehooks', (command.metadata.prehooks || []).map(a => a.application_uuid))
+    // this.app.log.warn('BRK todo prehooks', (command.metadata.prehooks || []).map(a => a.application_uuid))
     return Promise.resolve([command, options])
   }
 

@@ -8,6 +8,7 @@ import * as api from './api/index'
 import { FabrixApp } from '@fabrix/fabrix'
 import { Entry } from './Entry'
 import { FabrixModel } from '@fabrix/fabrix/dist/common'
+import { ConfigError } from './errors'
 
 export class BroadcastSpool extends ExtensionSpool {
   public broadcaster
@@ -115,7 +116,8 @@ export class BroadcastSpool extends ExtensionSpool {
 
     const requiredSpools = [
       'sequelize',
-      'realtime'
+      'realtime',
+      'errors'
     ]
 
     const oneOfSpools = [
@@ -126,20 +128,32 @@ export class BroadcastSpool extends ExtensionSpool {
 
     const spools = Object.keys(this.app.spools)
 
-    if (!spools.some(v => requiredSpools.indexOf(v) >= 0)) {
-      return Promise.reject(new Error(`spool-broadcast requires spools: ${ requiredSpools.join(', ') }!`))
+    if (!spools.some(v => requiredSpools.indexOf(v) === -1)) {
+      return Promise.reject(new ConfigError(
+        'E_PRECONDITION_FAILED',
+        `spool-broadcast requires spools: ${ requiredSpools.join(', ') }!`)
+      )
     }
 
     if (!spools.some(v => oneOfSpools.indexOf(v) === -1)) {
-      return Promise.reject(new Error(`spool-broadcast requires at least one of spools: ${ oneOfSpools.join(', ') }!`))
+      return Promise.reject(new ConfigError(
+        'E_PRECONDITION_FAILED',
+        `spool-broadcast requires at least one of spools: ${ oneOfSpools.join(', ') }!`)
+      )
     }
 
     if (!this.app.config.get('broadcast')) {
-      return Promise.reject(new Error('No configuration found at config.broadcast!'))
+      return Promise.reject(new ConfigError(
+        'E_PRECONDITION_FAILED',
+        'No configuration found at config.broadcast!')
+      )
     }
 
     if (!this.app.config.get('realtime')) {
-      return Promise.reject(new Error('No configuration found at config.realtime!'))
+      return Promise.reject(new ConfigError(
+        'E_PRECONDITION_FAILED',
+        'No configuration found at config.realtime!')
+      )
     }
 
     // Configs

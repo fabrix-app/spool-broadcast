@@ -9,31 +9,173 @@
 
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
-:package: broadcast Spool
+:package: Broadcast Spool
 
-A Spool that implements CQRS/Event Sourcing patterns
+A Spool that implements CQRS/Event Sourcing patterns.
+
+Spool-broadcast helps distribute your Fabrix Applications with a specialized broadcasting pattern over a PubSub and WebSockets.
 
 ## Install
 ```sh
 $ npm install --save @fabrix/spool-broadcast
 ```
 
+Broadcast has a few dependency spools:
+
+```sh
+$ npm install --save @fabrix/spool-realtime
+$ npm install --save @fabrix/spool-joi
+$ npm install --save @fabrix/spool-errors
+$ npm install --save @fabrix/spool-sequelize
+```
+
 ## Configure
 
 ```js
 // config/main.ts
-import { broadcastSpool } from '@fabrix/spool-broadcast'
+import { BroadcastSpool } from '@fabrix/spool-broadcast'
+import { RealtimeSpool } from '@fabrix/spool-realtime'
+import { SequelizeSpool } from '@fabrix/spool-sequelize'
+import { ErrorsSpool } from '@fabrix/spool-errors'
+import { JoiSpool } from '@fabrix/spool-joi'
+
 export const main = {
   spools: [
     // ... other spools
-    broadcastSpool
+    ErrorsSpool,
+    JoiSpool,
+    RealtimeSpool,
+    SequelizeSpool,
+    BroadcastSpool,
   ]
 }
 ```
+## Definitions
+### SAGA
+A running pattern that acts as a smart circuit breaker
+
+### Pipelines
+An Event Emitter that runs Actions and Commands in a Sequence
+
+### Hooks
+Command listeners that will run before or after the SAGA
+
+### Processors
+Event listeners that will trigger more events
+
+### Projectors
+Event listener that will save data from an event into a projection
+
 
 ## Configuration
+```js
+export const broadcast = {
+  /**
+   * If broadcast should handle transactions, highly recommended true
+   */
+  auto_transaction: true,
+  /**
+   * Connection for eventually consistent events
+   */
+  connection: {
+    /**
+     * Connection information could also be passed via uri
+     */
+    uri: process.env.CLOUDAMQP_URL
+  },
+
+  /**
+   * Profile for this Fabrix instance, this will only allow Broadcast in this profile to run.
+   */
+  profile: process.env.BROADCAST_PROFILE || 'development',
+  /**
+   * Broadcasters to run for profile definition
+   * <profile>: [
+   *   <Broadcast>
+   * ]
+   */
+  profiles: {
+    development: [
+      'CartBroadcast',
+      'CollectionBroadcast',
+      'UserBroadcast'
+    ],
+  },
+  /**
+   * Pipeline subscriptions to Broadcasters
+   * e.g.
+   * <Pipeline>: {
+   *   broadcasters: {
+   *     <Broadcast>: {
+   *       pipeline: {
+   *         <Entry.point>: {
+   *           config: {}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   */
+  pipelines: {
+    CollectionPipeline: {
+      broadcasters: {
+        CollectionBroadcast: {
+          '': {
+            'Collection.createCollection': {
+              zip: {
+                event_type: 'event_type',
+                object: 'object',
+                data: 'data'
+              }
+            },
+            'Collection.findByPkCollection': {
+              before: function (req, body, options) {
+                body = {
+                  params: {
+                    channel_uuid: body.data.channel_uuid,
+                    cart_uuid: body.data.cart_uuid
+                  },
+                  query: {}
+                }
+                return [req, body, { parent: options }]
+              },
+              // after: function(req, body, options) {
+              //   console.log('BRK trial after 2', body.data)
+              //   return [req, body, options]
+              // },
+              zip: {
+                data: 'data'
+              }
+            }
+          },
+        }
+      }
+    },
+  },
+
+
+  hooks: {
+      
+  },
+  processors: {
+        
+  },
+  projectors: {
+        
+  }
+}
+```
+
 
 ## Usage
+
+### Pipeline
+
+### Hook
+
+### Processor
+
+### Projector
 
 [npm-image]: https://img.shields.io/npm/v/@fabrix/spool-broadcast.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/@fabrix/spool-broadcast
