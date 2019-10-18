@@ -1,6 +1,6 @@
 {
   "name": "@fabrix/spool-broadcast",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "description": "Spool: broadcast for Fabrix to implement CQRS and Event Sourcing",
   "homepage": "https://fabrix.app",
   "author": {
@@ -41,16 +41,17 @@
     "test"
   ],
   "dependencies": {
+    "@fabrix/spool-errors": "^1.6.1",
     "joi": "^14.3.1",
     "lodash": "^4.17.15",
     "rabbot": "^2.1.0"
   },
   "devDependencies": {
-    "@fabrix/fabrix": "^1.6.3",
+    "@fabrix/fabrix": "^1.6.4",
     "@fabrix/lint": "^1.0.0-alpha.3",
-    "@fabrix/spool-express": "^1.6.3",
+    "@fabrix/spool-express": "^1.6.4",
     "@fabrix/spool-realtime": "^1.6.5",
-    "@fabrix/spool-router": "1.6.2",
+    "@fabrix/spool-router": "1.6.4",
     "@fabrix/spool-sequelize": "1.6.17",
     "@types/node": "~10.3.4",
     "express": "^4.17.1",
@@ -72,7 +73,8 @@
     "typescript-closure-compiler": "^1.8.11"
   },
   "peerDependencies": {
-    "@fabrix/fabrix": "^1.5.3"
+    "@fabrix/fabrix": "^1.6.4",
+    "@fabrix/spool-errors": "^1.6.1"
   },
   "engines": {
     "node": ">= 7.6.0 =< 12.4.0",

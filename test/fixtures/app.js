@@ -25,6 +25,7 @@ const App = {
     main: {
       spools: [
         require('@fabrix/spool-router').RouterSpool,
+        require('@fabrix/spool-errors').ErrorsSpool,
         require('@fabrix/spool-express').ExpressSpool,
         require('@fabrix/spool-realtime').RealtimeSpool,
         require('@fabrix/spool-sequelize').SequelizeSpool,

@@ -8,7 +8,7 @@ import {Entry} from './Entry'
 
 import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 
-export class Project {
+export class Project extends FabrixGeneric {
   public message: any
   public isAcknowledged: boolean
   public consistency = 'strong'
@@ -21,7 +21,7 @@ export class Project {
     consistency?: string,
     message?: string
   ) {
-    this.app = app
+    super(app)
     this.event = event
     this.options = options
     this.consistency = consistency || this.consistency
