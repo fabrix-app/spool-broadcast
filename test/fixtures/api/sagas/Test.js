@@ -3,7 +3,9 @@ const Saga = require('../../../../dist').Saga
 const Validator = require('../../../../dist').Validator
 
 const validate = {
-  'test.create': (data) => Validator.joiPromise(data, joi.object())
+  'create.test': (data) => Validator.joiPromise(data, joi.object()),
+  'update.test': (data) => Validator.joiPromise(data, joi.object()),
+  'destroy.test': (data) => Validator.joiPromise(data, joi.object())
 }
 
 module.exports = class Test extends Saga {
@@ -12,11 +14,11 @@ module.exports = class Test extends Saga {
     const TestBroadcast = this.app.broadcasts.Test
 
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: false})
+    body = this.app.models.Test.stage(body, {isNewRecord: true})
 
     const command = TestBroadcast.createCommand({
       req: req,
-      command_type: 'test.create',
+      command_type: 'create.test',
       object: this.app.models.Test,
       data: body,
       causation_uuid: req.causation_uuid,
@@ -28,6 +30,62 @@ module.exports = class Test extends Saga {
       .then(([_command, _options]) => {
         const event = TestBroadcast.buildEvent({
           event_type: 'test.created',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
+  update(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {isNewRecord: true})
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'update.test',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'test.updated',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
+  destroy(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {isNewRecord: true})
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'destroy.test',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'test.destroyed',
           correlation_uuid: _command.command_uuid,
           command: _command
         })

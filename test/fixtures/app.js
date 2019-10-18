@@ -79,7 +79,7 @@ const App = {
       logger: new smokesignals.Logger('debug')
     },
 
-    broadcasts: {
+    broadcast: {
       auto_transaction: true,
       /**
        * Connection for eventually consistent events
@@ -120,8 +120,19 @@ const App = {
               /**
                * Commands subscribed to
                */
-              'test.create': {
+              'create.test': {
                 create: {
+                  lifecycle: 'before',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
+              'update.test': {
+                update: {
                   lifecycle: 'before',
                   config: {
                     priority: 1,
@@ -137,12 +148,86 @@ const App = {
       },
       projectors: {
         Test: {
-          broadcasters: {}
+          broadcasters: {
+            Test: {
+              /**
+               * Commands subscribed to
+               */
+              'test.created': {
+                created: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 2,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
+                  }
+                },
+              },
+              'test.updated': {
+                updated: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 2,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
+                  }
+                },
+              }
+            }
+          }
         }
       },
       processors: {
         Test: {
-          broadcasters: {}
+          broadcasters: {
+            Test: {
+              /**
+               * Commands subscribed to
+               */
+              'test.created': {
+                update: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
+              // 'test.updated': {
+              //   destroy: {
+              //     consistency: 'strong',
+              //     config: {
+              //       priority: 1,
+              //       receives: 'Test',
+              //       merge: true,
+              //       expects: 'Test'
+              //     }
+              //   },
+              // }
+            }
+          }
         }
       },
     }

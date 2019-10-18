@@ -15,7 +15,7 @@ export class Project extends FabrixGeneric {
   private _id: string
 
   constructor(
-    public app: FabrixApp,
+    app: FabrixApp,
     public event: BroadcastEvent,
     public options: {[key: string]: any},
     consistency?: string,

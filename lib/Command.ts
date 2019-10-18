@@ -6,7 +6,6 @@ import uuid from 'uuid/v4'
 import { Broadcast } from './Broadcast'
 
 export class Command extends FabrixGeneric {
-  app: FabrixApp
   broadcaster: Broadcast
   req: {[key: string]: any}
   command_type: string
