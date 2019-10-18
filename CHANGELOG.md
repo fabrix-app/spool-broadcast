@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.10](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.8...v1.6.10) (2019-10-18)
+
+
+### Features
+
+* adds in spool-realtime ([9180763](https://github.com/fabrix-app/spool-broadcast/commit/9180763))
+* adds spool-errors, updates express tests ([4afeb2e](https://github.com/fabrix-app/spool-broadcast/commit/4afeb2e))
+* starts realtime intergration ([785b3db](https://github.com/fabrix-app/spool-broadcast/commit/785b3db))
+
 ### [1.6.8](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.7...v1.6.8) (2019-09-24)
 
 
