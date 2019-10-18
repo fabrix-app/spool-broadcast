@@ -46,8 +46,7 @@ export const main = {
     JoiSpool,
     RealtimeSpool,
     SequelizeSpool,
-    BroadcastSpool,
-  ]
+    BroadcastSpool
 }
 ```
 ## Definitions
