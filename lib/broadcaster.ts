@@ -227,8 +227,10 @@ export const broadcaster = {
     app.spools.broadcast.channelMap.forEach((value, key, map) => {
       console.log('brk map', value, key)
       const channel = app.channels[key]
-      channel._channel = app.sockets.channel(channel.name)
-      channel.initialize()
+      if (channel) {
+        channel._channel = app.sockets.channel(channel.name)
+        channel.initialize()
+      }
     })
     return Promise.resolve()
   },
