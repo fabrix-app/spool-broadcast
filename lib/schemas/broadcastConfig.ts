@@ -29,5 +29,6 @@ export const broadcastConfig = joi.object().keys({
   projectors: joi.object(),
   processors: joi.object(),
   hooks: joi.object(),
-  pipelines: joi.object()
+  pipelines: joi.object(),
+  channels: joi.object(),
 })

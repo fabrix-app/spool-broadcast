@@ -5,6 +5,9 @@ export { types, Field, ReadState, Type, Data } from './binary'
 // Broadcast Class
 export { Broadcast } from './Broadcast'
 
+// Broadcast Channels
+export { BroadcastChannel, BroadcastSubscriber } from './BroadcastChannel'
+
 // Pipeline Classes
 export { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
 

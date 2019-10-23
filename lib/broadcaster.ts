@@ -1,6 +1,7 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { clone } from 'lodash'
 import { utils } from './utils/index'
+import { regexdot } from '@fabrix/regexdot'
 import { Client } from './Client'
 import {BroadcastObjectModel} from './BroadcastObjectModel'
 
@@ -96,6 +97,22 @@ export const broadcaster = {
   },
 
   /**
+   * Discover Channels for Broadcast
+   * @param app
+   */
+  discoverChannels: (app: FabrixApp) => {
+    Object.keys(app.broadcasts || {}).forEach(r => {
+      Object.keys(app.channels || {}).forEach(p => {
+        if (app.channels[p] && app.channels[p].hasBroadcaster(app.broadcasts[r])) {
+          app.log.debug(`Adding ${app.channels[p].name} channel to ${app.broadcasts[r].name} broadcaster`)
+          app.broadcasts[r].addChannel(app.channels[p])
+        }
+      })
+    })
+    return Promise.resolve()
+  },
+
+  /**
    * Discover Pipelines for Broadcast
    * @param app
    */
@@ -161,6 +178,61 @@ export const broadcaster = {
     //
     return Promise.resolve()
   },
+
+  makeChannelMap: (app: FabrixApp) => {
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.channelMap.set(
+        app.broadcasts[bk].constructor.name,
+        app.broadcasts[bk].subscribers()
+      )
+    })
+    return app.spools.broadcast.channelMap
+  },
+
+  makePipelineMap: (app: FabrixApp) => {
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.pipelineMap.set(
+        app.broadcasts[bk].constructor.name,
+        app.broadcasts[bk].pipes()
+      )
+    })
+    return app.spools.broadcast.pipelineMap
+  },
+
+  /**
+   * Make a map of the connections of projectors
+   * @param app
+   */
+  makeProjectorMap: (app: FabrixApp) => {
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.projectorMap.set(
+        app.broadcasts[bk].constructor.name,
+        app.broadcasts[bk].events()
+      )
+    })
+    return app.spools.broadcast.projectorMap
+  },
+
+  makeHookMap: (app: FabrixApp) => {
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.hookMap.set(
+        app.broadcasts[bk].constructor.name,
+        app.broadcasts[bk].commands()
+      )
+    })
+    return app.spools.broadcast.hookMap
+  },
+
+  makeBroadcastChannelResources: (app: FabrixApp) => {
+    app.spools.broadcast.channelMap.forEach((value, key, map) => {
+      console.log('brk map', value, key)
+      const channel = app.channels[key]
+      channel._channel = app.sockets.channel(channel.name)
+      channel.initialize()
+    })
+    return Promise.resolve()
+  },
+
   /**
    * Shutdown Broadcaster
    */
@@ -173,26 +245,4 @@ export const broadcaster = {
 
     return Promise.resolve(rabbit.shutdown())
   },
-
-  makePipelineMap: (app: FabrixApp) => {
-    Object.keys((app.broadcasts || {})).forEach(bk => {
-      app.spools.broadcast.projectorMap.set(app.broadcasts[bk].constructor.name, app.broadcasts[bk].pipelines())
-    })
-  },
-
-  /**
-   * Make a map of the connections of projectors
-   * @param app
-   */
-  makeProjectorMap: (app: FabrixApp) => {
-    Object.keys((app.broadcasts || {})).forEach(bk => {
-      app.spools.broadcast.projectorMap.set(app.broadcasts[bk].constructor.name, app.broadcasts[bk].events())
-    })
-  },
-
-  makeHookMap: (app: FabrixApp) => {
-    Object.keys((app.broadcasts || {})).forEach(bk => {
-      app.spools.broadcast.projectorMap.set(app.broadcasts[bk].constructor.name, app.broadcasts[bk].hooks())
-    })
-  }
 }
