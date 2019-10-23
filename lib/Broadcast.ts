@@ -2,10 +2,12 @@ import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { get, isArray } from 'lodash'
 import joi from 'joi'
-import { projectorConfig, processorConfig, hookConfig, pipeConfig } from './schemas'
+import { regexdot } from '@fabrix/regexdot'
+import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
 
 import { Hook, HookIn } from './Hook'
 import { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
+import { BroadcastChannel, BroadcastSubscriber } from './BroadcastChannel'
 import { Project, Projector } from './Projector'
 import { Processor } from './Processer'
 import { BroadcastEvent } from './api/models'
@@ -18,21 +20,39 @@ import { GenericError } from '@fabrix/spool-errors/dist/errors'
 export class Broadcast extends FabrixGeneric {
 
   public lifecycles = ['before', 'after']
+  public lifespans = ['ephemeral', 'eternal']
   public consistencies = ['strong', 'eventual']
   public processing = ['serial', 'parallel']
 
+  /**
+   * Broadcast Channels
+   */
+  private _channels: Map<string, BroadcastChannel> = new Map()
+  private _subscribers: Map<string, { [key: string]: Map<string, any> }> = new Map()
+  private _brokers: Map<string, { [key: string]: Map<string, any> }> = new Map()
+
+  /**
+   * Pipelines
+   */
+  private _pipelines: Map<string, Pipeline> = new Map()
+  private _pipes: Map<string, { [key: string]: Map<string, any> }> = new Map()
+  private _runners: Map<string, { [key: string]: Map<string, any> }> = new Map()
+
+  /**
+   * Hooks
+   */
   private _hooks: Map<string, HookIn> = new Map()
   private _commands: Map<string, { [key: string]: Map<string, any> }> = new Map()
   private _handlers: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
+  /**
+   * Processors/Projectors
+   */
   private _processors: Map<string, Processor> = new Map()
   private _projectors: Map<string, Projector> = new Map()
   private _events: Map<string, { [key: string]: Map<string, any> }> = new Map()
   private _managers: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
-  private _pipelines: Map<string, Pipeline> = new Map()
-  private _pipes: Map<string, { [key: string]: Map<string, any> }> = new Map()
-  private _runners: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
   /**
    * Get's the name of the Broadcast class
@@ -41,9 +61,17 @@ export class Broadcast extends FabrixGeneric {
     return this.constructor.name
   }
 
+  /**
+   * Run a Pipeline
+   * TODO may be renamed
+   * @param command
+   * @param req
+   * @param body
+   * @param options
+   */
   subscribe(command, req = {}, body = {}, options = {}) {
     if (!this._pipes.has(command)) {
-      throw new Error(`${command} is not a valid pipeline for ${this.anme}`)
+      throw new Error(`${command} is not a valid pipeline for ${this.name}`)
     }
     return new PipelineEmitter(
       this.app,
@@ -58,6 +86,8 @@ export class Broadcast extends FabrixGeneric {
 
   /**
    * Run Serial TODO or in Parallel
+   * Sequelize transactions can not run in parallel, if using transaction management, then this
+   * must always run in Serial
    * @param managers
    * @param args
    */
@@ -107,7 +137,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Build Event from command infBRK beforeCommandAscormation
+   * Build Event from command information
    * @param event_type
    * @param correlation_uuid
    * @param causation_uuid
@@ -160,11 +190,15 @@ export class Broadcast extends FabrixGeneric {
       ...command
     }
 
-    return this.app.models.BroadcastEvent.stage(data, { isNewRecord: true }).generateUUID()
+    // Stage the Event as a new BroadcastEvent ready to be run
+    return this.app.models.BroadcastEvent.stage(data, {
+      isNewRecord: true
+    })
+      .generateUUID()
   }
 
   /**
-   * Call toJSON on each "Sequelize Model"
+   * Call toJSON on each "Sequelize Model" to make it a normal JS object
    * @param obj
    * @private
    */
@@ -186,11 +220,10 @@ export class Broadcast extends FabrixGeneric {
    */
   validate(validator, value, options) {
     return validator(this._cleanObj(value.data))
-      .then(data => {
+      .then((data) => {
         return [value, options]
       })
       .catch(error => {
-        console.log('brk test error', error)
         const err = this.app.transformJoiError({ value, error })
         return Promise.reject(err.error)
       })
@@ -210,7 +243,7 @@ export class Broadcast extends FabrixGeneric {
       )
     }
     return this.beforeCommand(command, options, validator)
-      .catch(err => {
+      .catch((err) => {
         this.app.log.error(`${this.name} Failure before ${command.command_type} - fatal`, err)
         // TODO reverse SAGA
         return [command, options]
@@ -228,7 +261,7 @@ export class Broadcast extends FabrixGeneric {
       throw new Error('command is not an instance of Command')
     }
     return this.afterCommand(command, options, validator)
-      .catch(err => {
+      .catch((err) => {
         this.app.log.error(`${this.name} Failure after ${command.command_type} - fatal`, err)
         // TODO reverse SAGA
         return [command, options]
@@ -247,7 +280,10 @@ export class Broadcast extends FabrixGeneric {
     const beforeHandlers = this.getBeforeHandlers(command.command_type)
 
     if (!beforeHooks || !beforeHandlers) {
-      const err = new this.app.errors.GenericError('E_PRECONDITION_REQUIRED', 'Before Commands/Handlers are not defined')
+      const err = new this.app.errors.GenericError(
+        'E_PRECONDITION_REQUIRED',
+        'Before Commands/Handlers are not defined'
+      )
       return Promise.reject(err)
     }
     return this.runBefore(beforeHooks, beforeHandlers, command, options, validator)
@@ -265,7 +301,10 @@ export class Broadcast extends FabrixGeneric {
     const afterHandlers = this.getAfterHandlers(command.command_type)
 
     if ( !afterHooks || !afterHandlers) {
-      const err = new this.app.errors.GenericError('E_PRECONDITION_REQUIRED', 'After Commands/Handler are not defined')
+      const err = new this.app.errors.GenericError(
+        'E_PRECONDITION_REQUIRED',
+        'After Commands/Handler are not defined'
+      )
       return Promise.reject(err)
     }
     return this.runAfter(afterHooks, afterHandlers, command, options, validator)
@@ -288,6 +327,7 @@ export class Broadcast extends FabrixGeneric {
     // Log the order
     const slog = []
     beforeCommandsAsc.forEach((v, k) => slog.push(k))
+
     this.app.log.debug(
       `Broadcaster ${this.name} running`,
       `${beforeCommandsAsc.size} before hooks for command ${command.command_type}`,
@@ -404,12 +444,13 @@ export class Broadcast extends FabrixGeneric {
     const afterCommandsAsc = new Map([...afterCommands.entries()]
       .sort((a, b) => {
         return afterHandlers
-          .get(a[0]).priority - afterHandlers.get(b[0])
-          .priority
+          .get(a[0]).priority - afterHandlers.get(b[0]).priority
       }))
+
     // Log the order
     const slog = []
     afterCommandsAsc.forEach((v, k) => slog.push(k))
+
     this.app.log.debug(
       `Broadcaster ${this.name} running`,
       `${afterCommandsAsc.size} after hooks for command ${command.command_type}`,
@@ -509,31 +550,171 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
+   * Notify BroadcastChannels that event is fully committed
+   * TODO remove ephemeral subscriptions https://github.com/fabrix-app/spool-broadcast/issues/3
+   * @param event
+   * @param options
+   */
+  notify(event: BroadcastEvent, options) {
+    //
+
+    const subscribers = this.getSubscribers(event.event_type)
+    const brokers = this.getBrokers(event.event_type)
+
+    // const eternal = this.getEternalSubscribers(event.event_type)
+    // const eternalBrokers = this.getEternalBrokers(event.event_type)
+    //
+    // const ephemeral = this.getEphemeralSubscribers(event.event_type)
+    // const ephemeralBrokers = this.getEphemeralBrokers(event.event_type)
+
+
+    // if (!ephemeral || !ephemeralBrokers || !eternal || !eternalBrokers) {
+    //   const err = new this.app.errors.GenericError(
+    //     'E_FAILED_DEPENDENCY',
+    //     'Eternal Subscribers/Brokers or Ephemeral Subscribers/Brokers are not defined'
+    //   )
+    //   return Promise.reject(err)
+    // }
+
+    if (!subscribers || !brokers) {
+      const err = new this.app.errors.GenericError(
+        'E_FAILED_DEPENDENCY',
+        'Eternal Subscribers/Brokers or Ephemeral Subscribers/Brokers are not defined'
+      )
+      return Promise.reject(err)
+    }
+
+    // console.log('BRK TEST NOTIFY', subscribers, brokers, eternal, eternalBrokers, ephemeral, ephemeralBrokers)
+
+    return this.notifySubscribers(subscribers, brokers, event, options)
+  }
+
+  /**
+   * Runs the methods subscribed to this event_type
+   * @param subscribers
+   * @param brokers
+   * @param event
+   * @param options
+   */
+  notifySubscribers(subscribers, brokers, event, options) {
+    let breakException
+    // Setup Strong Events in priority order
+    const subscribersAsc = new Map([...subscribers.entries()].sort((a, b) => {
+      return brokers.get(a[0]).priority - brokers.get(b[0]).priority
+    }))
+
+    // Log the order
+    const slog = []
+    subscribersAsc.forEach((v, k) => slog.push(k))
+
+    this.app.log.debug(
+      `Broadcaster ${this.name} notifying`,
+      `${subscribersAsc.size} for event ${event.event_type}`,
+      `: ${slog.map(k => k).join(' -> ')}`
+    )
+
+    const promises = Array.from(subscribersAsc.entries())
+
+    return this.process(brokers, promises, ([m, p], k) => {
+
+      // If this series is broken, no need to continue
+      if (breakException) {
+        return Promise.reject(breakException)
+      }
+
+      const broker = brokers.get(m)
+
+      // Receiver Test
+      if (broker.config && broker.config.receives) {
+        if (
+          typeof broker.config.receives === 'string'
+          && event.getDataValue('object') !== broker.config.receives
+        ) {
+          throw new this.app.errors.GenericError(
+            'E_PRECONDITION_FAILED',
+            `${m} subscriber receives ${broker.config.receives}
+            but got ${event.getDataValue('object')} for ${event.event_type}`
+          )
+        }
+        else if (
+          Array.isArray(broker.config.receives)
+          && broker.config.receives.includes(event.getDataValue('object'))
+        ) {
+          throw new this.app.errors.GenericError(
+            'E_PRECONDITION_FAILED',
+            `${m} subscriber receives one of ${broker.config.receives.join(', ')}
+            but got ${event.getDataValue('object')} for ${event.event_type}`
+          )
+        }
+      }
+      else {
+        this.app.log.debug(`${event.event_type} broker ${m} subscriber assuming it receives ${event.getDataValue('object')}`)
+      }
+
+      // Check and promise events
+      if (!p || typeof p !== 'function') {
+        this.app.log.warn(`${m} attempted to call a non function ${p}! - returning`)
+        return [event, options]
+      }
+
+      // Get the time for the start of the hook
+      const notifystart = process.hrtime()
+
+      return p({
+        event,
+        options,
+        lifespan: broker.lifespan,
+        broker: broker
+      })
+        .run()
+        .then(() => {
+          const notifyend = process.hrtime(notifystart)
+          this.app.log.debug(
+            `${this.name}.${m}: ${event.event_type} Execution time (hr): ${notifyend[0]}s ${notifyend[1] / 1000000}ms`
+          )
+          return [event, options]
+        })
+        .catch(err => {
+          breakException = err
+          // TODO perhaps retry up to a limit?
+          this.app.log.error(`${p.name} threw an error - fatal`, err)
+          return Promise.reject(err)
+        })
+    })
+      .then(results => [event, options])
+  }
+
+
+  /**
    * Save event and Broadcast the event to the projectors
    * @param event
    * @param options
    */
   broadcast(event: BroadcastEvent, options) {
 
+    // Event should be an actual BroadcastEvent
     if (!(event instanceof this.app.models.BroadcastEvent.instance)) {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
         'event is not an instance of BroadcastEvent'
       )
     }
+    // Should by default have the ability to serialize its own data
     if (typeof event.object.toBinaryData === 'undefined') {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
         'Data object does not have a toBinaryData function'
       )
     }
+    // Should by default have the ability to serialize its own metadata
     if (typeof event.object.toBinaryMetadata === 'undefined') {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
         'Data object does not have a toBinaryMetadata function'
       )
     }
-        // Send to the projectors TODO SBW
+
+    // Send to the projectors
     return this.project(event, options)
       .then(([_event, _options]) => {
         return event.save(options)
@@ -541,6 +722,7 @@ export class Broadcast extends FabrixGeneric {
             return [event, options]
           })
       })
+      .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
         this.app.log.error(`Failure while running ${event.event_type}`, err)
         // TODO reverse SAGA
@@ -552,11 +734,12 @@ export class Broadcast extends FabrixGeneric {
     //     return this.project(event, options)
     //       .catch(err => {
     //         this.app.log.error(`Failure while projecting ${event.event_type}`, err)
-    //         // TODO reverse SAGA
+    //         // TODO reverse SAGA SBW
     //         return [event, options]
     //       })
     //   })
       .then(([_e, _o]) => {
+        // The processors/projectors should have returned the event
         if (!(_e instanceof this.app.models.BroadcastEvent.instance)) {
           throw new Error(`${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`)
         }
@@ -573,6 +756,7 @@ export class Broadcast extends FabrixGeneric {
         //       return [event, options]
         //     })
         // }
+        // return the event tuple
         return [event, options]
       })
       .catch(err => {
@@ -585,18 +769,24 @@ export class Broadcast extends FabrixGeneric {
       })
   }
 
+  /**
+   * Broadcast multiple non linear events
+   * TODO either test or deprecate
+   * @param events
+   * @param options
+   */
   bulkBroadcast(events: BroadcastEvent[] = [], options) {
     return this.process(new Map(), events, e => this.broadcast(e, options))
   }
 
   /**
-   * Given an options with a transaction tree, find the top most level transaction
+   * Given an options argument with a transaction tree, find the top most level transaction
    * @param options
    */
   unnestTransaction(options) {
     if (options && options.parent && options.parent.transaction) {
       if (options.transaction) {
-        this.app.log.debug(options.transaction.id, 'will await', options.parent.transaction.id)
+        this.app.log.debug('transaction', options.transaction.id, 'will await', options.parent.transaction.id)
       }
       return this.unnestTransaction(options.parent)
     }
@@ -634,9 +824,11 @@ export class Broadcast extends FabrixGeneric {
 
         const elog = []
         eventual.forEach((v, k) => elog.push(k))
-        // Check that there is something subscribed to this
+
+        // Check that there is a transaction chain, and that we are listening to the root one
         const topLevelTransaction = this.unnestTransaction(options)
 
+        // If there is a root transaction, add the eventual events to when it's committed
         if (
           topLevelTransaction
           && !topLevelTransaction.finished
@@ -727,17 +919,25 @@ export class Broadcast extends FabrixGeneric {
       const manager = strongManagers.get(m)
 
       // Receiver Test
-      if (manager.receives) {
-        if (typeof manager.receives === 'string' && event.getDataValue('object') !== manager.receives) {
+      if (manager.config && manager.config.receives) {
+        if (
+          typeof manager.config.receives === 'string'
+          && String(event.getDataValue('object')) !== manager.config.receives
+        ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} processor receives ${manager.receives} but got ${event.getDataValue('object')} for ${event.event_type}`
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives ${manager.config.receives}
+            but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
-        else if (Array.isArray(manager.receives) && manager.receives.indexOf(event.getDataValue('object')) === -1) {
+        else if (
+          Array.isArray(manager.config.receives)
+          && manager.config.receives.includes(event.getDataValue('object'))
+        ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} processor receives one of ${manager.receives.join(', ')} but got ${event.getDataValue('object')} for ${event.event_type}`
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives one of ${manager.config.receives.join(', ')}
+            but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
       }
@@ -873,8 +1073,262 @@ export class Broadcast extends FabrixGeneric {
   }
 
 
+  channels() {
+    return this._channels
+  }
+
+  subscribers() {
+    return this._subscribers
+  }
+
+  brokers() {
+    return this._brokers
+  }
+
+  /**
+   * Add a Channel
+   * @param channel
+   */
+  addChannel (channel: BroadcastChannel) {
+
+    if (!(channel instanceof BroadcastChannel)) {
+      throw new Error(`${channel} is not an instance of Channel`)
+    }
+
+    this._channels.set(channel.name, channel)
+
+    const config = this.app.config.get(`broadcast.channels.${channel.name}.broadcasters.${this.name}`)
+    const subscriberTypes = Object.keys(config || {})
+
+
+    subscriberTypes.forEach(subscriberType => {
+      const methods = Object.keys(config[subscriberType])
+      const subscribers = config[subscriberType]
+
+      methods.forEach(m => {
+        if (
+          typeof channel[m] !== 'function'
+          && get(this.app.entries, m) === 'undefined'
+        ) {
+          throw new this.app.errors.GenericError(
+            'E_FAILED_DEPENDENCY',
+            `Neither ${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`)
+        }
+
+        const { error } = joi.validate(subscribers[m].config, subscriberConfig)
+
+        if (error) {
+          throw new Error(`${channel.name} config is invalid`)
+        }
+
+        this.app.log.silly(`Adding channel ${channel.name}.${m} to broadcaster ${this.name} for subscriber ${subscriberType}`)
+        this.addSubscriber({
+          event_type: subscriberType,
+          name: `${m}`,
+          method: typeof channel[m] === 'function' ? channel[m] : get(this.app.entries, m),
+          config: subscribers[m]
+        })
+      })
+    })
+
+    return this
+  }
+
+
+  /**
+   * Add Subscriber Subscriber
+   * @param event_type
+   * @param name
+   * @param method
+   * @param config
+   */
+  addSubscriber({event_type, name, method, config = {}}): Broadcast {
+
+    const lifespan = 'eternal'
+    const { keys, pattern } = regexdot(event_type)
+
+    // Add default configs
+    config = {
+      lifespan: lifespan,
+      params: keys,
+      pattern: pattern,
+      ...config
+    }
+
+    if (this._subscribers.has(pattern)) {
+      const subscriber = this._subscribers.get(pattern)
+      const broker = this._brokers.get(pattern)
+
+      if (subscriber[lifespan]) {
+        subscriber[lifespan].set(name, method)
+        broker[lifespan].set(name, config)
+      }
+      else {
+        subscriber[lifespan] = new Map([[name, method]])
+        broker[lifespan] = new Map([[name, config]])
+      }
+    }
+    else {
+      this._subscribers.set(pattern, {
+        [lifespan]: new Map([[name, method]])
+      })
+      this._brokers.set(pattern, {
+        [lifespan]: new Map([[name, config]])
+      })
+    }
+    return this
+  }
+
+
+  /**
+   * Has Subscriber type
+   * @param event_type
+   */
+  hasSubscriber({event_type}) {
+    // const { keys, pattern } = regexdot(event_type)
+    // console.log('brk regexdot 1', keys, pattern)
+    // return this._subscribers.has(pattern)
+
+    this._subscribers.forEach( (subscribers, _k: any) => {
+      const match = _k.test('.' + event_type)
+      if (match) {
+        return match
+      }
+    })
+  }
+  hasBroker({event_type}) {
+    // const { keys, pattern } = regexdot(event_type)
+    // console.log('brk regexdot 2', keys, pattern)
+    // return this._brokers.has(pattern)
+
+    this._brokers.forEach( (brokers, _k: any) => {
+      const match = _k.test('.' + event_type)
+      if (match) {
+        return match
+      }
+    })
+  }
+
+
+  /**
+   * Get subscribers by type with any lifespan
+   * @param event_type
+   */
+  getSubscribers(event_type): Map<string, any> {
+    let types = []
+
+    this._subscribers.forEach( (subscribers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match) {
+        const keys = Object.keys(subscribers || {})
+        keys.forEach(k => {
+          if (subscribers[k]) {
+            types = [...types, ...subscribers[k]]
+          }
+        })
+      }
+    })
+
+    return new Map(types)
+  }
+
+  /**
+   * Get subscribers by type with any lifespan
+   * @param event_type
+   */
+  getBrokers(event_type): Map<string, any> {
+    let _brokers = []
+
+    this._brokers.forEach( (brokers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match) {
+        const keys = Object.keys(brokers || {})
+        keys.forEach(k => {
+          if (brokers[k]) {
+            _brokers = [..._brokers, ...brokers[k]]
+          }
+        })
+      }
+    })
+    return new Map(_brokers)
+  }
+
+  /**
+   * Get subscribers by type with eternal lifespan
+   * @param event_type
+   */
+  getEternalSubscribers(event_type): Map<string, any> {
+    let _subscribers = []
+
+    this._subscribers.forEach( (subscribers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match && subscribers['eternal']) {
+        _subscribers = [..._subscribers, ...subscribers['eternal']]
+      }
+    })
+    return new Map(_subscribers)
+  }
+
+  /**
+   * Get subscribers by type with eternal lifespan
+   * @param event_type
+   */
+  getEternalBrokers(event_type): Map<string, any> {
+    let _brokers = []
+
+    this._brokers.forEach( (brokers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match && brokers['eternal']) {
+        _brokers = [..._brokers, ...brokers['eternal']]
+      }
+    })
+    return new Map(_brokers)
+  }
+
+  /**
+   * Get subscribers by type with ephemeral lifespan
+   * @param event_type
+   */
+  getEphemeralSubscribers(event_type): Map<string, any> {
+    let _subscribers = []
+
+    this._subscribers.forEach( (subscribers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match && subscribers['ephemeral']) {
+        _subscribers = [..._subscribers, ...subscribers['ephemeral']]
+      }
+    })
+    return new Map(_subscribers)
+  }
+
+  /**
+   * Get subscribers by type with ephemeral lifespan
+   * @param event_type
+   */
+  getEphemeralBrokers(event_type): Map<string, any> {
+    let _brokers = []
+
+    this._brokers.forEach( (brokers, _k: any) => {
+      const match = _k.test('.' + event_type)
+
+      if (match && brokers['ephemeral']) {
+        _brokers = [..._brokers, ...brokers['ephemeral']]
+      }
+    })
+    return new Map(_brokers)
+  }
+
   pipelines() {
     return this._pipelines
+  }
+
+  pipes() {
+    return this._pipes
   }
 
   runners() {
@@ -1047,10 +1501,15 @@ export class Broadcast extends FabrixGeneric {
    */
   addCommand({command_type, lifecycle = 'before', name, method, config = {}}): Broadcast {
 
+    const { keys, pattern } = regexdot(command_type)
+    console.log('brk regexdot 1.0', keys, pattern)
+
     // Add default configs
     config = {
       priority: 255,
       retry_limit: 0,
+      params: keys,
+      pattern: pattern,
       ...config
     }
 
@@ -1150,6 +1609,10 @@ export class Broadcast extends FabrixGeneric {
 
   hooks() {
     return this._hooks
+  }
+
+  commands() {
+    return this._commands
   }
 
   handlers() {
@@ -1302,12 +1765,18 @@ export class Broadcast extends FabrixGeneric {
    */
   addEvent({event_type, consistency = 'strong', name, method, config = {}, is_processor = false}): Broadcast {
 
+
+    const { keys, pattern } = regexdot(event_type)
+    console.log('brk regexdot 2.0', keys, pattern)
+
     // Add default configs
     config = {
       priority: 255,
       retry_limit: 0,
       processing: 'serial',
       is_processor: is_processor,
+      params: keys,
+      pattern: pattern,
       ...config
     }
 

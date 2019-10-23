@@ -276,7 +276,7 @@ export class Pipeline extends Generic {
 
     // this._broadcasters =
     broadcasters.forEach((k) => {
-      if (this.app.broadcasts[k]) {
+      if (k && this.app.broadcasts[k]) {
         this.addBroadcaster(this.app.broadcasts[k])
       }
       else {

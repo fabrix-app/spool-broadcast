@@ -5,10 +5,13 @@ import { zip } from './zip'
 import { merge } from './merge'
 import { push } from './push'
 
+import { pattern } from './pattern'
+
 export const utils = {
   ...merge,
   ...push,
   ...zip,
+  ...pattern,
 
   resolveTransaction: (func, req, body, options: {[key: string]: any}) => {
     if (options.transaction) {

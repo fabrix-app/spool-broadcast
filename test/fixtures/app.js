@@ -68,11 +68,15 @@ const App = {
         // },
         // transformer: 'websockets'
       },
+
       // Plugins for Primus.use
       plugins: {
         // 'fortress maximus': require('fortress-maximus'),
         // 'mirage': require('mirage')
         // redis: PrimusRedisRooms
+        'multiplex': require('primus-multiplex'),
+        'emitter': require('primus-emitter'),
+        'resource': require('primus-resource')
       }
     },
     log: {
@@ -107,14 +111,58 @@ const App = {
 
       pipelines: {
         Test: {
-          broadcasters: {}
+          broadcasters: {
+            Test: {}
+          }
         }
       },
-      hooks: {
+
+      channels: {
+        /**
+         * BroadcastChannels
+         */
         Test: {
           broadcasters: {
             /**
-             * Broadcaster that the Channel Carts are hooked into
+             * Broadcaster that the Test BroadcastChannel is listening to
+             */
+            Test: {
+              /**
+               * Events subscribed to
+               */
+              'test.created': {
+                created: {
+                  lifespan: 'eternal',
+                  config: {
+                    priority: 1,
+                    receives: 'Test'
+                  }
+                },
+              },
+              /**
+               * Events subscribed to
+               */
+              'test.:crud': {
+                crud: {
+                  lifespan: 'eternal',
+                  config: {
+                    priority: 2,
+                    receives: 'Test'
+                  }
+                },
+              },
+            }
+          }
+        }
+      },
+      hooks: {
+        /**
+         * HookIns
+         */
+        Test: {
+          broadcasters: {
+            /**
+             * Broadcaster that the Test HookIn is hooked into
              */
             Test: {
               /**
@@ -147,8 +195,14 @@ const App = {
         }
       },
       projectors: {
+        /**
+         * Projectors
+         */
         Test: {
           broadcasters: {
+            /**
+             * Broadcaster that the Test Projectors are responding to
+             */
             Test: {
               /**
                * Commands subscribed to
@@ -198,8 +252,14 @@ const App = {
         }
       },
       processors: {
+        /**
+         * Processors
+         */
         Test: {
           broadcasters: {
+            /**
+             * Broadcasters that the Test Processors are responding to
+             */
             Test: {
               /**
                * Commands subscribed to

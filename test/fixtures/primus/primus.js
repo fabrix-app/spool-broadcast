@@ -490,24 +490,28 @@ if ('undefined' !== typeof module) {
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
+    if (superCtor) {
+      ctor.super_ = superCtor
+      ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      })
+    }
   };
 } else {
   // old school shim for old browsers
   module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
+    if (superCtor) {
+      ctor.super_ = superCtor
+      var TempCtor = function () {}
+      TempCtor.prototype = superCtor.prototype
+      ctor.prototype = new TempCtor()
+      ctor.prototype.constructor = ctor
+    }
   }
 }
 
@@ -3649,7 +3653,7 @@ Primus.prototype.decoder = function decoder(data, fn) {
 
   fn(err, data);
 };
-Primus.prototype.version = "7.3.3";
+Primus.prototype.version = "7.3.4";
 
 if (
      'undefined' !== typeof document
@@ -3700,6 +3704,49 @@ module.exports = Primus;
 
 },{"demolish":1,"emits":2,"eventemitter3":3,"inherits":4,"querystringify":8,"recovery":9,"tick-tock":12,"url-parse":14,"yeast":15}]},{},[16])(16)
 ;
+Primus.prototype.ark["multiplex"] = function client(primus) {
+
+  // multiplex instance.
+  var multiplex = new Primus.$.multiplex.Multiplex(primus);
+
+  /**
+   * Return a `Channel` instance.
+   *
+   * @param {String} name The channel name.
+   * @return {multiplex.Spark}
+   * @api public
+   */
+
+  primus.channel = function channel(name) {
+    return multiplex.channel(name);
+  };
+};
+Primus.prototype.ark["emitter"] = function () {};
+Primus.prototype.ark["resource"] = function client(primus) {
+
+  var Resource = Primus.$.resource.Resource;
+
+  /**
+   * List of resources.
+   *
+   * @type {Object}
+   * @api private
+   */
+
+  primus.resources = {};
+
+  /**
+   * Create a new resource.
+   *
+   * @param {String} name The resource name
+   * @returns {Resource}
+   * @api private
+   */
+   
+  primus.resource = function resource(name, multiplex) {
+    return this.resources[name] || Resource(this, name, multiplex);
+  };
+};
   return Primus;
 },
 [
@@ -3707,18 +3754,6 @@ function (Primus) {
 (function(f){var g;if(typeof window!=='undefined'){g=window}else if(typeof self!=='undefined'){g=self}g.eio=f()})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 
 },{}],2:[function(_dereq_,module,exports){
-
-module.exports = _dereq_('./socket');
-
-/**
- * Exports parser
- *
- * @api public
- *
- */
-module.exports.parser = _dereq_('engine.io-parser');
-
-},{"./socket":3,"engine.io-parser":16}],3:[function(_dereq_,module,exports){
 /**
  * Module dependencies.
  */
@@ -3787,6 +3822,7 @@ function Socket (uri, opts) {
   this.jsonp = false !== opts.jsonp;
   this.forceBase64 = !!opts.forceBase64;
   this.enablesXDR = !!opts.enablesXDR;
+  this.withCredentials = false !== opts.withCredentials;
   this.timestampParam = opts.timestampParam || 't';
   this.timestampRequests = opts.timestampRequests;
   this.transports = opts.transports || ['polling', 'websocket'];
@@ -3903,6 +3939,7 @@ Socket.prototype.createTransport = function (name) {
     jsonp: options.jsonp || this.jsonp,
     forceBase64: options.forceBase64 || this.forceBase64,
     enablesXDR: options.enablesXDR || this.enablesXDR,
+    withCredentials: options.withCredentials || this.withCredentials,
     timestampRequests: options.timestampRequests || this.timestampRequests,
     timestampParam: options.timestampParam || this.timestampParam,
     policyPort: options.policyPort || this.policyPort,
@@ -4445,7 +4482,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
   return filteredUpgrades;
 };
 
-},{"./transport":4,"./transports/index":5,"component-emitter":14,"engine.io-parser":16,"indexof":22,"parseqs":24,"parseuri":25}],4:[function(_dereq_,module,exports){
+},{"./transport":3,"./transports/index":4,"component-emitter":13,"engine.io-parser":15,"indexof":21,"parseqs":23,"parseuri":24}],3:[function(_dereq_,module,exports){
 /**
  * Module dependencies.
  */
@@ -4478,6 +4515,7 @@ function Transport (opts) {
   this.agent = opts.agent || false;
   this.socket = opts.socket;
   this.enablesXDR = opts.enablesXDR;
+  this.withCredentials = opts.withCredentials;
 
   // SSL options for Node.js client
   this.pfx = opts.pfx;
@@ -4607,7 +4645,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":14,"engine.io-parser":16}],5:[function(_dereq_,module,exports){
+},{"component-emitter":13,"engine.io-parser":15}],4:[function(_dereq_,module,exports){
 /**
  * Module dependencies
  */
@@ -4662,7 +4700,7 @@ function polling (opts) {
   }
 }
 
-},{"./polling-jsonp":6,"./polling-xhr":7,"./websocket":9,"xmlhttprequest-ssl":10}],6:[function(_dereq_,module,exports){
+},{"./polling-jsonp":5,"./polling-xhr":6,"./websocket":8,"xmlhttprequest-ssl":9}],5:[function(_dereq_,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -4905,7 +4943,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":8,"component-inherit":15}],7:[function(_dereq_,module,exports){
+},{"./polling":7,"component-inherit":14}],6:[function(_dereq_,module,exports){
 /* global attachEvent */
 
 /**
@@ -4984,6 +5022,7 @@ XHR.prototype.request = function (opts) {
   opts.agent = this.agent || false;
   opts.supportsBinary = this.supportsBinary;
   opts.enablesXDR = this.enablesXDR;
+  opts.withCredentials = this.withCredentials;
 
   // SSL options for Node.js client
   opts.pfx = this.pfx;
@@ -5056,6 +5095,7 @@ function Request (opts) {
   this.isBinary = opts.isBinary;
   this.supportsBinary = opts.supportsBinary;
   this.enablesXDR = opts.enablesXDR;
+  this.withCredentials = opts.withCredentials;
   this.requestTimeout = opts.requestTimeout;
 
   // SSL options for Node.js client
@@ -5129,7 +5169,7 @@ Request.prototype.create = function () {
 
     // ie6 check
     if ('withCredentials' in xhr) {
-      xhr.withCredentials = true;
+      xhr.withCredentials = this.withCredentials;
     }
 
     if (this.requestTimeout) {
@@ -5148,7 +5188,7 @@ Request.prototype.create = function () {
         if (xhr.readyState === 2) {
           try {
             var contentType = xhr.getResponseHeader('Content-Type');
-            if (self.supportsBinary && contentType === 'application/octet-stream') {
+            if (self.supportsBinary && contentType === 'application/octet-stream' || contentType === 'application/octet-stream; charset=UTF-8') {
               xhr.responseType = 'arraybuffer';
             }
           } catch (e) {}
@@ -5160,7 +5200,7 @@ Request.prototype.create = function () {
           // make sure the `error` event handler that's user-set
           // does not throw in the same tick and gets caught here
           setTimeout(function () {
-            self.onError(xhr.status);
+            self.onError(typeof xhr.status === 'number' ? xhr.status : 0);
           }, 0);
         }
       };
@@ -5259,7 +5299,7 @@ Request.prototype.onLoad = function () {
     try {
       contentType = this.xhr.getResponseHeader('Content-Type');
     } catch (e) {}
-    if (contentType === 'application/octet-stream') {
+    if (contentType === 'application/octet-stream' || contentType === 'application/octet-stream; charset=UTF-8') {
       data = this.xhr.response || this.xhr.responseText;
     } else {
       data = this.xhr.responseText;
@@ -5318,7 +5358,7 @@ function unloadHandler () {
   }
 }
 
-},{"./polling":8,"component-emitter":14,"component-inherit":15,"xmlhttprequest-ssl":10}],8:[function(_dereq_,module,exports){
+},{"./polling":7,"component-emitter":13,"component-inherit":14,"xmlhttprequest-ssl":9}],7:[function(_dereq_,module,exports){
 /**
  * Module dependencies.
  */
@@ -5553,7 +5593,7 @@ Polling.prototype.uri = function () {
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":4,"component-inherit":15,"engine.io-parser":16,"parseqs":24,"xmlhttprequest-ssl":10,"yeast":26}],9:[function(_dereq_,module,exports){
+},{"../transport":3,"component-inherit":14,"engine.io-parser":15,"parseqs":23,"xmlhttprequest-ssl":9,"yeast":25}],8:[function(_dereq_,module,exports){
 (function (Buffer){
 /**
  * Module dependencies.
@@ -5566,12 +5606,17 @@ var inherit = _dereq_('component-inherit');
 var yeast = _dereq_('yeast');
 
 var BrowserWebSocket, NodeWebSocket;
-if (typeof self === 'undefined') {
+
+if (typeof WebSocket !== 'undefined') {
+  BrowserWebSocket = WebSocket;
+} else if (typeof self !== 'undefined') {
+  BrowserWebSocket = self.WebSocket || self.MozWebSocket;
+}
+
+if (typeof window === 'undefined') {
   try {
     NodeWebSocket = _dereq_('ws');
   } catch (e) { }
-} else {
-  BrowserWebSocket = self.WebSocket || self.MozWebSocket;
 }
 
 /**
@@ -5580,7 +5625,7 @@ if (typeof self === 'undefined') {
  * interface exposed by `ws` for Node-like environment.
  */
 
-var WebSocket = BrowserWebSocket || NodeWebSocket;
+var WebSocketImpl = BrowserWebSocket || NodeWebSocket;
 
 /**
  * Module exports.
@@ -5604,7 +5649,7 @@ function WS (opts) {
   this.usingBrowserWebSocket = BrowserWebSocket && !opts.forceNode;
   this.protocols = opts.protocols;
   if (!this.usingBrowserWebSocket) {
-    WebSocket = NodeWebSocket;
+    WebSocketImpl = NodeWebSocket;
   }
   Transport.call(this, opts);
 }
@@ -5664,7 +5709,12 @@ WS.prototype.doOpen = function () {
   }
 
   try {
-    this.ws = this.usingBrowserWebSocket && !this.isReactNative ? (protocols ? new WebSocket(uri, protocols) : new WebSocket(uri)) : new WebSocket(uri, protocols, opts);
+    this.ws =
+      this.usingBrowserWebSocket && !this.isReactNative
+        ? protocols
+          ? new WebSocketImpl(uri, protocols)
+          : new WebSocketImpl(uri)
+        : new WebSocketImpl(uri, protocols, opts);
   } catch (err) {
     return this.emit('error', err);
   }
@@ -5836,11 +5886,11 @@ WS.prototype.uri = function () {
  */
 
 WS.prototype.check = function () {
-  return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
+  return !!WebSocketImpl && !('__initialize' in WebSocketImpl && this.name === WS.prototype.name);
 };
 
 }).call(this,_dereq_("buffer").Buffer)
-},{"../transport":4,"buffer":1,"component-inherit":15,"engine.io-parser":16,"parseqs":24,"ws":undefined,"yeast":26}],10:[function(_dereq_,module,exports){
+},{"../transport":3,"buffer":1,"component-inherit":14,"engine.io-parser":15,"parseqs":23,"ws":undefined,"yeast":25}],9:[function(_dereq_,module,exports){
 // browser shim for xmlhttprequest module
 
 var hasCORS = _dereq_('has-cors');
@@ -5879,7 +5929,7 @@ module.exports = function (opts) {
   }
 };
 
-},{"has-cors":21}],11:[function(_dereq_,module,exports){
+},{"has-cors":20}],10:[function(_dereq_,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -5909,7 +5959,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],12:[function(_dereq_,module,exports){
+},{}],11:[function(_dereq_,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -5940,7 +5990,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],13:[function(_dereq_,module,exports){
+},{}],12:[function(_dereq_,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -6009,7 +6059,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })();
 
-},{}],14:[function(_dereq_,module,exports){
+},{}],13:[function(_dereq_,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -6174,7 +6224,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],15:[function(_dereq_,module,exports){
+},{}],14:[function(_dereq_,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -6182,7 +6232,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],16:[function(_dereq_,module,exports){
+},{}],15:[function(_dereq_,module,exports){
 /**
  * Module dependencies.
  */
@@ -6789,7 +6839,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
   });
 };
 
-},{"./keys":17,"./utf8":18,"after":11,"arraybuffer.slice":12,"base64-arraybuffer":13,"blob":19,"has-binary2":20}],17:[function(_dereq_,module,exports){
+},{"./keys":16,"./utf8":17,"after":10,"arraybuffer.slice":11,"base64-arraybuffer":12,"blob":18,"has-binary2":19}],16:[function(_dereq_,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -6810,7 +6860,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],18:[function(_dereq_,module,exports){
+},{}],17:[function(_dereq_,module,exports){
 /*! https://mths.be/utf8js v2.1.2 by @mathias */
 
 var stringFromCharCode = String.fromCharCode;
@@ -7022,7 +7072,7 @@ module.exports = {
 	decode: utf8decode
 };
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],18:[function(_dereq_,module,exports){
 /**
  * Create a blob builder even when vendor prefixes exist
  */
@@ -7124,7 +7174,7 @@ module.exports = (function() {
   }
 })();
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],19:[function(_dereq_,module,exports){
 (function (Buffer){
 /* global Blob File */
 
@@ -7192,7 +7242,7 @@ function hasBinary (obj) {
 }
 
 }).call(this,_dereq_("buffer").Buffer)
-},{"buffer":1,"isarray":23}],21:[function(_dereq_,module,exports){
+},{"buffer":1,"isarray":22}],20:[function(_dereq_,module,exports){
 
 /**
  * Module exports.
@@ -7211,7 +7261,7 @@ try {
   module.exports = false;
 }
 
-},{}],22:[function(_dereq_,module,exports){
+},{}],21:[function(_dereq_,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -7222,14 +7272,14 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],23:[function(_dereq_,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -7268,7 +7318,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],25:[function(_dereq_,module,exports){
+},{}],24:[function(_dereq_,module,exports){
 /**
  * Parses an URI
  *
@@ -7309,7 +7359,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],25:[function(_dereq_,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -7379,8 +7429,726 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}]},{},[2])(2)
+},{}],26:[function(_dereq_,module,exports){
+
+module.exports = _dereq_('./socket');
+
+/**
+ * Exports parser
+ *
+ * @api public
+ *
+ */
+module.exports.parser = _dereq_('engine.io-parser');
+
+},{"./socket":2,"engine.io-parser":15}]},{},[26])(26)
 });
 
+},
+function (Primus) {
+;(function (Primus, undefined) {
+function spark() {
+
+  'use strict';
+
+  var slice = Array.prototype.slice
+    , nextTick
+    , Stream;
+
+  /**
+   * Module dependencies.
+   */
+
+  try {
+    Stream = require('stream');
+    nextTick = process.nextTick;
+  } catch (e) {
+    Stream = Primus.EventEmitter;
+    nextTick = function tick(fn) {
+      setTimeout(fn, 0);
+    };
+  }
+
+  function inherit(a, b) {
+    function F() {}
+    F.prototype = b.prototype;
+    a.prototype = new F();
+    a.prototype.constructor = a;
+  }
+
+  /**
+   * `Spark` constructor.
+   *
+   * @constructor
+   * @param {Multiplex} Multiplex instance.
+   * @param {String|Number} id.
+   * @param {primus.Spark} conn.
+   * @api public
+   */
+
+  function Spark(mp, channel, id) {
+    if (!(this instanceof Spark)) return new Spark(mp, channel, id);
+    Stream.call(this);
+    this.channel = channel;
+    this.id = id || this.uid(13);
+    this.packets = mp.packets;
+    this.conn = mp.conn;
+    this.readyState = mp.conn.readyState;
+    this.channels = mp.channels;
+    this.writable = true;
+    this.readable = true;
+    this.reconnect = false;
+    this.initialise();
+  }
+
+  /**
+   * Inherits from `EventEmitter`.
+   */
+
+  inherit(Spark, Stream);
+
+  /**
+   * Initialise the Primus and setup all
+   * parsers and internal listeners.
+   *
+   * @api private
+   */
+
+  Spark.prototype.initialise = function initialise() {
+    var listeners = []
+      , spark = this
+      , events = []
+      , i;
+
+    for (var ev in this.conn.reserved.events) {
+      if ('data' === ev || 'end' === ev) continue;
+      events.push(ev);
+    }
+
+    // This listener must be registered before other ones
+    // to make sure readyState is set when the others are called
+    this.conn.on('readyStateChange', onreadystatechange);
+
+    this.conn.on('reconnect', onreconnect);
+    this.conn.on('open', onopen);
+
+    // Connect to the actual channel
+    this.connect();
+
+    // Re-emit events from main connection
+    for (i = 0; i < events.length; i++) {
+      listeners.push(proxy(events[i]));
+      this.conn.on(events[i], listeners[i]);
+    }
+
+    this.on('end', function () {
+      spark.emit('close');
+      spark.conn.removeListener('readyStateChange', onreadystatechange);
+      spark.conn.removeListener('reconnect', onreconnect);
+      spark.conn.removeListener('open', onopen);
+      for (i = 0; i < events.length; i++) {
+        spark.conn.removeListener(events[i], listeners[i]);
+      }
+    });
+
+    function onreadystatechange() {
+      spark.readyState = spark.conn.readyState;
+    }
+
+    function onreconnect() {
+      spark.reconnect = true;
+    }
+
+    function onopen() {
+      if (spark.reconnect) spark.connect();
+      spark.reconnect = false;
+    }
+
+    function proxy(ev) {
+      return function emit() {
+        spark.emit.apply(spark, [ev].concat(slice.call(arguments)));
+      };
+    }
+
+    return this;
+  };
+
+  /**
+   * Connect to the `channel`.
+   *
+   * @return {Socket} self
+   * @api public
+   */
+
+  Spark.prototype.connect = function connect() {
+    // Subscribe to channel
+    this.conn.write(this.packet.call(this, 'SUBSCRIBE'));
+    return this;
+  };
+
+  /**
+   * Send a new message to a given spark.
+   *
+   * @param {Mixed} data The data that needs to be written.
+   * @returns {Boolean} Always returns true.
+   * @api public
+   */
+
+  Spark.prototype.write = function write(data) {
+    var payload = this.packet('MESSAGE', data);
+    return this.conn.write(payload);
+  };
+
+  /**
+   * End the connection.
+   *
+   * @param {Mixed} data Optional closing data.
+   * @param {Function} fn Optional callback function.
+   * @return {Channel} self
+   * @api public
+   */
+
+  Spark.prototype.end = function end(data) {
+    var spark = this;
+    if (data) this.write(data);
+    this.conn.write(this.packet('UNSUBSCRIBE'));
+    nextTick(function tick() {
+      spark.emit('end');
+      spark.writable = false;
+    });
+    delete this.channels[this.channel][this.id];
+    return this;
+  };
+
+  /**
+   * Generate a unique id.
+   *
+   * @param {String} len
+   * @return {String} uid.
+   * @api private
+   */
+
+  Spark.prototype.uid = function uid(len) {
+    return Math.random().toString(35).substr(2, len || 7);
+  };
+
+  /**
+   * Encode data to return a multiplex packet.
+   * @param {String} ev
+   * @param {Object} data
+   * @return {Object} pack
+   * @api private
+   */
+
+  Spark.prototype.packet = function packet(ev, data) {
+    var type = this.packets[ev];
+    var pack = [type, this.id, this.channel];
+    if (data) pack.push(data);
+    return pack;
+  };
+
+  /**
+   * Checks if the given event is an emitted event by Primus.
+   *
+   * @param {String} evt The event name.
+   * @returns {Boolean}
+   * @api public
+   */
+
+  Spark.prototype.reserved = function reserved(evt) {
+    return (/^(incoming|outgoing)::/).test(evt)
+      || evt in this.conn.reserved.events
+      || evt in this.reserved.events;
+  };
+
+  /**
+   * The reserved custom events list.
+   *
+   * @type {Object}
+   * @api public
+   */
+
+  Spark.prototype.reserved.events = {};
+
+  return Spark;
+}
+function multiplex(Spark) {
+
+  'use strict';
+
+  /**
+   * `Multiplex` constructor.
+   *
+   * @constructor
+   * @param {Primus} primus Primus instance.
+   * @param {Object} options The options.
+   * @api public
+   */
+
+  function Multiplex(primus, options) {
+    if (!(this instanceof Multiplex)) return new Multiplex(primus, options);
+    options = options || {};
+    this.conn = primus;
+    this.channels = {};
+    this.reconnect = false;
+    if (this.conn) this.bind();
+  }
+
+  /**
+   * Message packets.
+   */
+
+  Multiplex.prototype.packets = {
+    MESSAGE: 0,
+    SUBSCRIBE: 1,
+    UNSUBSCRIBE: 2
+  };
+
+  /**
+   * Bind `Multiplex` events.
+   *
+   * @return {Multiplex} self
+   * @api private
+   */
+
+  Multiplex.prototype.bind = function bind() {
+    var mp = this;
+    this.conn.on('data', function ondata(data) {
+      if (isArray(data)) {
+        var type = data[0]
+          , id = data[1]
+          , name = data[2]
+          , payload = data.length === 4 ? data[3] : undefined
+          , channel = mp.channels[name][id];
+
+        if (!channel) return false;
+
+        switch (type) {
+          case mp.packets.MESSAGE:
+            channel.emit('data', payload);
+            break;
+          case mp.packets.UNSUBSCRIBE:
+              channel.emit('end');
+              channel.removeAllListeners();
+              delete mp.channels[name][id];
+            break;
+        }
+        return false;
+      }
+    });
+
+    return this;
+  };
+
+  /**
+   * Return a `Channel` instance.
+   *
+   * @param {String} name The channel name.
+   * @return {Spark}
+   * @api public
+   */
+
+  Multiplex.prototype.channel = function channel(name) {
+    if (!name) return this.conn;
+
+    // extend Spark to use emitter if this
+    // the plugin its present.
+    if ('emitter' in Primus.$) {
+      Primus.$.emitter.spark(Spark, Primus.$.emitter.emitter());
+    }
+
+    var spark = new Spark(this, name);
+    var id = spark.id;
+    this.channels[name] =
+    this.channels[name] || {};
+    this.channels[name][id] = spark;
+    return spark;
+  };
+
+  /**
+   * Check if object is an array.
+   */
+
+  function isArray(obj) {
+    return '[object Array]' === Object.prototype.toString.call(obj);
+  }
+
+  return Multiplex;
+}
+ if (undefined === Primus) return;
+ var Spark = spark();
+ Primus.$ = Primus.$ || {};
+ Primus.$.multiplex = {}
+ Primus.$.multiplex.spark = spark;
+ Primus.$.multiplex.multiplex = multiplex;
+ Primus.$.multiplex.Multiplex = multiplex(Spark);
+})(Primus);
+},
+function (Primus) {
+;(function (Primus, undefined) {
+function spark(Spark, Emitter) {
+  'use strict';
+
+  /**
+   * `Primus#initialise` reference.
+   */
+
+  var initialise = Spark.prototype.initialise;
+
+  /**
+   * Initialise the Primus and setup all
+   * parsers and internal listeners.
+   *
+   * @api private
+   */
+
+  Spark.prototype.initialise = function init() {
+    if (!this.emitter) this.emitter = new Emitter(this);
+    if (!this.__initialise) initialise.apply(this, arguments);
+  };
+
+  // Extend the Spark to add the send method. If `Spark.readable`
+  // is not supported then we set the method on the prototype instead.
+  if (!Spark.readable) Spark.prototype.send = send;
+  else if (!Spark.prototype.send) Spark.readable('send', send);
+
+  /**
+   * Emits to this Spark.
+   *
+   * @param {String} ev The event
+   * @param {Mixed} [data] The data to broadcast
+   * @param {Function} [fn] The callback function
+   * @return {Primus|Spark} this
+   * @api public
+   */
+
+  function send(ev, data, fn) {
+    /* jshint validthis: true */
+    // ignore newListener event to avoid this error in node 0.8
+    // https://github.com/cayasso/primus-emitter/issues/3
+    if (/^(newListener|removeListener)/.test(ev)) return this;
+    this.emitter.send.apply(this.emitter, arguments);
+    return this;
+  }
+}
+function emitter() {
+  'use strict';
+
+  var toString = Object.prototype.toString
+    , slice = Array.prototype.slice;
+
+  /**
+   * Check if the given `value` is an `Array`.
+   *
+   * @param {*} value The value to check
+   * @return {Boolean}
+   */
+
+  var isArray = Array.isArray || function isArray(value) {
+    return '[object Array]' === toString.call(value);
+  };
+
+  /**
+   * Event packets.
+   */
+
+  var packets = {
+    EVENT:  0,
+    ACK:    1
+  };
+
+  /**
+   * Initialize a new `Emitter`.
+   *
+   * @param {Primus|Spark} conn
+   * @return {Emitter} `Emitter` instance
+   * @api public
+   */
+
+  function Emitter(conn) {
+    if (!(this instanceof Emitter)) return new Emitter(conn);
+    this.ids = 1;
+    this.acks = {};
+    this.conn = conn;
+    if (this.conn) this.bind();
+  }
+
+  /**
+   * Bind `Emitter` events.
+   *
+   * @return {Emitter} self
+   * @api private
+   */
+
+  Emitter.prototype.bind = function bind() {
+    var em = this;
+    this.conn.on('data', function ondata(packet) {
+      em.ondata.call(em, packet);
+    });
+    return this;
+  };
+
+  /**
+   * Called with incoming transport data.
+   *
+   * @param {Object} packet
+   * @return {Emitter} self
+   * @api private
+   */
+
+  Emitter.prototype.ondata = function ondata(packet) {
+    if (!isArray(packet.data) || packet.id && 'number' !== typeof packet.id) {
+      return this;
+    }
+    switch (packet.type) {
+      case packets.EVENT:
+        this.onevent(packet);
+        break;
+      case packets.ACK:
+        this.onack(packet);
+    }
+    return this;
+  };
+
+  /**
+   * Send a message to client.
+   *
+   * @return {Emitter} self
+   * @api public
+   */
+
+  Emitter.prototype.send = function send() {
+    var args = slice.call(arguments);
+    this.conn.write(this.packet(args));
+    return this;
+  };
+
+  /**
+   * Prepare packet for emitting.
+   *
+   * @param {Array} arguments
+   * @return {Object} packet
+   * @api private
+   */
+
+  Emitter.prototype.packet = function pack(args) {
+    var packet = { type: packets.EVENT, data: args };
+    // access last argument to see if it's an ACK callback
+    if ('function' === typeof args[args.length - 1]) {
+      var id = this.ids++;
+      this.acks[id] = args.pop();
+      packet.id = id;
+    }
+    return packet;
+  };
+
+  /**
+   * Called upon event packet.
+   *
+   * @param {Object} packet object
+   * @return {Emitter} self
+   * @api private
+   */
+
+  Emitter.prototype.onevent = function onevent(packet) {
+    var args = packet.data;
+    if (this.conn.reserved(args[0])) return this;
+    if (packet.id) args.push(this.ack(packet.id));
+    this.conn.emit.apply(this.conn, args);
+    return this;
+  };
+
+  /**
+   * Produces an ack callback to emit with an event.
+   *
+   * @param {Number} packet id
+   * @return {Function}
+   * @api private
+   */
+
+  Emitter.prototype.ack = function ack(id) {
+    var conn = this.conn
+      , sent = false;
+    return function () {
+      if (sent) return; // prevent double callbacks
+      sent = true;
+      conn.write({
+        id: id,
+        type: packets.ACK,
+        data: slice.call(arguments)
+      });
+    };
+  };
+
+  /**
+   * Called upon ack packet.
+   *
+   * @param {Object} packet object
+   * @return {Emitter} self
+   * @api private
+   */
+
+  Emitter.prototype.onack = function onack(packet) {
+    var ack = this.acks[packet.id];
+    if ('function' === typeof ack) {
+      ack.apply(this, packet.data);
+      delete this.acks[packet.id];
+    }
+    return this;
+  };
+
+  // Expose packets
+  Emitter.packets = packets;
+
+  return Emitter;
+}
+ if (undefined === Primus) return;
+ Primus.$ = Primus.$ || {};
+ Primus.$.emitter = {};
+ Primus.$.emitter.spark = spark;
+ Primus.$.emitter.emitter = emitter;
+ spark(Primus, emitter());
+})(Primus);
+},
+function (Primus) {
+;(function (Primus, undefined) {
+function resource(primus, options) {
+
+  'use strict';
+
+  var Emitter
+    , slice = [].slice;
+
+  try {
+    Emitter = require('events').EventEmitter;
+  } catch (e) {
+    Emitter = Primus.EventEmitter;
+  }
+
+  /**
+   * Initialize a new resource.
+   *
+   * @param {Stream} stream
+   * @param {String} name
+   * @param {Boolean} multiplex
+   * @api public
+   */
+
+  function Resource(stream, name, multiplex) {
+    if (!(this instanceof Resource)) return new Resource(stream, name, multiplex);
+    Emitter.call(this);
+    multiplex = ('undefined' === typeof multiplex) ? true : multiplex;
+    this.ns = multiplex ? '' : name + '::';
+    this.stream = multiplex ? stream.channel(name) : stream;
+    stream.resources = stream.resources || {};
+    stream.resources[name] = this;
+    this.name = name;
+    this._bind();
+  }
+
+  /**
+   * Inherits from `EventEmitter`.
+   */
+
+  Resource.prototype = Object.create(Emitter.prototype);
+  Resource.prototype.constructor = Resource;
+  Resource.prototype._on = Resource.prototype.on;
+
+  /**
+   * Bind resource events.
+   *
+   * @param {String} name Namespace id
+   * @return {Resource} this
+   * @api private
+   */
+
+  Resource.prototype.on = function on(ev, fn) {
+    if ('ready' === ev) return this._on(ev, fn);
+    this.stream.on(this.ns + ev, fn);
+  };
+
+  /**
+   * Bind resource events.
+   *
+   * @return {Resource} this
+   * @api private
+   */
+
+  Resource.prototype._bind = function _bind() {
+    var resource = this
+      , ev = resource.ns + 'ready';
+  
+    // bind ready event
+    resource.stream.once(ev, ready);
+
+    // bind end event
+    resource.stream.on('end', function onend() {
+
+      // remove all listeners
+      resource.stream.removeAllListeners(ev);
+
+      // rebind onready event
+      resource.stream.once(ev, ready);
+
+    });
+
+    /**
+     * Ready event for binding.
+     *
+     * @param {Array} methods
+     * @api private
+     */
+
+    function ready(methods) {
+      resource.onready(methods);
+    }
+
+    return this;
+  };
+
+  /**
+   * Called upon resource ready.
+   *
+   * @param {Array} methods
+   * @return {Resource} this
+   * @api private
+   */
+
+  Resource.prototype.onready = function onready(methods) {
+
+    var i = 0
+      , resource = this
+      , ns = resource.ns
+      , stream = this.stream
+      , len = methods.length;
+
+    for (; i < len; ++i) setup(methods[i]);
+
+    // we need to setup each remote method
+    // make the corresponding namespace on the
+    // resource so we can call it.
+    function setup(method) {
+      // create the remote method
+      if ('function' === typeof resource[method]) return;
+      resource[method] = function () {
+        var args = slice.call(arguments);
+        // lets send event with the corresponding arguments
+        stream.send.apply(stream, [ns + method].concat(args));
+      };
+    }
+
+    // emit the ready event
+    resource.emit('ready', resource.name, methods);
+    return this;
+  };
+
+  return Resource;
+}
+ if (undefined === Primus) return;
+ Primus.$ = Primus.$ || {};
+ Primus.$.resource = {}
+ Primus.$.resource.resource = resource;
+ Primus.$.resource.Resource = resource();
+})(Primus);
 }
 ]);

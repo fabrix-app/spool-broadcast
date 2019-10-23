@@ -13,6 +13,7 @@ import { ConfigError } from './errors'
 export class BroadcastSpool extends ExtensionSpool {
   public broadcaster
 
+  public channelMap = new Map()
   public pipelineMap = new Map()
   public hookMap = new Map()
   public processorMap = new Map()
@@ -172,6 +173,7 @@ export class BroadcastSpool extends ExtensionSpool {
   async configure () {
     await Promise.all([
       broadcaster.configure(this.app),
+      broadcaster.discoverChannels(this.app),
       broadcaster.discoverPipelines(this.app),
       broadcaster.discoverHooks(this.app),
       broadcaster.discoverProjectors(this.app),
@@ -189,10 +191,18 @@ export class BroadcastSpool extends ExtensionSpool {
    * TODO document method
    */
   async initialize () {
+    // Make the all the maps
     await Promise.all([
       broadcaster.addBroadcasts(this.app),
+      broadcaster.makeChannelMap(this.app),
+      broadcaster.makePipelineMap(this.app),
+      broadcaster.makeHookMap(this.app),
       broadcaster.makeProjectorMap(this.app)
     ])
+      .then((maps) => {
+        // Make the broadcast resources
+        return broadcaster.makeBroadcastChannelResources(this.app)
+      })
       .catch(err => {
         return Promise.reject(err)
       })
@@ -211,7 +221,9 @@ export class BroadcastSpool extends ExtensionSpool {
   }
 
   async sanity() {
-    //
+    this.app.log.silly('BroadcastChannel Map', this.channelMap)
+    this.app.log.silly('Pipeline Map', this.pipelineMap)
+    this.app.log.silly('Hook Map', this.hookMap)
     this.app.log.silly('Projection Map', this.projectorMap)
     return Promise.resolve()
   }
