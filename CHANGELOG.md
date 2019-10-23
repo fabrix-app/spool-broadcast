@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.12](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.11...v1.6.12) (2019-10-23)
+
+
+### Features
+
+* starts BroadcastChannel ([b2392da](https://github.com/fabrix-app/spool-broadcast/commit/b2392da))
+
 ### [1.6.11](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.10...v1.6.11) (2019-10-18)
 
 ### [1.6.10](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.8...v1.6.10) (2019-10-18)
