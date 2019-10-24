@@ -57,6 +57,12 @@ class Updated extends Project {
   }
 }
 
+class Puff extends Project {
+  async run() {
+    return Promise.resolve([this.event, this.options])
+  }
+}
+
 module.exports = class Test extends Projector {
   logger({event, options, consistency, message}) {
     return new Logger(this.app, event, options, consistency, message)
@@ -64,7 +70,13 @@ module.exports = class Test extends Projector {
   created({event, options, consistency, message}) {
     return new Created(this.app, event, options, consistency, message)
   }
+  created2({event, options, consistency, message}) {
+    return new Created(this.app, event, options, consistency, message)
+  }
   updated({event, options, consistency, message}) {
     return new Updated(this.app, event, options, consistency, message)
+  }
+  puff({event, options, consistency, message}) {
+    return new Puff(this.app, event, options, consistency, message)
   }
 }

@@ -1153,6 +1153,7 @@ export class Broadcast extends FabrixGeneric {
 
     const lifespan = 'eternal'
     const { keys, pattern } = regexdot(event_type)
+    const key = pattern // .toString()
 
     // Add default configs
     config = {
@@ -1162,9 +1163,9 @@ export class Broadcast extends FabrixGeneric {
       ...config
     }
 
-    if (this._subscribers.has(pattern)) {
-      const subscriber = this._subscribers.get(pattern)
-      const broker = this._brokers.get(pattern)
+    if (this._subscribers.has(key)) {
+      const subscriber = this._subscribers.get(key)
+      const broker = this._brokers.get(key)
 
       if (subscriber[lifespan]) {
         subscriber[lifespan].set(name, method)
@@ -1176,10 +1177,10 @@ export class Broadcast extends FabrixGeneric {
       }
     }
     else {
-      this._subscribers.set(pattern, {
+      this._subscribers.set(key, {
         [lifespan]: new Map([[name, method]])
       })
-      this._brokers.set(pattern, {
+      this._brokers.set(key, {
         [lifespan]: new Map([[name, config]])
       })
     }
@@ -1197,7 +1198,8 @@ export class Broadcast extends FabrixGeneric {
     // return this._subscribers.has(pattern)
 
     this._subscribers.forEach( (subscribers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
       if (match) {
         return match
       }
@@ -1209,7 +1211,8 @@ export class Broadcast extends FabrixGeneric {
     // return this._brokers.has(pattern)
 
     this._brokers.forEach( (brokers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
       if (match) {
         return match
       }
@@ -1225,7 +1228,8 @@ export class Broadcast extends FabrixGeneric {
     let types = []
 
     this._subscribers.forEach( (subscribers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match) {
         const keys = Object.keys(subscribers || {})
@@ -1248,7 +1252,8 @@ export class Broadcast extends FabrixGeneric {
     let _brokers = []
 
     this._brokers.forEach( (brokers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match) {
         const keys = Object.keys(brokers || {})
@@ -1270,7 +1275,8 @@ export class Broadcast extends FabrixGeneric {
     let _subscribers = []
 
     this._subscribers.forEach( (subscribers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match && subscribers['eternal']) {
         _subscribers = [..._subscribers, ...subscribers['eternal']]
@@ -1287,7 +1293,8 @@ export class Broadcast extends FabrixGeneric {
     let _brokers = []
 
     this._brokers.forEach( (brokers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match && brokers['eternal']) {
         _brokers = [..._brokers, ...brokers['eternal']]
@@ -1304,7 +1311,8 @@ export class Broadcast extends FabrixGeneric {
     let _subscribers = []
 
     this._subscribers.forEach( (subscribers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match && subscribers['ephemeral']) {
         _subscribers = [..._subscribers, ...subscribers['ephemeral']]
@@ -1321,13 +1329,35 @@ export class Broadcast extends FabrixGeneric {
     let _brokers = []
 
     this._brokers.forEach( (brokers, _k: any) => {
-      const match = _k.test('.' + event_type)
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
 
       if (match && brokers['ephemeral']) {
         _brokers = [..._brokers, ...brokers['ephemeral']]
       }
     })
     return new Map(_brokers)
+  }
+
+  /**
+   * Remove Subscriber Subscriber
+   * @param event_type
+   * @param lifespan
+   * @param name
+   */
+  removeSubscriber({event_type, lifespan = 'eternal', name}): Broadcast {
+    const { keys, pattern } = regexdot(event_type)
+    const key = pattern // .toString()
+
+    if (this._subscribers.has(key)) {
+      const subscriber = this._subscribers.get(key)
+      const broker = this._brokers.get(key)
+      if (subscriber[lifespan]) {
+        subscriber[lifespan].delete(name)
+        broker[lifespan].delete(name)
+      }
+    }
+    return this
   }
 
   pipelines() {
@@ -1509,7 +1539,7 @@ export class Broadcast extends FabrixGeneric {
   addCommand({command_type, lifecycle = 'before', name, method, config = {}}): Broadcast {
 
     const { keys, pattern } = regexdot(command_type)
-    console.log('brk regexdot 1.0', keys, pattern)
+    const key = pattern // .toString()
 
     // Add default configs
     config = {
@@ -1520,9 +1550,9 @@ export class Broadcast extends FabrixGeneric {
       ...config
     }
 
-    if (this._commands.has(command_type)) {
-      const command = this._commands.get(command_type)
-      const handler = this._handlers.get(command_type)
+    if (this._commands.has(key)) {
+      const command = this._commands.get(key)
+      const handler = this._handlers.get(key)
 
       if (command[lifecycle]) {
         command[lifecycle].set(name, method)
@@ -1534,10 +1564,10 @@ export class Broadcast extends FabrixGeneric {
       }
     }
     else {
-      this._commands.set(command_type, {
+      this._commands.set(key, {
         [lifecycle]: new Map([[name, method]])
       })
-      this._handlers.set(command_type, {
+      this._handlers.set(key, {
         [lifecycle]: new Map([[name, config]])
       })
     }
@@ -1550,10 +1580,24 @@ export class Broadcast extends FabrixGeneric {
    * @param command_type
    */
   hasCommand({command_type}) {
-    return this._commands.has(command_type)
+    // return this._commands.has(command_type)
+    this._commands.forEach( (subscribers, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + command_type)
+      if (match) {
+        return match
+      }
+    })
   }
   hasHandler({command_type}) {
-    return this._handlers.has(command_type)
+    // return this._handlers.has(command_type)
+    this._handlers.forEach( (subscribers, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + command_type)
+      if (match) {
+        return match
+      }
+    })
   }
 
 
@@ -1563,13 +1607,26 @@ export class Broadcast extends FabrixGeneric {
    * @param command_type
    */
   getBeforeHooks(command_type): Map<string, any> {
-    if (this._commands.has(command_type)) {
-      const hooks = this._commands.get(command_type)
-      if (hooks['before']) {
-        return hooks['before']
+    // if (this._commands.has(command_type)) {
+    //   const hooks = this._commands.get(command_type)
+    //   if (hooks['before']) {
+    //     return hooks['before']
+    //   }
+    // }
+    // return new Map()
+
+    let _commands = []
+
+    this._commands.forEach( (commands, _k: any) => {
+      const key = _k // new RegExp(_k)
+
+      const match = key.test('.' + command_type)
+
+      if (match && commands['before']) {
+        _commands = [..._commands, ...commands['before']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_commands)
   }
 
   /**
@@ -1577,13 +1634,24 @@ export class Broadcast extends FabrixGeneric {
    * @param command_type
    */
   getBeforeHandlers(command_type): Map<string, any> {
-    if (this._handlers.has(command_type)) {
-      const handlers = this._handlers.get(command_type)
-      if (handlers['before']) {
-        return handlers['before']
+    // if (this._handlers.has(command_type)) {
+    //   const handlers = this._handlers.get(command_type)
+    //   if (handlers['before']) {
+    //     return handlers['before']
+    //   }
+    // }
+    // return new Map()
+    let _commands = []
+
+    this._handlers.forEach( (commands, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + command_type)
+
+      if (match && commands['before']) {
+        _commands = [..._commands, ...commands['before']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_commands)
   }
 
   /**
@@ -1591,13 +1659,25 @@ export class Broadcast extends FabrixGeneric {
    * @param command_type
    */
   getAfterHooks(command_type): Map<string, any> {
-    if (this._commands.has(command_type)) {
-      const hooks = this._commands.get(command_type)
-      if (hooks['after']) {
-        return hooks['after']
+    // if (this._commands.has(command_type)) {
+    //   const hooks = this._commands.get(command_type)
+    //   if (hooks['after']) {
+    //     return hooks['after']
+    //   }
+    // }
+    // return new Map()
+
+    let _commands = []
+
+    this._commands.forEach( (commands, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + command_type)
+
+      if (match && commands['after']) {
+        _commands = [..._commands, ...commands['after']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_commands)
   }
 
   /**
@@ -1605,13 +1685,24 @@ export class Broadcast extends FabrixGeneric {
    * @param command_type
    */
   getAfterHandlers(command_type): Map<string, any> {
-    if (this._handlers.has(command_type)) {
-      const handlers = this._handlers.get(command_type)
-      if (handlers['after']) {
-        return handlers['after']
+    // if (this._handlers.has(command_type)) {
+    //   const handlers = this._handlers.get(command_type)
+    //   if (handlers['after']) {
+    //     return handlers['after']
+    //   }
+    // }
+    // return new Map()
+    let _commands = []
+
+    this._handlers.forEach( (commands, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + command_type)
+
+      if (match && commands['after']) {
+        _commands = [..._commands, ...commands['after']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_commands)
   }
 
   hooks() {
@@ -1641,9 +1732,12 @@ export class Broadcast extends FabrixGeneric {
    * @param name
    */
   removeCommand({command_type, lifecycle = 'before', name}): Broadcast {
-    if (this._commands.has(command_type)) {
-      const command = this._commands.get(command_type)
-      const handler = this._handlers.get(command_type)
+    const { pattern, keys } = regexdot(command_type)
+    const key = pattern // .toString()
+
+    if (this._commands.has(key)) {
+      const command = this._commands.get(key)
+      const handler = this._handlers.get(key)
       if (command[lifecycle]) {
         command[lifecycle].delete(name)
         handler[lifecycle].delete(name)
@@ -1774,7 +1868,7 @@ export class Broadcast extends FabrixGeneric {
 
 
     const { keys, pattern } = regexdot(event_type)
-    console.log('brk regexdot 2.0', keys, pattern)
+    const key = pattern // .toString()
 
     // Add default configs
     config = {
@@ -1787,9 +1881,9 @@ export class Broadcast extends FabrixGeneric {
       ...config
     }
 
-    if (this._events.has(event_type)) {
-      const event = this._events.get(event_type)
-      const manager = this._managers.get(event_type)
+    if (this._events.has(key)) {
+      const event = this._events.get(key)
+      const manager = this._managers.get(key)
 
       if (event[consistency]) {
         event[consistency].set(name, method)
@@ -1801,10 +1895,10 @@ export class Broadcast extends FabrixGeneric {
       }
     }
     else {
-      this._events.set(event_type, {
+      this._events.set(key, {
         [consistency]: new Map([[name, method]])
       })
-      this._managers.set(event_type, {
+      this._managers.set(key, {
         [consistency]: new Map([[name, config]])
       })
     }
@@ -1816,10 +1910,24 @@ export class Broadcast extends FabrixGeneric {
    * @param event_type
    */
   hasEvent({event_type}) {
-    return this._events.has(event_type)
+    // return this._events.has(event_type)
+    this._events.forEach( (subscribers, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
+      if (match) {
+        return match
+      }
+    })
   }
   hasManager({event_type}) {
-    return this._managers.has(event_type)
+    // return this._events.has(event_type)
+    this._managers.forEach( (subscribers, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
+      if (match) {
+        return match
+      }
+    })
   }
 
   /**
@@ -1829,9 +1937,12 @@ export class Broadcast extends FabrixGeneric {
    * @param name
    */
   removeEvent({event_type, consistency = 'strong', name}): Broadcast {
-    if (this._events.has(event_type)) {
-      const event = this._events.get(event_type)
-      const manager = this._managers.get(event_type)
+    const { pattern, keys } = regexdot(event_type)
+    const key = pattern // .toString()
+
+    if (this._events.has(key)) {
+      const event = this._events.get(key)
+      const manager = this._managers.get(key)
       if (event[consistency]) {
         event[consistency].delete(name)
         manager[consistency].delete(name)
@@ -1845,13 +1956,24 @@ export class Broadcast extends FabrixGeneric {
    * @param event_type
    */
   getStrongEvents(event_type): Map<string, any> {
-    if (this._events.has(event_type)) {
-      const events = this._events.get(event_type)
-      if (events['strong']) {
-        return events['strong']
+    // if (this._events.has(event_type)) {
+    //   const events = this._events.get(event_type)
+    //   if (events['strong']) {
+    //     return events['strong']
+    //   }
+    // }
+    // return new Map()
+    let _events = []
+
+    this._events.forEach( (events, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
+
+      if (match && events['strong']) {
+        _events = [..._events, ...events['strong']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_events)
   }
 
   /**
@@ -1859,13 +1981,24 @@ export class Broadcast extends FabrixGeneric {
    * @param event_type
    */
   getStrongManagers(event_type): Map<string, any> {
-    if (this._managers.has(event_type)) {
-      const managers = this._managers.get(event_type)
-      if (managers['strong']) {
-        return managers['strong']
+    // if (this._managers.has(event_type)) {
+    //   const managers = this._managers.get(event_type)
+    //   if (managers['strong']) {
+    //     return managers['strong']
+    //   }
+    // }
+    // return new Map()
+    let _events = []
+
+    this._managers.forEach( (events, _k: any) => {
+      const key = new RegExp(_k, 'i')
+      const match = key.test('.' + event_type)
+
+      if (match && events['strong']) {
+        _events = [..._events, ...events['strong']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_events)
   }
 
   /**
@@ -1873,13 +2006,24 @@ export class Broadcast extends FabrixGeneric {
    * @param event_type
    */
   getEventualEvents(event_type): Map<string, any> {
-    if (this._events.has(event_type)) {
-      const events = this._events.get(event_type)
-      if (events['eventual']) {
-        return events['eventual']
+    // if (this._events.has(event_type)) {
+    //   const events = this._events.get(event_type)
+    //   if (events['eventual']) {
+    //     return events['eventual']
+    //   }
+    // }
+    // return new Map()
+    let _events = []
+
+    this._events.forEach( (events, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
+
+      if (match && events['eventual']) {
+        _events = [..._events, ...events['eventual']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_events)
   }
 
   /**
@@ -1887,13 +2031,24 @@ export class Broadcast extends FabrixGeneric {
    * @param event_type
    */
   getEventualManagers(event_type): Map<string, any> {
-    if (this._managers.has(event_type)) {
-      const managers = this._managers.get(event_type)
-      if (managers['eventual']) {
-        return managers['eventual']
+    // if (this._managers.has(event_type)) {
+    //   const managers = this._managers.get(event_type)
+    //   if (managers['eventual']) {
+    //     return managers['eventual']
+    //   }
+    // }
+    // return new Map()
+    let _events = []
+
+    this._managers.forEach( (events, _k: any) => {
+      const key = _k // new RegExp(_k)
+      const match = key.test('.' + event_type)
+
+      if (match && events['eventual']) {
+        _events = [..._events, ...events['eventual']]
       }
-    }
-    return new Map()
+    })
+    return new Map(_events)
   }
 
   /**

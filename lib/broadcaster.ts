@@ -225,7 +225,6 @@ export const broadcaster = {
 
   makeBroadcastChannelResources: (app: FabrixApp) => {
     app.spools.broadcast.channelMap.forEach((value, key, map) => {
-      console.log('brk map', value, key)
       const channel = app.channels[key]
       if (channel) {
         channel._channel = app.sockets.channel(channel.name)

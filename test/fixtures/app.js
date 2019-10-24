@@ -204,6 +204,17 @@ const App = {
              * Broadcaster that the Test Projectors are responding to
              */
             Test: {
+              'test.:crud': {
+                puff: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 3,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
               /**
                * Commands subscribed to
                */
@@ -217,10 +228,19 @@ const App = {
                     expects: 'Test'
                   }
                 },
+                created2: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 2,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
                 logger: {
                   consistency: 'eventual',
                   config: {
-                    priority: 2,
+                    priority: 3,
                     receives: 'Test',
                     merge: true,
                     expects: 'TestLogger'
