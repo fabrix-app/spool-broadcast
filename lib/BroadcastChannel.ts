@@ -22,7 +22,7 @@ export class BroadcastSubscriber {
   }
 
   // async run (): Promise<any> {
-  //   throw new Error('Subclasses must override Project.run')
+  //   throw new Error('Subclasses must override BroadcastProject.run')
   // }
 
   // /**

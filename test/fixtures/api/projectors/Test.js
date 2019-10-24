@@ -1,9 +1,9 @@
-const Projector = require('../../../../dist').Projector
-const Project = require('../../../../dist').Project
+const Projector = require('../../../../dist').BroadcastProjector
+const Project = require('../../../../dist').BroadcastProject
 
 class Logger extends Project {
   async run() {
-    const test = this.app.models.TestLogger.stage(this.event.data, { isNewRecord: true })
+    const test = this.app.models.TestLogger.stage(this.event, { isNewRecord: true })
     // return userRole.destroy(this.options)
     return test.save(this.options)
       .then(_e => {

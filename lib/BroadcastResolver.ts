@@ -2,9 +2,9 @@ import {FabrixModel, FabrixModel as Model} from '@fabrix/fabrix/dist/common'
 import { SequelizeResolver } from '@fabrix/spool-sequelize'
 import { isArray, defaultsDeep } from 'lodash'
 import uuid from 'uuid/v4'
+
 import { Type } from './binary/index'
 import { utils } from './utils/index'
-import { mapSeries } from 'bluebird'
 
 export class BroadcastResolver extends SequelizeResolver {
   get object() {
@@ -49,12 +49,12 @@ export class BroadcastResolver extends SequelizeResolver {
         // If the binary is not defined, but is optional attempt to translate
         else if (this.schema[k].binaryOptional) {
           const key = `${k}${this.schema[k].binaryOptional ? '?' : ''}`
-          return types[key] = utils.replaceDataType(this.schema[k].type)
+          return types[key] = utils.replaceDataType(this.app, this.schema[k].type)
         }
         // Attempt a translation
         else {
           const key = `${k}${this.schema[k].primaryKey ? '' : '?'}`
-          return types[key] = utils.replaceDataType(this.schema[k].type)
+          return types[key] = utils.replaceDataType(this.app, this.schema[k].type)
         }
 
         if (allowedTypes.indexOf(this.schema[k].binaryType) === -1) {

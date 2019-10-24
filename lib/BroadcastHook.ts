@@ -1,7 +1,7 @@
 import { FabrixGeneric, FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
 import { get, isArray } from 'lodash'
 import { Broadcast } from './Broadcast'
-import { Command } from './Command'
+import { BroadcastCommand } from './BroadcastCommand'
 import { FabrixApp } from '@fabrix/fabrix'
 import { mapSeries } from 'bluebird'
 
@@ -9,7 +9,7 @@ import { mapSeries } from 'bluebird'
  * @module Hook
  * @description Hook
  */
-export class Hook extends FabrixGeneric {
+export class BroadcastHook extends FabrixGeneric {
   public app: FabrixApp
   public options
   public command
@@ -122,7 +122,7 @@ export class Hook extends FabrixGeneric {
 }
 
 
-export class HookIn extends Generic {
+export class BroadcastHookIn extends Generic {
 
   private _broadcasters: Map<string, Broadcast> = new Map()
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']

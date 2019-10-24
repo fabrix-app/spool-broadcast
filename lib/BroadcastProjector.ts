@@ -8,7 +8,7 @@ import {Entry} from './Entry'
 
 import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 
-export class Project extends FabrixGeneric {
+export class BroadcastProject extends FabrixGeneric {
   public message: any
   public isAcknowledged: boolean
   public consistency = 'strong'
@@ -48,7 +48,7 @@ export class Project extends FabrixGeneric {
   }
 
   async run (): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
-    throw new Error('Subclasses must override Project.run')
+    throw new Error('Subclasses must override BroadcastProject.run')
   }
 
   /**
@@ -164,7 +164,7 @@ export class Project extends FabrixGeneric {
   }
 }
 
-export class Projector extends FabrixGeneric {
+export class BroadcastProjector extends FabrixGeneric {
 
   private _broadcasters: Map<string, Broadcast> = new Map()
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']

@@ -7,7 +7,7 @@ import {Entry} from './Entry'
 // import uuid from 'uuid/v4'
 import { BroadcastAction, BroadcastOptions } from './Interface'
 
-export class Process extends FabrixGeneric {
+export class BroadcastProcess extends FabrixGeneric {
   public message: any
   public isAcknowledged: boolean
   public consistency = 'strong'
@@ -44,7 +44,7 @@ export class Process extends FabrixGeneric {
   }
 
   async run (): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
-    throw new Error('Subclasses must override Project.run')
+    throw new Error('Subclasses must override BroadcastProject.run')
   }
 
   /**
@@ -138,7 +138,7 @@ export class Process extends FabrixGeneric {
   }
 }
 
-export class Processor extends FabrixGeneric {
+export class BroadcastProcessor extends FabrixGeneric {
 
   private _broadcasters: Map<string, Broadcast> = new Map()
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']

@@ -1,7 +1,8 @@
 'use strict'
-
+const Utils =  require('@fabrix/spool-sequelize').Utils
 const BroadcastModel = require('../../../../dist').BroadcastModel
 const BroadcastResolver = require('../../../../dist').BroadcastResolver
+const BroadcastEvent = require('../../../../dist').BroadcastEvent
 
 /**
  * Test
@@ -24,13 +25,13 @@ module.exports = class TestLogger extends BroadcastModel {
   }
 
   static schema(app, Sequelize) {
-    return {
+    return Utils.mergeConfig(BroadcastEvent.schema(app, Sequelize), {
       name: {
         type: Sequelize.STRING,
         binaryOptional: true,
         binaryType: 'string'
       }
-    }
+    })
   }
 
   //If you need associations, put them here

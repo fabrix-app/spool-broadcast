@@ -5,13 +5,13 @@ import joi from 'joi'
 import { regexdot } from '@fabrix/regexdot'
 import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
 
-import { Hook, HookIn } from './Hook'
-import { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
+import { BroadcastHook, BroadcastHookIn } from './BroadcastHook'
+import { BroadcastPipeline, BroadcastPipe, PipelineEmitter } from './BroadcastPipeline'
 import { BroadcastChannel, BroadcastSubscriber } from './BroadcastChannel'
-import { Project, Projector } from './Projector'
-import { Processor } from './Processer'
+import { BroadcastProject, BroadcastProjector } from './BroadcastProjector'
+import { BroadcastProcessor } from './BroadcastProcesser'
 import { BroadcastEvent } from './api/models'
-import { Command } from './Command'
+import { BroadcastCommand } from './BroadcastCommand'
 import { GenericError } from '@fabrix/spool-errors/dist/errors'
 
 // import { each, mapSeries } from 'Bluebird'
@@ -34,22 +34,22 @@ export class Broadcast extends FabrixGeneric {
   /**
    * Pipelines
    */
-  private _pipelines: Map<string, Pipeline> = new Map()
+  private _pipelines: Map<string, BroadcastPipeline> = new Map()
   private _pipes: Map<string, { [key: string]: Map<string, any> }> = new Map()
   private _runners: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
   /**
    * Hooks
    */
-  private _hooks: Map<string, HookIn> = new Map()
+  private _hooks: Map<string, BroadcastHookIn> = new Map()
   private _commands: Map<string, { [key: string]: Map<string, any> }> = new Map()
   private _handlers: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
   /**
    * Processors/Projectors
    */
-  private _processors: Map<string, Processor> = new Map()
-  private _projectors: Map<string, Projector> = new Map()
+  private _processors: Map<string, BroadcastProcessor> = new Map()
+  private _projectors: Map<string, BroadcastProjector> = new Map()
   private _events: Map<string, { [key: string]: Map<string, any> }> = new Map()
   private _managers: Map<string, { [key: string]: Map<string, any> }> = new Map()
 
@@ -106,7 +106,7 @@ export class Broadcast extends FabrixGeneric {
 
     return this.app.spools.sequelize._datastore.Promise.mapSeries(...args)
       .catch(err => {
-        this.app.log.err('Fatal Process', err)
+        this.app.log.err('Fatal BroadcastProcess', err)
         return Promise.reject(err)
       })
   }
@@ -114,7 +114,7 @@ export class Broadcast extends FabrixGeneric {
   reverseProcess(managers, ...args) {
     return this.app.spools.sequelize._datastore.Promise.mapSeries(...args)
       .catch(err => {
-        this.app.log.err('Fatal Process', err)
+        this.app.log.err('Fatal BroadcastProcess', err)
         return Promise.reject(err)
       })
   }
@@ -124,7 +124,7 @@ export class Broadcast extends FabrixGeneric {
    * @param data
    */
   createCommand(data) {
-    return new Command(this.app, this, data)
+    return new BroadcastCommand(this.app, this, data)
   }
 
   /**
@@ -133,7 +133,7 @@ export class Broadcast extends FabrixGeneric {
    * @param data
    */
   updateCommand(data) {
-    return new Command(this.app, this, {correlation_uuid: data.command_uuid, ...data})
+    return new BroadcastCommand(this.app, this, {correlation_uuid: data.command_uuid, ...data})
   }
 
   /**
@@ -157,7 +157,7 @@ export class Broadcast extends FabrixGeneric {
      chain_after,
      chain_events
   }: {
-    command: Command,
+    command: BroadcastCommand,
     // Overrides
     event_type?: string,
     correlation_uuid: string,
@@ -173,7 +173,7 @@ export class Broadcast extends FabrixGeneric {
     if (!correlation_uuid) {
       throw new Error('Broadcast.buildEvent missing correlation_uuid')
     }
-    if (!(command instanceof Command)) {
+    if (!(command instanceof BroadcastCommand)) {
       throw new Error('Broadcast.buildEvent called with a non Command object')
     }
 
@@ -235,8 +235,8 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    * @param validator
    */
-  before(command: Command, options, validator) {
-    if (!(command instanceof Command)) {
+  before(command: BroadcastCommand, options, validator) {
+    if (!(command instanceof BroadcastCommand)) {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
         'command is not an instance of Command'
@@ -256,8 +256,8 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    * @param validator
    */
-  after(command: Command, options, validator) {
-    if (!(command instanceof Command)) {
+  after(command: BroadcastCommand, options, validator) {
+    if (!(command instanceof BroadcastCommand)) {
       throw new Error('command is not an instance of Command')
     }
     return this.afterCommand(command, options, validator)
@@ -274,7 +274,7 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    * @param validator
    */
-  beforeCommand(command: Command, options, validator) {
+  beforeCommand(command: BroadcastCommand, options, validator) {
 
     const beforeHooks = this.getBeforeHooks(command.command_type)
     const beforeHandlers = this.getBeforeHandlers(command.command_type)
@@ -295,7 +295,7 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    * @param validator
    */
-  afterCommand(command: Command, options, validator) {
+  afterCommand(command: BroadcastCommand, options, validator) {
 
     const afterHooks = this.getAfterHooks(command.command_type)
     const afterHandlers = this.getAfterHandlers(command.command_type)
@@ -340,6 +340,8 @@ export class Broadcast extends FabrixGeneric {
       if (breakException) {
         return Promise.reject(breakException)
       }
+      const handler = beforeHandlers.get(m)
+
       // Check and promise commands
       if (!p || typeof p !== 'function') {
         this.app.log.error(`${this.name}: ${m} attempted to call a non function ${p}! - returning`)
@@ -352,7 +354,8 @@ export class Broadcast extends FabrixGeneric {
       return p({
         command,
         options,
-        lifecycle: 'before'
+        lifecycle: 'before',
+        handler: handler
       })
         .run()
         .then(([_command, _options]) => {
@@ -362,7 +365,7 @@ export class Broadcast extends FabrixGeneric {
               `${this.name}: ${p.name} Hook returned invalid response for ${m}! - fatal`
             )
           }
-          if (!(_command instanceof Command)) {
+          if (!(_command instanceof BroadcastCommand)) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
               `${this.name}: ${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
@@ -391,7 +394,7 @@ export class Broadcast extends FabrixGeneric {
 
           command.chain_before.push(m)
 
-          const handler = beforeHandlers.get(m)
+          // const handler = beforeHandlers.get(m)
 
           if (handler && handler.merge && handler.merge !== false) {
             command.mergeData(m, handler, _command)
@@ -464,6 +467,8 @@ export class Broadcast extends FabrixGeneric {
       if (breakException) {
         return Promise.reject(breakException)
       }
+      const handler = afterHandlers.get(m)
+
       // Check and promise commands
       if (!p || typeof p !== 'function') {
         this.app.log.error(`${m} attempted to call a non function ${p}! - returning`)
@@ -476,7 +481,8 @@ export class Broadcast extends FabrixGeneric {
       return p({
         command,
         options,
-        lifecycle: 'after'
+        lifecycle: 'after',
+        handler: handler
       })
         .run()
         .then(([_command, _options]) => {
@@ -486,7 +492,7 @@ export class Broadcast extends FabrixGeneric {
               `${p.name} Hook returned invalid response for ${m}! - fatal`
             )
           }
-          if (!(_command instanceof Command)) {
+          if (!(_command instanceof BroadcastCommand)) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
               `${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
@@ -514,7 +520,7 @@ export class Broadcast extends FabrixGeneric {
 
           command.chain_after.push(m)
 
-          const handler = afterHandlers.get(m)
+          // const handler = afterHandlers.get(m)
 
           if (handler && handler.merge && handler.merge !== false) {
             command.mergeData(m, handler, _command)
@@ -799,7 +805,7 @@ export class Broadcast extends FabrixGeneric {
     }
   }
   /**
-   * Project the event that was persisted
+   * BroadcastProject the event that was persisted
    * @param event
    * @param options
    */
@@ -885,7 +891,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Project the Strong Events
+   * BroadcastProject the Strong Events
    * @param strongEvents
    * @param strongManagers
    * @param event
@@ -957,7 +963,8 @@ export class Broadcast extends FabrixGeneric {
       return p({
         event,
         options,
-        consistency: 'strong'
+        consistency: 'strong',
+        manager: manager
       })
         .run()
         .then(([_event, _options]) => {
@@ -974,7 +981,7 @@ export class Broadcast extends FabrixGeneric {
                 `${p.name} Projection returned invalid response for ${m}! - fatal`
               )
             }
-            if (_event instanceof Command) {
+            if (_event instanceof BroadcastCommand) {
               throw new this.app.errors.GenericError(
                 'E_NOT_ACCEPTABLE',
                 `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`
@@ -998,7 +1005,7 @@ export class Broadcast extends FabrixGeneric {
                   `${p.name} Projection returned invalid response for ${m}! - fatal`
                 )
               }
-              if (_e[0] instanceof Command) {
+              if (_e[0] instanceof BroadcastCommand) {
                 throw new this.app.errors.GenericError(
                   'E_NOT_ACCEPTABLE',
                   `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`)
@@ -1032,7 +1039,7 @@ export class Broadcast extends FabrixGeneric {
 
 
           const projectend = process.hrtime(projectstart)
-          const t = `${manager.is_processor ? 'Processor' : 'Projector'}`
+          const t = `${manager.is_processor ? 'BroadcastProcessor' : 'Projector'}`
           this.app.log.debug(
             `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
           )
@@ -1050,7 +1057,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Project Eventual
+   * BroadcastProject Eventual
    * @param eventualEvents
    * @param eventualManagers
    * @param event
@@ -1339,9 +1346,9 @@ export class Broadcast extends FabrixGeneric {
    * Add a Pipeline
    * @param pipeline
    */
-  addPipeline (pipeline: Pipeline) {
+  addPipeline (pipeline: BroadcastPipeline) {
 
-    if (!(pipeline instanceof Pipeline)) {
+    if (!(pipeline instanceof BroadcastPipeline)) {
       throw new Error(`${pipeline} is not an instance of Pipeline`)
     }
 
@@ -1386,7 +1393,7 @@ export class Broadcast extends FabrixGeneric {
 
 
   /**
-   * Add Pipe Subscriber
+   * Add BroadcastPipe Subscriber
    * @param pipe_type
    * @param name
    * @param method
@@ -1428,7 +1435,7 @@ export class Broadcast extends FabrixGeneric {
 
 
   /**
-   * Has Pipe type
+   * Has BroadcastPipe type
    * @param pipe_type
    */
   hasPipe({pipe_type}) {
@@ -1440,12 +1447,12 @@ export class Broadcast extends FabrixGeneric {
 
 
   /**
-   * Add a HookIn
+   * Add a BroadcastHookIn
    * @param hookIn
    */
-  addHookIn (hookIn: HookIn) {
+  addHookIn (hookIn: BroadcastHookIn) {
 
-    if (!(hookIn instanceof HookIn)) {
+    if (!(hookIn instanceof BroadcastHookIn)) {
       throw new this.app.errors.GenericError(
         'E_PRECONDITION_REQUIRED',
         `${hookIn} is not an instance of HookIn`
@@ -1623,7 +1630,7 @@ export class Broadcast extends FabrixGeneric {
    * Utility Function
    * @param str
    */
-  getHookInFromString(str): HookIn {
+  getHookInFromString(str): BroadcastHookIn {
     return get(this.app.hooks, str)
   }
 
@@ -1649,9 +1656,9 @@ export class Broadcast extends FabrixGeneric {
    * Add a Projector
    * @param projector
    */
-  addProjector (projector: Projector) {
+  addProjector (projector: BroadcastProjector) {
 
-    if (!(projector instanceof Projector)) {
+    if (!(projector instanceof BroadcastProjector)) {
       throw new Error(`${projector} is not an instance of Projector`)
     }
 
@@ -1699,12 +1706,12 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Add a Processor
+   * Add a BroadcastProcessor
    * @param processor
    */
-  addProcessor (processor: Processor) {
+  addProcessor (processor: BroadcastProcessor) {
 
-    if (!(processor instanceof Processor)) {
+    if (!(processor instanceof BroadcastProcessor)) {
       throw new Error(`${processor} is not an instance of Processor`)
     }
 
@@ -1909,7 +1916,7 @@ export class Broadcast extends FabrixGeneric {
    * Utility Function
    * @param str
    */
-  getProjectorFromString(str): Projector {
+  getProjectorFromString(str): BroadcastProjector {
     return get(this.app.projectors, str)
   }
 
@@ -1927,7 +1934,7 @@ export class Broadcast extends FabrixGeneric {
    * Remove a Projector
    * @param projector
    */
-  removeProjector (projector: Projector) {
+  removeProjector (projector: BroadcastProjector) {
     this._projectors.delete(projector.name)
     return this
   }

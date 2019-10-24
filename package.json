@@ -62,7 +62,8 @@
     "mocha": "^6",
     "nyc": "^14.1.1",
     "pg": "^7.12.1",
-    "should": "^13.1.3",
+    "pg-hstore": "^2.3.3",
+    "should": "^13.2.3",
     "smokesignals": "^3.0.4",
     "source-map-support": "^0.5.13",
     "standard-version": "^7.0.0",
@@ -79,7 +80,7 @@
   "peerDependencies": {
     "@fabrix/fabrix": "^1.6.4",
     "@fabrix/spool-errors": "^1.6.2",
-    "@fabrix/spool-sequelize": "^1.6.19"
+    "@fabrix/spool-sequelize": "^1.6.18"
   },
   "engines": {
     "node": ">= 7.6.0 =< 12.4.0",

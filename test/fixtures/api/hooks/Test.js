@@ -1,5 +1,5 @@
-const HookIn = require('../../../../dist').HookIn
-const Hook = require('../../../../dist').Hook
+const HookIn = require('../../../../dist').BroadcastHookIn
+const Hook = require('../../../../dist').BroadcastHook
 
 class Create extends Hook {
   async run() {

@@ -189,7 +189,7 @@ export class PipelineEmitter extends EventEmitter {
 
 
 
-export class Pipe {
+export class BroadcastPipe {
   public req
   public command: string
   public body
@@ -210,7 +210,7 @@ export class Pipe {
   }
 
   // async run (): Promise<any> {
-  //   throw new Error('Subclasses must override Project.run')
+  //   throw new Error('Subclasses must override BroadcastProject.run')
   // }
 
   // /**
@@ -261,7 +261,7 @@ export class Pipe {
  * @module Pipeline
  * @description Pipeline
  */
-export class Pipeline extends Generic {
+export class BroadcastPipeline extends Generic {
 
 
   private _broadcasters: Map<string, Broadcast> = new Map()

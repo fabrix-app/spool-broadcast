@@ -1,5 +1,5 @@
-const Processor = require('../../../../dist').Processor
-const Process = require('../../../../dist').Process
+const Processor = require('../../../../dist').BroadcastProcessor
+const Process = require('../../../../dist').BroadcastProcess
 
 
 class Update extends Process {
@@ -8,7 +8,9 @@ class Update extends Process {
 
     return this.app.entries.Test.update({
       ...this.metadata
-    }, test, {parent: this.options})
+    }, test, {
+      parent: this.options
+    })
       .then(([_e, _o]) => [_e, _o])
       .catch((err) => {
         if (this.consistency === 'eventual') {

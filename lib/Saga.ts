@@ -2,7 +2,7 @@
 import { FabrixGeneric as Generic, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { get, isArray } from 'lodash'
 import { Broadcast } from './Broadcast'
-import { Command } from './Command'
+import { BroadcastCommand } from './BroadcastCommand'
 import { mapSeries } from 'bluebird'
 import { Entry } from './Entry'
 
@@ -118,7 +118,7 @@ export class Saga extends Generic  {
 
     const validator = get(validators, command.command_type)
 
-    if (!(command instanceof Command)) {
+    if (!(command instanceof BroadcastCommand)) {
       return Promise.reject(
         new Error(`${this.name}: Command sent to before hook ${command.command_type} is not a command instance`)
       )

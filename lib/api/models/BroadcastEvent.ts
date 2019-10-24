@@ -2,7 +2,6 @@
 import { isArray, isObject } from 'lodash'
 import { BroadcastModel } from '../../BroadcastModel'
 
-
 /**
  * @module BroadcastEvent
  * @description Item Channel Model n:m
@@ -561,6 +560,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
 /**
  * Merge data from one event to another
  * Set mergeAsArray to true, if the event.data and the previous event.data are both Arrays and want the zipped
+ * @param method
  * @param manager
  * @param event
  */

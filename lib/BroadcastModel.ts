@@ -10,7 +10,7 @@ export class BroadcastModelResolver extends BroadcastResolver {
 
 /**
  * @module BroadcastModel
- * @description Item Channel Model n:m
+ * @description
  */
 export class BroadcastModel extends Model {
 

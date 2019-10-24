@@ -1,6 +1,5 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { remove, find } from 'lodash'
-import Sequelize from 'sequelize'
 import { zip } from './zip'
 import { merge } from './merge'
 import { push } from './push'
@@ -345,13 +344,13 @@ export const utils = {
     '^(GEOMETRY)\((\w*),\s(\d*)\)': 'string'
   },
 
-  replaceDataType: (dataType) => {
+  replaceDataType: (app: FabrixApp, dataType) => {
     let transformed
     try {
       Object.keys(utils.dataTypes).forEach(type => {
         const exp = new RegExp(type)
         if (exp.test(dataType)) {
-          transformed = Sequelize[dataType.replace(exp, utils.dataTypes[type])]
+          transformed = app.spools.sequelize.sequelize[dataType.replace(exp, utils.dataTypes[type])]
           throw utils.BreakException
         }
       })

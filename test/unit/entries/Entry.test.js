@@ -18,4 +18,14 @@ describe('Entry', () => {
       done(err)
     })
   })
+
+  it('should update', (done) => {
+    global.app.entries.Test.update({}, { name: 'test' }, {})
+      .then(([_event, _options]) => {
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
 })

@@ -162,7 +162,7 @@ const App = {
         Test: {
           broadcasters: {
             /**
-             * Broadcaster that the Test HookIn is hooked into
+             * Broadcaster that the Test BroadcastHookIn is hooked into
              */
             Test: {
               /**
@@ -275,17 +275,17 @@ const App = {
                   }
                 },
               },
-              // 'test.updated': {
-              //   destroy: {
-              //     consistency: 'strong',
-              //     config: {
-              //       priority: 1,
-              //       receives: 'Test',
-              //       merge: true,
-              //       expects: 'Test'
-              //     }
-              //   },
-              // }
+              'test.updated': {
+                destroy: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              }
             }
           }
         }

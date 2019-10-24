@@ -5,7 +5,7 @@ import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
 
-export class Command extends FabrixGeneric {
+export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
   req: {[key: string]: any}
   command_type: string
@@ -303,14 +303,14 @@ export interface Command {
   includeAs(method, handler, data): any
 }
 
-Command.prototype.getDataValue = function(str) {
+BroadcastCommand.prototype.getDataValue = function(str) {
   if (str === 'object') {
     return `${this.object.constructor.name}${isArray(this.data) ? '.list' : '' }`
   }
   return this[str]
 }
 
-Command.prototype.mergeData = function(method, handler, command) {
+BroadcastCommand.prototype.mergeData = function(method, handler, command) {
   // If merge: {as: <string>}
   if (
     isObject(handler.merge)
@@ -382,7 +382,7 @@ Command.prototype.mergeData = function(method, handler, command) {
   }
 }
 
-Command.prototype.mergeAs = function(method, handler, command) {
+BroadcastCommand.prototype.mergeAs = function(method, handler, command) {
   if ((!handler.merge && !handler.mergeAs) || !command || !command.data) {
     this.app.log.debug(`BroadcastCommand.mergeAs was passed empty handler mergeAs property or command.data for ${command.command_type}`)
     return this
@@ -408,7 +408,7 @@ Command.prototype.mergeAs = function(method, handler, command) {
   return this
 }
 
-Command.prototype.mergeEachAs = function(method, handler, command) {
+BroadcastCommand.prototype.mergeEachAs = function(method, handler, command) {
   if ((!handler.merge && !handler.mergeEachAs) || !command || !command.data) {
     this.app.log.debug(
       `BroadcastCommand.mergeEachAs was passed empty handler mergeEachAs property or command.data for ${command.command_type}`
@@ -432,7 +432,7 @@ Command.prototype.mergeEachAs = function(method, handler, command) {
   return this
 }
 
-Command.prototype.includeAs = function(method, handler, command) {
+BroadcastCommand.prototype.includeAs = function(method, handler, command) {
   if (!handler.includeAs || !command || !command.data) {
     this.app.log.debug(`BroadcastCommand.includeAs was passed empty includeAs property or command.data for ${command.command_type}`)
     return this

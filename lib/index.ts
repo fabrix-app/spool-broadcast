@@ -9,16 +9,16 @@ export { Broadcast } from './Broadcast'
 export { BroadcastChannel, BroadcastSubscriber } from './BroadcastChannel'
 
 // Pipeline Classes
-export { Pipeline, Pipe, PipelineEmitter } from './Pipeline'
+export { BroadcastPipeline, BroadcastPipe, PipelineEmitter } from './BroadcastPipeline'
 
 // Projector Classes
-export { Projector, Project } from './Projector'
+export { BroadcastProjector, BroadcastProject } from './BroadcastProjector'
 
-// Processor Classes
-export { Processor, Process } from './Processer'
+// BroadcastProcessor Classes
+export { BroadcastProcessor, BroadcastProcess } from './BroadcastProcesser'
 
 // Hook Classes
-export { HookIn, Hook } from './Hook'
+export { BroadcastHookIn, BroadcastHook } from './BroadcastHook'
 
 // Utilities
 export { utils } from './utils/index'
@@ -31,7 +31,7 @@ export { Validator } from './validator'
 export { Saga, Story } from './Saga'
 
 // Command Class and Metadata
-export { Command } from './Command'
+export { BroadcastCommand } from './BroadcastCommand'
 
 // Entry Class and Metadata
 export { Entry, Point } from './Entry'
@@ -43,7 +43,7 @@ export { BroadcastObjectModel } from './BroadcastObjectModel'
 
 export {
   BroadcastEvent,
-  BroadcastHook,
+  BroadcastCommandHook,
   BroadcastProjectionVersion,
   BroadcastSnapshot,
   BroadcastStream
