@@ -116,10 +116,16 @@ export const broadcast = {
    * }
    */
   pipelines: {
+    /**
+    * The Name of the Pipeline Resource 
+    */
     CollectionPipeline: {
       broadcasters: {
+        /**
+        * The name of the Broadcast to listend to 
+        */
         CollectionBroadcast: {
-          '': {
+          'Unique_Name': {
             'Collection.createCollection': {
               zip: {
                 event_type: 'event_type',
@@ -153,6 +159,9 @@ export const broadcast = {
   },
 
 
+  channels: {
+      
+  },
   hooks: {
       
   },
@@ -167,14 +176,37 @@ export const broadcast = {
 
 
 ## Usage
+### BroadcastChannel
 
-### Pipeline
+### BroadcastPipeline
 
-### Hook
+### BroadcastHook
 
-### Processor
+### BroadcastProcessor
 
-### Projector
+### BroadcastProjector
+
+
+
+
+## Contributing
+We love contributions! Please check out our [Contributor's Guide](https://github.com/fabrix-app/fabrix/blob/master/CONTRIBUTING.md) for more
+information on how our projects are organized and how to get started.
+
+### Release Instructions
+When the master is tagged with a release, it will automatically publish to npm, updates the Changelog and bumps the version. Fabrix uses the [standard-version library](https://www.npmjs.com/package/standard-version) to manage it all.
+
+To run a patch release: 
+```bash
+npm run release -- --release-as patch
+``` 
+and then commit to master. `git push --follow-tags origin master`
+
+You can also test the release by running
+```bash
+npm run release -- --dry-run --release-as patch
+``` 
+
 
 [npm-image]: https://img.shields.io/npm/v/@fabrix/spool-broadcast.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/@fabrix/spool-broadcast

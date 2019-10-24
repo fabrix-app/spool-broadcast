@@ -13,12 +13,12 @@ export const utils = {
   ...zip,
   ...pattern,
 
-  resolveTransaction: (func, req, body, options: {[key: string]: any}) => {
+  resolveTransaction: (app: FabrixApp, func, req, body, options: {[key: string]: any}) => {
     if (options.transaction) {
       return func(req, body, options)
     }
     else {
-      return Sequelize.transaction(t => {
+      return this.app.spools.sequelize.sequelize.transaction(t => {
         options.transaction = t
         return func(req, body, options)
       })

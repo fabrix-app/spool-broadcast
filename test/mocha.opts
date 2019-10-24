@@ -4,6 +4,6 @@
 --no-exit
 --check-leaks
 --timeout 10000
---globals app,__core-js_shared__,__coverage__,$$bole
+--globals app,__core-js_shared__,__coverage__,$$bole,@@any-promise/REGISTRATION
 
 test/index.js test/**/*.test.js
