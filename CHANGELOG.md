@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.15](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.14...v1.6.15) (2019-10-24)
+
+
+### Features
+
+* adds pattern matching to events and commands! ([dbb682f](https://github.com/fabrix-app/spool-broadcast/commit/dbb682f))
+* renames libraries to make them easier to distinguish in context ([baed23a](https://github.com/fabrix-app/spool-broadcast/commit/baed23a))
+
 ### [1.6.14](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.13...v1.6.14) (2019-10-24)
 
 
