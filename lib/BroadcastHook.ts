@@ -112,7 +112,7 @@ export class BroadcastHook extends FabrixGeneric {
   // Utilities
   public mapSeries(...args) {
     if (this.app && this.app.spools && this.app.spools.sequelize) {
-      return this.Sequelize().Promise.broadcastSeries(...args)
+      return this.app.broadcastSeries(...args)
     }
     else {
       // return broadcastSeries(...args)
