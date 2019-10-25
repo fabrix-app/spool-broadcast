@@ -41,6 +41,8 @@ export class Client extends FabrixGeneric {
       return [event, options]
     }
 
+    console.log('BRK PUBLISH', event_type, event.data)
+
     return this.messenger.publish(
       this.exchange_name,
       event_type, // type

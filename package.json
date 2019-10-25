@@ -41,7 +41,7 @@
     "test"
   ],
   "dependencies": {
-    "@fabrix/regexdot": "^1.0.0",
+    "@fabrix/regexdot": "^1.0.1",
     "@fabrix/spool-errors": "^1.6.2",
     "joi": "^14.3.1",
     "lodash": "^4.17.15",
@@ -56,7 +56,7 @@
     "@fabrix/spool-express": "^1.6.7",
     "@fabrix/spool-realtime": "^1.6.6",
     "@fabrix/spool-router": "^1.6.4",
-    "@fabrix/spool-sequelize": "^1.6.18",
+    "@fabrix/spool-sequelize": "1.6.18",
     "@types/node": "~10.3.4",
     "express": "^4.17.1",
     "mocha": "^6",
@@ -80,7 +80,7 @@
   "peerDependencies": {
     "@fabrix/fabrix": "^1.6.4",
     "@fabrix/spool-errors": "^1.6.2",
-    "@fabrix/spool-sequelize": "^1.6.18"
+    "@fabrix/spool-sequelize": "^1.6.15"
   },
   "engines": {
     "node": ">= 7.6.0 =< 12.4.0",

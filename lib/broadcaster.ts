@@ -76,7 +76,6 @@ export const broadcaster = {
     // Setup the spool broadcaster
     app.spools.broadcast.broadcaster = new Client(app, rabbit, broadcasterConfig.exchangeName)
 
-    // console.log('BRK this', app.spools.broadcast.broadcaster)
     // Register the profile broadcasters
     return utils.registerBroadcasts(app, rabbit, profile)
   },

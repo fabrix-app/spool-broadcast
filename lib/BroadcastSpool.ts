@@ -95,11 +95,11 @@ export class BroadcastSpool extends ExtensionSpool {
    * Utility selector for the installed version of Sequelize from spool-sequelize
    */
   public Sequelize() {
-    console.log('BRK this.app', this.app.spools)
-    if (!this.app.spools.sequelize) {
+    const app = this.app || this
+    if (!app.spools.sequelize) {
       throw new Error('Spool-sequelize is not loaded!')
     }
-    return this.app.spools.sequelize._datastore
+    return app.spools.sequelize._datastore
   }
 
   /**
@@ -110,6 +110,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * @param options
    */
   transaction(func, req, body, options: {[key: string]: any} = {}) {
+    const app = this.app || this
     if (typeof func !== 'function') {
       throw new Error(`transaction ${func} is not a function`)
     }
@@ -117,27 +118,27 @@ export class BroadcastSpool extends ExtensionSpool {
       return func(req, body, options)
     }
     else {
-      if (!this.app.models.BroadcastEvent.sequelize) {
+      if (!app.models.BroadcastEvent.sequelize) {
         throw new Error('Sequelize is not available on BroadcastEvent!')
       }
       if (options.parent && options.parent.transaction) {
-        return this.app.models.BroadcastEvent.sequelize.transaction({transaction: options.parent.transaction}, t => {
+        return app.models.BroadcastEvent.sequelize.transaction({transaction: options.parent.transaction}, t => {
           options.transaction = t
-          this.app.log.debug(`Broadcast adding transaction ${t.id} to parent ${options.parent.transaction.id}`)
+          app.log.debug(`Broadcast adding transaction ${t.id} to parent ${options.parent.transaction.id}`)
           return func(req, body, options)
         })
       }
       else if (options.transaciton) {
-        this.app.log.debug(`Broadcast on same transaction ${options.transaction.id}`)
+        app.log.debug(`Broadcast on same transaction ${options.transaction.id}`)
         return func(req, body, options)
       }
       else {
-        return this.app.models.BroadcastEvent.sequelize.transaction({
+        return app.models.BroadcastEvent.sequelize.transaction({
           isolationLevel: this.app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
           deferrable: this.app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
         }, t => {
           options.transaction = t
-          this.app.log.debug(`Broadcast new transaction ${options.transaction.id}`)
+          app.log.debug(`Broadcast new transaction ${options.transaction.id}`)
           return func(req, body, options)
         })
       }

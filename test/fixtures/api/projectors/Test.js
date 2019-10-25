@@ -3,13 +3,30 @@ const Project = require('../../../../dist').BroadcastProject
 
 class Logger extends Project {
   async run() {
-    const test = this.app.models.TestLogger.stage(this.event, { isNewRecord: true })
+    console.log('BRK LOGGED!', this.event.data)
+
+    const test = this.app.models.TestLogger.stage({
+      event_type: this.event.event_type,
+      event_uuid: this.event.event_uuid,
+      causation_uuid: this.event.causation_uuid,
+      correlation_uuid: this.event.correlation_uuid,
+      req_user_uuid: this.event.metadata.req_user_uuid,
+      req_channel_uuid: this.event.metadata.req_channel_uuid,
+      req_application_uuid: this.event.metadata.req_application_uuid,
+      object: this.event.object,
+      data: this.event.data,
+      metadata: this.event.metadata
+    }, {
+      isNewRecord: true
+    })
     // return userRole.destroy(this.options)
     return test.save(this.options)
       .then(_e => {
+        console.log('BRK LOGGED!', _e)
         return [this.event, this.options]
       })
       .catch(err => {
+        console.log('BRK LOGGED ERR!', err)
         if (this.consistency === 'eventual') {
           return Promise.reject(err)
         }

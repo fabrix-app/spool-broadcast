@@ -123,12 +123,20 @@ export const utils = {
       return
     }
 
+    broadcaster.pipelines().forEach((types, command_type) => {
+      utils.registerPipelines(app, broadcaster, command_type, types)
+    })
+
+    broadcaster.channels().forEach((types, command_type) => {
+      utils.registerChannels(app, broadcaster, command_type, types)
+    })
+
     broadcaster.hooks().forEach((types, command_type) => {
-      utils.registerHooks(app, rabbit, broadcaster, command_type, types)
+      utils.registerHooks(app, broadcaster, command_type, types)
     })
 
     broadcaster.events().forEach((types, event_type) => {
-      utils.registerProjectors(app, rabbit, broadcaster, event_type, types)
+      utils.registerEventualProjectors(app, rabbit, broadcaster, event_type, types)
     })
 
     return
@@ -149,12 +157,23 @@ export const utils = {
   /**
    * Register the Before/After hooks for SAGA
    * @param app
-   * @param rabbit
+   * @param broadcaster
+   * @param event_type
+   * @param types
+   */
+  registerChannels: (app: FabrixApp, broadcaster, event_type: string, types) => {
+    app.log.debug(`Routing broadcaster ${ broadcaster.name } channels for events ${event_type}`)
+    return
+  },
+
+  /**
+   * Register the Before/After hooks for SAGA
+   * @param app
    * @param broadcaster
    * @param command_type
    * @param types
    */
-  registerHooks: (app: FabrixApp, rabbit, broadcaster, command_type: string, types) => {
+  registerHooks: (app: FabrixApp, broadcaster, command_type: string, types) => {
     app.log.debug(`Routing broadcaster ${ broadcaster.name } hooks for command ${command_type}`)
     return
   },
@@ -167,60 +186,35 @@ export const utils = {
    * @param event_type
    * @param types
    */
-  registerProjectors: (app: FabrixApp, rabbit, broadcaster, event_type: string, types) => {
+  registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types) => {
     const broadcasterClient = app.broadcaster
 
-    app.log.debug(`Routing broadcaster ${ broadcaster.name } projectors for event ${event_type}`)
+    if (types.eventual && types.eventual.size > 0) {
+      app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
 
-    // rabbit.handle( 'channel.created', req => {
-    //   console.log('BULLSHIT', req)
-    // })
-
-    // rabbit.handle( {topic: '#'}, req => {
-    //   console.log('BULLSHIT 3', req)
-    //   return Promise.resolve()
-    // })
-    // rabbit.handle( 'user.registered', req => {
-    //   console.log('BULLSHIT 4s', req)
-    //   return Promise.resolve()
-    // })
-    //
-    // rabbit.handle( 'Channel', req => {
-    //   console.log('BULLSHIT 5', req)
-    //   return Promise.resolve()
-    // })
-    //
-    // rabbit.handle('#', req => {
-    //   console.log('BRK no handler', event_type, req)
-    //   return Promise.resolve()
-    // })
-
-    rabbit.handle(`${event_type}`, req => {
-      // if (!app.api.broadcasts[broadcastName]) {
-      //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
-      //     `${JSON.stringify(event.body)}`)
-      //   return event.reject()
-      // }
-
-      // console.log('BRK rabbit handle', event_type, types, req)
-      // console.log('BRK handle', event_type, types.eventual)
-      // return Promise.resolve()
-      // // add the current broadcast type into the list of active broadcasts,
-      const promises = []
-      if (types.eventual) {
-        types.eventual.forEach(project => {
-          promises.push(utils.runProjector(
-            app,
-            broadcasterClient,
-            broadcaster,
-            project,
-            req
-          ))
-        })
-      }
-      //
-      return Promise.all(promises)
-    })
+      rabbit.handle(`${event_type}`, req => {
+        // if (!app.api.broadcasts[broadcastName]) {
+        //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
+        //     `${JSON.stringify(event.body)}`)
+        //   return event.reject()
+        // }
+        // add the current broadcast type into the list of active broadcasts,
+        const promises = []
+        if (types.eventual) {
+          types.eventual.forEach(project => {
+            promises.push(utils.runProjector(
+              app,
+              broadcasterClient,
+              broadcaster,
+              project,
+              req
+            ))
+          })
+        }
+        //
+        return Promise.all(promises)
+      })
+    }
   },
 
   /**
@@ -243,7 +237,7 @@ export const utils = {
       try {
         p = project({
           event: event,
-          options: { transaction: t }, // This keeps namespace clean for eventual events
+          options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
           consistency: 'eventual',
           message: req
         })
