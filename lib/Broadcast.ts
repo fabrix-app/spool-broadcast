@@ -1,6 +1,6 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { get, isArray } from 'lodash'
+import { get, isArray, uniq } from 'lodash'
 import joi from 'joi'
 import { regexdot } from '@fabrix/regexdot'
 import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
@@ -1069,12 +1069,14 @@ export class Broadcast extends FabrixGeneric {
       event.chain_events.push(e)
     })
 
-    return Promise.all(Array.from(eventualManagers.values()).map( (manager: {[key: string]: any}) => {
-      this.app.log.debug(this.name, 'publishing pattern', manager.pattern_raw)
+    const patterns = uniq(Array.from(eventualManagers.values()).map((v: {[key: string]: any}) => v.pattern_raw))
+
+    return Promise.all(patterns.map((pattern: string) => {
+      this.app.log.debug('Broadcaster', this.name, 'publishing pattern', pattern)
       // Publish the eventual events
       return this.app.broadcaster.publish({
         broadcaster: this,
-        event_type: `${manager.pattern_raw}`,
+        event_type: `${pattern}`,
         event: event,
         options: options,
         consistency: 'eventual'
