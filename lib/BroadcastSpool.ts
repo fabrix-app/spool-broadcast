@@ -39,6 +39,26 @@ export class BroadcastSpool extends ExtensionSpool {
         enumerable: true,
         configurable: true
       },
+      broadcastSeries: {
+        get: () => {
+          return this.mapSeries
+        },
+        set: (newInstances) => {
+          throw new Error('broadcastSeries can not be set through FabrixApp, check spool-broadcaster instead')
+        },
+        enumerable: true,
+        configurable: true
+      },
+      broadcastTransaction: {
+        get: () => {
+          return this.transaction
+        },
+        set: (newInstances) => {
+          throw new Error('broadcastTransaction can not be set through FabrixApp, check spool-broadcaster instead')
+        },
+        enumerable: true,
+        configurable: true
+      },
       // entrypoints: {
       //   get: () => {
       //     return this.app.entries
@@ -52,6 +72,43 @@ export class BroadcastSpool extends ExtensionSpool {
     }
   }
 
+  /**
+   * Utlity version of Blue Bird's Map Series
+   * This is an app extension, so the context is already this.app
+   * @param args
+   */
+  public mapSeries(...args): Promise<any> {
+    if (
+      this
+      && this.spools
+      && this.spools.sequelize
+    ) {
+      return this.spools.broadcast.Sequelize().Promise.mapSeries(...args)
+    }
+    else {
+      // return broadcastSeries(...args)
+      throw new Error('Spool Sequelize is not yet loaded')
+    }
+  }
+
+  /**
+   * Utility selector for the installed version of Sequelize from spool-sequelize
+   */
+  public Sequelize() {
+    console.log('BRK this.app', this.app.spools)
+    if (!this.app.spools.sequelize) {
+      throw new Error('Spool-sequelize is not loaded!')
+    }
+    return this.app.spools.sequelize._datastore
+  }
+
+  /**
+   * Utility for wrapping
+   * @param func
+   * @param req
+   * @param body
+   * @param options
+   */
   transaction(func, req, body, options: {[key: string]: any} = {}) {
     if (typeof func !== 'function') {
       throw new Error(`transaction ${func} is not a function`)

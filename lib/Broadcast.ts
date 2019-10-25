@@ -14,7 +14,7 @@ import { BroadcastEvent } from './api/models'
 import { BroadcastCommand } from './BroadcastCommand'
 import { GenericError } from '@fabrix/spool-errors/dist/errors'
 
-// import { each, mapSeries } from 'Bluebird'
+// import { each, broadcastSeries } from 'Bluebird'
 
 
 export class Broadcast extends FabrixGeneric {
@@ -104,7 +104,7 @@ export class Broadcast extends FabrixGeneric {
     //   return arrayOfResults
     // })
 
-    return this.app.spools.sequelize._datastore.Promise.mapSeries(...args)
+    return this.app.broadcastSeries(...args)
       .catch(err => {
         this.app.log.err('Fatal BroadcastProcess', err)
         return Promise.reject(err)
@@ -112,7 +112,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   reverseProcess(managers, ...args) {
-    return this.app.spools.sequelize._datastore.Promise.mapSeries(...args)
+    return this.app.broadcastSeries(...args)
       .catch(err => {
         this.app.log.err('Fatal BroadcastProcess', err)
         return Promise.reject(err)
@@ -1194,7 +1194,6 @@ export class Broadcast extends FabrixGeneric {
    */
   hasSubscriber({event_type}) {
     // const { keys, pattern } = regexdot(event_type)
-    // console.log('brk regexdot 1', keys, pattern)
     // return this._subscribers.has(pattern)
 
     this._subscribers.forEach( (subscribers, _k: any) => {
@@ -1207,7 +1206,6 @@ export class Broadcast extends FabrixGeneric {
   }
   hasBroker({event_type}) {
     // const { keys, pattern } = regexdot(event_type)
-    // console.log('brk regexdot 2', keys, pattern)
     // return this._brokers.has(pattern)
 
     this._brokers.forEach( (brokers, _k: any) => {

@@ -1,5 +1,12 @@
 import joi from 'joi'
-import {broadcastConfig, realtimeConfig, hookConfig, processorConfig, projectorConfig, pipeConfig} from './schemas'
+import {
+  broadcastConfig,
+  realtimeConfig,
+  hookConfig,
+  processorConfig,
+  projectorConfig,
+  pipeConfig
+} from './schemas'
 
 export const Validator = {
 

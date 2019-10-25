@@ -1,6 +1,5 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
-import uuid from 'uuid'
 import { BroadcastEvent } from './api/models'
 import { Broadcast } from './Broadcast'
 
@@ -60,9 +59,18 @@ export class Client extends FabrixGeneric {
    * Cancel Broadcast
    */
   async cancel (event_type, event_uuid) {
-    this.app.log.info('cancelling type', event_type, event_uuid, this.exchange_name)
+    this.app.log.info(
+      'cancelling type',
+      event_type,
+      event_uuid,
+      this.exchange_name
+    )
 
-    return this.messenger.publish(this.exchange_name, `${event_type}.interrupt`, { event_uuid })
+    return this.messenger.publish(
+      this.exchange_name,
+      `${event_type}.interrupt`,
+      { event_uuid }
+    )
       .then((result) => {
         return result
       })

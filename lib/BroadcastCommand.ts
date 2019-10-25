@@ -96,15 +96,15 @@ export class BroadcastCommand extends FabrixGeneric {
     let serial = true
 
     if (serial) {
-      return this.mapSeries(...args)
+      return this.broadcastSeries(...args)
     }
     else {
       return Promise.all([...args])
     }
   }
 
-  mapSeries(...args) {
-    return this.app.spools.sequelize._datastore.Promise.mapSeries(...args)
+  broadcastSeries(...args) {
+    return this.app.broadcastSeries(...args)
   }
 
   /**

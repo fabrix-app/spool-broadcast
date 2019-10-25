@@ -473,12 +473,6 @@ export class BroadcastResolver extends SequelizeResolver {
 
 
   mapSeries(...args) {
-    if (this.app && this.app.spools && this.app.spools.sequelize) {
-      return this.app.spools.sequelize.Promise.mapSeries(...args)
-    }
-    else {
-      // return mapSeries(args[0], args)
-      throw new Error('Spool Sequelize is not yet loaded')
-    }
+    return this.app.broadcastSeries(...args)
   }
 }

@@ -38,7 +38,7 @@ export class PipelineEmitter extends EventEmitter {
     this.emit(`${this.command}.progress`, `${this.command}`, 0, total)
 
     // Map the pipeline
-    this.app.spools.sequelize._datastore.Promise.mapSeries(pipes, (pipe, i) => {
+    this.app.broadcastSeries(pipes, (pipe, i) => {
 
       if (breakException) {
         return Promise.reject(breakException)

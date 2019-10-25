@@ -76,11 +76,15 @@ export class Saga extends Generic  {
   }
 
   public mapSeries(...args): Promise<any> {
-    if (this.app && this.app.spools && this.app.spools.sequelize) {
-      return this.Sequelize().Promise.mapSeries(...args)
+    if (
+      this.app
+      && this.app.spools
+      && this.app.spools.sequelize
+    ) {
+      return this.Sequelize().Promise.broadcastSeries(...args)
     }
     else {
-      // return mapSeries(...args)
+      // return broadcastSeries(...args)
       throw new Error('Spool Sequelize is not yet loaded')
     }
   }

@@ -3,7 +3,7 @@ import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { mapSeries } from 'bluebird'
 import { Broadcast } from './Broadcast'
 import { BroadcastEvent } from './api/models'
-import {Entry} from './Entry'
+import { Entry } from './Entry'
 // import uuid from 'uuid/v4'
 import { BroadcastAction, BroadcastOptions } from './Interface'
 
@@ -105,12 +105,7 @@ export class BroadcastProcess extends FabrixGeneric {
 
   // Utilities
   public mapSeries(...args): Promise<any> {
-    if (this.app && this.app.spools && this.app.spools.sequelize) {
-      return this.Sequelize().Promise.mapSeries(...args)
-    }
-    else {
-      throw new Error('Spool Sequelize is not yet loaded')
-    }
+    return this.app.broadcastSeries(...args)
   }
 
   get metadata(): { channel, channel_session, user, device, application, causation_uuid } {

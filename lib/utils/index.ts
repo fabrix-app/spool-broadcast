@@ -17,7 +17,7 @@ export const utils = {
       return func(req, body, options)
     }
     else {
-      return this.app.spools.sequelize.sequelize.transaction(t => {
+      return this.app.spools.sequelize._datastore.transaction(t => {
         options.transaction = t
         return func(req, body, options)
       })
@@ -344,13 +344,18 @@ export const utils = {
     '^(GEOMETRY)\((\w*),\s(\d*)\)': 'string'
   },
 
-  replaceDataType: (app: FabrixApp, dataType) => {
+  /**
+   * A utility to convert unspecified binary types by their sequelize conterpart
+   * @param app
+   * @param dataType
+   */
+  replaceDataType: (app: FabrixApp, dataType: string) => {
     let transformed
     try {
       Object.keys(utils.dataTypes).forEach(type => {
         const exp = new RegExp(type)
         if (exp.test(dataType)) {
-          transformed = app.spools.sequelize.sequelize[dataType.replace(exp, utils.dataTypes[type])]
+          transformed = app.spools.sequelize._datastore[dataType.replace(exp, utils.dataTypes[type])]
           throw utils.BreakException
         }
       })

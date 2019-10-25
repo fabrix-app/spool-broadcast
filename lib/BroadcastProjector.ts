@@ -136,13 +136,7 @@ export class BroadcastProject extends FabrixGeneric {
 
   // Utilities
   public mapSeries(...args): Promise<any> {
-    if (this.app && this.app.spools && this.app.spools.sequelize) {
-      return this.Sequelize().Promise.mapSeries(...args)
-    }
-    else {
-      // return mapSeries(...args)
-      throw new Error('Spool Sequelize is not yet loaded')
-    }
+    return this.app.broadcastSeries(...args)
   }
 
   get metadata(): { channel, channel_session, user, device, application, causation_uuid } {
