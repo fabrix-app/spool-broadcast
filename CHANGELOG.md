@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.16](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.15...v1.6.16) (2019-10-25)
+
+
+### Features
+
+* add app extensions to make it easier to reconcile. ([f4a0155](https://github.com/fabrix-app/spool-broadcast/commit/f4a0155))
+
 ### [1.6.15](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.14...v1.6.15) (2019-10-24)
 
 
