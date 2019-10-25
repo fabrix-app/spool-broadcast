@@ -5,6 +5,7 @@ import { Broadcast } from './Broadcast'
 import { BroadcastCommand } from './BroadcastCommand'
 import { mapSeries } from 'bluebird'
 import { Entry } from './Entry'
+import { regexdot } from '@fabrix/regexdot'
 
 export function Story({ broadcaster, command, event, validator, annotations = null, docs = null }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
@@ -120,7 +121,20 @@ export class Saga extends Generic  {
     const sagastart = process.hrtime()
     let hrstart = sagastart
 
-    const validator = get(validators, command.command_type)
+    // const { pattern, keys } = regexdot(command.command_type)
+
+    let useValidators = []
+    Object.keys(validators).forEach(k => {
+      const { pattern } = regexdot(k)
+      const match = pattern.test('.' + command.command_type)
+      if (match) {
+        useValidators  = [...useValidators , validators[k]]
+      }
+    })
+
+    // console.log('brk useValidators', useValidators)
+    //
+    // const validator = get(validators, command.command_type)
 
     if (!(command instanceof BroadcastCommand)) {
       return Promise.reject(
@@ -132,13 +146,13 @@ export class Saga extends Generic  {
         new Error(`${this.name}: Command sent to before hook ${command.command_type} did not include a broadcaster instance`)
       )
     }
-    if (!validator) {
+    if (useValidators.length === 0) {
       return Promise.reject(
         new Error(`${this.name}: Command Validator ${command.command_type} does not exist`)
       )
     }
 
-    return command.broadcaster.before(command, options, validator)
+    return command.broadcaster.before(command, options, useValidators)
       .then(([_command, _options]) => {
         const hrend = process.hrtime(hrstart)
         this.app.log.debug(`${this.name}: ${_command.command_type} Before SAGA Execution time (hr): ${hrend[0]}s ${hrend[1] / 1000000}ms`)
@@ -164,7 +178,7 @@ export class Saga extends Generic  {
           this.app.log.warn('BRK saga err', _command.breakException)
           return Promise.reject(_command.breakException)
         }
-        return this.saga(_command, _options, validator)
+        return this.saga(_command, _options, useValidators)
       })
       .catch(err => {
         // TODO Reverse
@@ -182,7 +196,7 @@ export class Saga extends Generic  {
           this.app.log.warn('BRK after saga err', _command.breakException)
           return Promise.reject(_command.breakException)
         }
-        return command.broadcaster.after(_command, _options, validator)
+        return command.broadcaster.after(_command, _options, useValidators)
       })
       .catch(err => {
         // TODO Reverse

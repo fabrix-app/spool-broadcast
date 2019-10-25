@@ -214,13 +214,19 @@ export class Broadcast extends FabrixGeneric {
 
   /**
    * Run provided validator over command data that is cleaned to JSON throws spool-error standard on failure
-   * @param validator
+   * @param validators
    * @param value
    * @param options
    */
-  validate(validator, value, options) {
-    return validator(this._cleanObj(value.data))
+  validate(validators = [], value, options) {
+
+    const _value = this._cleanObj(value.data)
+
+    return Promise.all(validators.map(v => {
+      return v(_value)
+    }))
       .then((data) => {
+        // Returns the unmodified version
         return [value, options]
       })
       .catch(error => {
@@ -233,16 +239,16 @@ export class Broadcast extends FabrixGeneric {
    * Run Sequence of Hooks before 3rd Party SAGA
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  before(command: BroadcastCommand, options, validator) {
+  before(command: BroadcastCommand, options, validators) {
     if (!(command instanceof BroadcastCommand)) {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
         'command is not an instance of Command'
       )
     }
-    return this.beforeCommand(command, options, validator)
+    return this.beforeCommand(command, options, validators)
       .catch((err) => {
         this.app.log.error(`${this.name} Failure before ${command.command_type} - fatal`, err)
         // TODO reverse SAGA
@@ -254,13 +260,13 @@ export class Broadcast extends FabrixGeneric {
    * Run Sequence of Hooks after 3rd Party SAGA
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  after(command: BroadcastCommand, options, validator) {
+  after(command: BroadcastCommand, options, validators) {
     if (!(command instanceof BroadcastCommand)) {
       throw new Error('command is not an instance of Command')
     }
-    return this.afterCommand(command, options, validator)
+    return this.afterCommand(command, options, validators)
       .catch((err) => {
         this.app.log.error(`${this.name} Failure after ${command.command_type} - fatal`, err)
         // TODO reverse SAGA
@@ -272,9 +278,9 @@ export class Broadcast extends FabrixGeneric {
    * Before a command heads to 3rd parties
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  beforeCommand(command: BroadcastCommand, options, validator) {
+  beforeCommand(command: BroadcastCommand, options, validators) {
 
     const beforeHooks = this.getBeforeHooks(command.command_type)
     const beforeHandlers = this.getBeforeHandlers(command.command_type)
@@ -286,16 +292,16 @@ export class Broadcast extends FabrixGeneric {
       )
       return Promise.reject(err)
     }
-    return this.runBefore(beforeHooks, beforeHandlers, command, options, validator)
+    return this.runBefore(beforeHooks, beforeHandlers, command, options, validators)
   }
 
   /**
    * After a command heads to 3rd parties
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  afterCommand(command: BroadcastCommand, options, validator) {
+  afterCommand(command: BroadcastCommand, options, validators) {
 
     const afterHooks = this.getAfterHooks(command.command_type)
     const afterHandlers = this.getAfterHandlers(command.command_type)
@@ -307,7 +313,7 @@ export class Broadcast extends FabrixGeneric {
       )
       return Promise.reject(err)
     }
-    return this.runAfter(afterHooks, afterHandlers, command, options, validator)
+    return this.runAfter(afterHooks, afterHandlers, command, options, validators)
   }
 
   /**
@@ -316,9 +322,9 @@ export class Broadcast extends FabrixGeneric {
    * @param beforeHandlers
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  runBefore(beforeCommands, beforeHandlers, command, options, validator) {
+  runBefore(beforeCommands, beforeHandlers, command, options, validators) {
     let breakException
     // Setup Before Commands in priority order
     const beforeCommandsAsc = new Map([...beforeCommands.entries()].sort((a, b) => {
@@ -381,7 +387,7 @@ export class Broadcast extends FabrixGeneric {
           }
 
           // Validate after the step
-          return this.validate(validator, _command, options)
+          return this.validate(validators, _command, options)
             .catch(err => {
               this.app.log.error(
                 `${this.name}: Before Handler ${m} failed validation for ${command.command_type}`,
@@ -439,9 +445,9 @@ export class Broadcast extends FabrixGeneric {
    * @param afterHandlers
    * @param command
    * @param options
-   * @param validator
+   * @param validators
    */
-  runAfter(afterCommands, afterHandlers, command, options, validator) {
+  runAfter(afterCommands, afterHandlers, command, options, validators) {
     let breakException
     // Setup After Commands in priority order
     const afterCommandsAsc = new Map([...afterCommands.entries()]
@@ -507,7 +513,7 @@ export class Broadcast extends FabrixGeneric {
             return [command, options]
           }
 
-          return this.validate(validator, _command, options)
+          return this.validate(validators, _command, options)
             .catch(err => {
               this.app.log.error(
                 `After Handler ${m} failed validation for ${command.command_type}`,
