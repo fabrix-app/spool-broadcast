@@ -4,6 +4,7 @@ const Validator = require('../../../../dist').Validator
 
 const validate = {
   'create.test': (data) => Validator.joiPromise(data, joi.object()),
+  'create.:test_uuid.test': (data) => Validator.joiPromise(data, joi.object()),
   'update.test': (data) => Validator.joiPromise(data, joi.object()),
   'destroy.test': (data) => Validator.joiPromise(data, joi.object())
 }
@@ -37,6 +38,36 @@ module.exports = class Test extends Saga {
         return TestBroadcast.broadcast(event, _options)
       })
   }
+
+
+  createWithParams(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {isNewRecord: true})
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'create.:test_uuid.test',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'test.:test_uuid.created',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
 
   update(req, body, options) {
     const TestBroadcast = this.app.broadcasts.Test

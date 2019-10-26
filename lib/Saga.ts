@@ -26,7 +26,6 @@ export function Story({ broadcaster, command, event, validator, annotations = nu
     return descriptor
   }
 }
-
 /**
  * @module Saga
  * @description Saga
@@ -119,11 +118,8 @@ export class Saga extends Generic  {
   public before(command, validators, options: { transaction?: any} = {}): Promise<any> {
 
     const sagastart = process.hrtime()
-    let hrstart = sagastart
+    let hrstart = sagastart, useValidators = []
 
-    // const { pattern, keys } = regexdot(command.command_type)
-
-    let useValidators = []
     Object.keys(validators).forEach(k => {
       const { pattern } = regexdot(k)
       const match = pattern.test('.' + command.command_type)
@@ -131,10 +127,6 @@ export class Saga extends Generic  {
         useValidators  = [...useValidators , validators[k]]
       }
     })
-
-    // console.log('brk useValidators', useValidators)
-    //
-    // const validator = get(validators, command.command_type)
 
     if (!(command instanceof BroadcastCommand)) {
       return Promise.reject(
@@ -146,6 +138,7 @@ export class Saga extends Generic  {
         new Error(`${this.name}: Command sent to before hook ${command.command_type} did not include a broadcaster instance`)
       )
     }
+
     if (useValidators.length === 0) {
       return Promise.reject(
         new Error(`${this.name}: Command Validator ${command.command_type} does not exist`)

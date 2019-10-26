@@ -28,4 +28,17 @@ describe('Entry', () => {
         done(err)
       })
   })
+
+  it('should create with params', (done) => {
+    global.app.entries.Test.createWithParams({}, {
+      test_uuid: uuid(),
+      name: 'test'
+    }, {})
+      .then(([_event, _options]) => {
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
 })

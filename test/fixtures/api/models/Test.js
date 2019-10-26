@@ -29,6 +29,11 @@ module.exports = class Test extends BroadcastObjectModel {
         binaryOptional: true,
         binaryType: 'string'
       },
+      test_uuid: {
+        type: Sequelize.VIRTUAL(Sequelize.UUID),
+        binaryOptional: true,
+        binaryType: 'string'
+      },
       name: {
         type: Sequelize.STRING,
         binaryOptional: true,

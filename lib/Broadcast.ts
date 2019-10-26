@@ -177,6 +177,9 @@ export class Broadcast extends FabrixGeneric {
       throw new Error('Broadcast.buildEvent called with a non Command object')
     }
 
+    // Replace any parameters in the event_type with the data
+    event_type = this.replaceParams(event_type, command.data)
+
     const data = {
       event_type, // || command.event_type,
       // This is the command uuid that started this event chain
@@ -195,6 +198,26 @@ export class Broadcast extends FabrixGeneric {
       isNewRecord: true
     })
       .generateUUID()
+  }
+
+  replaceParams(type = '', object: any = {}) {
+
+    let { keys = [], pattern } = regexdot(type)
+
+    if (
+      keys !== false
+      && typeof keys !== 'boolean'
+      && isArray(keys)
+      && !isArray(object)
+    ) {
+      keys.forEach(k => {
+        if (object[k]) {
+          type = type.replace(`:${k}`, object[k])
+        }
+      })
+    }
+
+    return type
   }
 
   /**
@@ -637,24 +660,24 @@ export class Broadcast extends FabrixGeneric {
       const broker = brokers.get(m)
 
       // Receiver Test
-      if (broker.config && broker.config.receives) {
+      if (broker && broker.receives) {
         if (
-          typeof broker.config.receives === 'string'
-          && event.getDataValue('object') !== broker.config.receives
+          typeof broker.receives === 'string'
+          && event.getDataValue('object') !== broker.receives
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} subscriber receives ${broker.config.receives}
+            `${m} subscriber receives ${broker.receives}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
         else if (
-          Array.isArray(broker.config.receives)
-          && broker.config.receives.includes(event.getDataValue('object'))
+          Array.isArray(broker.receives)
+          && broker.receives.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} subscriber receives one of ${broker.config.receives.join(', ')}
+            `${m} subscriber receives one of ${broker.receives.join(', ')}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
@@ -931,30 +954,31 @@ export class Broadcast extends FabrixGeneric {
       const manager = strongManagers.get(m)
 
       // Receiver Test
-      if (manager.config && manager.config.receives) {
+      if (manager && manager.receives) {
         if (
-          typeof manager.config.receives === 'string'
-          && String(event.getDataValue('object')) !== manager.config.receives
+          typeof manager.receives === 'string'
+          && String(event.getDataValue('object')) !== manager.receives
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives ${manager.config.receives}
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives ${manager.receives}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
         else if (
-          Array.isArray(manager.config.receives)
-          && manager.config.receives.includes(event.getDataValue('object'))
+          Array.isArray(manager.receives)
+          && manager.receives.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives one of ${manager.config.receives.join(', ')}
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives one of ${manager.receives.join(', ')}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
       }
       else {
-        this.app.log.debug(`${event.event_type} manager ${m} processor assuming it receives ${event.getDataValue('object')}`)
+        this.app.log.debug(`${event.event_type} manager ${m} ${manager.is_processor ? 'processor' : 'projector'}
+        assuming it receives ${event.getDataValue('object')}`)
       }
 
       // Check and promise events
@@ -1144,7 +1168,7 @@ export class Broadcast extends FabrixGeneric {
           event_type: subscriberType,
           name: `${m}`,
           method: typeof channel[m] === 'function' ? channel[m] : get(this.app.entries, m),
-          config: subscribers[m]
+          config: subscribers[m].config
         })
       })
     })

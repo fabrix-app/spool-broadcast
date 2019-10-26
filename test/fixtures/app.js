@@ -179,6 +179,17 @@ const App = {
                   }
                 },
               },
+              'create.:test_uuid.test': {
+                create: {
+                  lifecycle: 'before',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
               'update.test': {
                 update: {
                   lifecycle: 'before',
@@ -218,6 +229,18 @@ const App = {
               /**
                * Commands subscribed to
                */
+              'test.:test_uuid.created': {
+                created: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
+
               'test.created': {
                 created: {
                   consistency: 'strong',
@@ -247,6 +270,7 @@ const App = {
                   }
                 },
               },
+
               'test.updated': {
                 updated: {
                   consistency: 'strong',
@@ -284,6 +308,18 @@ const App = {
               /**
                * Commands subscribed to
                */
+              'test.:test_uuid.created': {
+                update: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
+
               'test.created': {
                 update: {
                   consistency: 'strong',
@@ -295,7 +331,20 @@ const App = {
                   }
                 },
               },
+
               'test.updated': {
+                destroy: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+              },
+
+              'test.:test_uuid.updated': {
                 destroy: {
                   consistency: 'strong',
                   config: {

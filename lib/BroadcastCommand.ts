@@ -4,6 +4,7 @@ import { get, isArray, isObject } from 'lodash'
 import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
+import { regexdot } from '@fabrix/regexdot'
 
 export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
@@ -64,7 +65,7 @@ export class BroadcastCommand extends FabrixGeneric {
     this.req = req
     this.command_uuid = this.generateUUID(correlation_uuid)
     this.object = object
-    this.command_type = command_type
+    this.command_type = this.replaceParams(command_type, data)
     this.causation_uuid = causation_uuid
     this.data = data
     this.metadata = metadata
@@ -84,6 +85,26 @@ export class BroadcastCommand extends FabrixGeneric {
       return correlationUUID
     }
     return uuid()
+  }
+
+  replaceParams(type = '', object: any = {}) {
+
+    let { keys = [], pattern } = regexdot(type)
+
+    if (
+      keys !== false
+      && typeof keys !== 'boolean'
+      && isArray(keys)
+      && !isArray(object)
+    ) {
+      keys.forEach(k => {
+        if (object[k]) {
+          type = type.replace(`:${k}`, object[k])
+        }
+      })
+    }
+
+    return type
   }
 
   /**
