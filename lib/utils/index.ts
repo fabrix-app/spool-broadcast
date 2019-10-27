@@ -136,7 +136,8 @@ export const utils = {
     })
 
     broadcaster.events().forEach((types, event_type) => {
-      utils.registerEventualProjectors(app, rabbit, broadcaster, event_type, types)
+      const managers = broadcaster.getEventualManagers(event_type)
+      utils.registerEventualProjectors(app, rabbit, broadcaster, event_type, types, managers)
     })
 
     return
@@ -185,8 +186,9 @@ export const utils = {
    * @param broadcaster
    * @param event_type
    * @param types
+   * @param managers
    */
-  registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types) => {
+  registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
     const broadcasterClient = app.broadcaster
 
     if (types.eventual && types.eventual.size > 0) {
@@ -201,12 +203,14 @@ export const utils = {
         // add the current broadcast type into the list of active broadcasts,
         const promises = []
         if (types.eventual) {
-          types.eventual.forEach(project => {
+          types.eventual.forEach((project, k) => {
+            const manager = managers.get(k)
             promises.push(utils.runProjector(
               app,
               broadcasterClient,
               broadcaster,
               project,
+              manager,
               req
             ))
           })
@@ -223,11 +227,12 @@ export const utils = {
    * @param client
    * @param broadcaster
    * @param project
+   * @param manager
    * @param req
    */
-  runProjector: (app: FabrixApp, client, broadcaster, project, req) => {
+  runProjector: (app: FabrixApp, client, broadcaster, project, manager, req) => {
     let p
-    // console.log('BRK runProjector', client, broadcaster, project, event)
+
     const event = app.models.BroadcastEvent.stage(req.body, { isNewRecord: false})
 
     app.models.BroadcastEvent.sequelize.transaction({
@@ -239,7 +244,8 @@ export const utils = {
           event: event,
           options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
           consistency: 'eventual',
-          message: req
+          message: req,
+          manager: manager
         })
         app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
       } catch (err) {

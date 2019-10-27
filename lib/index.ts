@@ -55,6 +55,9 @@ export {
   IBroadcastModelResolve,
   IProjectorParams,
   IProcessorParams,
+  IHookInParams,
+  IChannelParams,
+  IPipelineParams,
   BroadcastOptions,
   BroadcastAction,
   IBroadcastTuple

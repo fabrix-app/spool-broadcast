@@ -151,6 +151,8 @@ export class Broadcast extends FabrixGeneric {
      command,
      event_type,
      correlation_uuid,
+     correlation_pattern,
+     correlation_pattern_raw,
      causation_uuid,
      chain_before,
      chain_saga,
@@ -162,6 +164,8 @@ export class Broadcast extends FabrixGeneric {
     event_type?: string,
     correlation_uuid: string,
     causation_uuid?: string,
+    correlation_pattern?: RegExp,
+    correlation_pattern_raw?: string,
     chain_before?: string[],
     chain_saga?: string[],
     chain_after?: string[],
@@ -177,20 +181,26 @@ export class Broadcast extends FabrixGeneric {
       throw new Error('Broadcast.buildEvent called with a non Command object')
     }
 
+    const { pattern, keys } = regexdot(event_type)
+    const pattern_raw = event_type
     // Replace any parameters in the event_type with the data
-    event_type = this.replaceParams(event_type, command.data)
+    event_type = this.replaceParams(event_type, keys, command.data)
 
     const data = {
       event_type, // || command.event_type,
       // This is the command uuid that started this event chain
       correlation_uuid,
+      correlation_pattern: correlation_pattern || command.pattern,
+      correlation_pattern_raw: correlation_pattern_raw || command.pattern_raw,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: causation_uuid || command.causation_uuid,
       chain_before: chain_before || command.chain_before,
       chain_saga: chain_saga || command.chain_saga,
       chain_after: chain_after || command.chain_after,
       chain_events: chain_events || command.chain_events,
-      ...command
+      ...command,
+      pattern: pattern,
+      pattern_raw: pattern_raw
     }
 
     // Stage the Event as a new BroadcastEvent ready to be run
@@ -200,9 +210,7 @@ export class Broadcast extends FabrixGeneric {
       .generateUUID()
   }
 
-  replaceParams(type = '', object: any = {}) {
-
-    let { keys = [], pattern } = regexdot(type)
+  replaceParams(type = '', keys: boolean | string[] = [], object: any = {}) {
 
     if (
       keys !== false

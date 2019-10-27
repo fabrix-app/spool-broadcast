@@ -44,11 +44,11 @@ class Destroy extends Process {
 
 module.exports = class Test extends Processor {
 
-  update({event, options}) {
-    return new Update(this.app, event, options)
+  update({event, options, manager}) {
+    return new Update(this.app, event, options, manager)
   }
 
-  destroy({event, options}) {
-    return new Destroy(this.app, event, options)
+  destroy({event, options, manager}) {
+    return new Destroy(this.app, event, options, manager)
   }
 }

@@ -8,7 +8,7 @@ export class BroadcastSubscriber {
   public broker
   public isAcknowledged
 
-  constructor(public app: FabrixApp, event, options, broker) {
+  constructor(public app: FabrixApp, event, options, broker?) {
     this.app = app
     this.event = event
     this.options = options

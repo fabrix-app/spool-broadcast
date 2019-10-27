@@ -17,12 +17,14 @@ export class BroadcastProcess extends FabrixGeneric {
   constructor(
     app: FabrixApp,
     public event: BroadcastEvent,
-    public options: BroadcastOptions
+    public options: BroadcastOptions,
+    public manager?
   ) {
     super(app)
 
     this.event = event
     this.options = options
+    this.manager = manager
 
     this.id = this.event.event_uuid
     this.isAcknowledged = false

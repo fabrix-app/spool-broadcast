@@ -81,19 +81,19 @@ class Puff extends Project {
 }
 
 module.exports = class Test extends Projector {
-  logger({event, options, consistency, message}) {
-    return new Logger(this.app, event, options, consistency, message)
+  logger({event, options, consistency, message, manager}) {
+    return new Logger(this.app, event, options, consistency, message, manager)
   }
-  created({event, options, consistency, message}) {
-    return new Created(this.app, event, options, consistency, message)
+  created({event, options, consistency, message, manager}) {
+    return new Created(this.app, event, options, consistency, message, manager)
   }
-  created2({event, options, consistency, message}) {
-    return new Created(this.app, event, options, consistency, message)
+  created2({event, options, consistency, message, manager}) {
+    return new Created(this.app, event, options, consistency, message, manager)
   }
-  updated({event, options, consistency, message}) {
-    return new Updated(this.app, event, options, consistency, message)
+  updated({event, options, consistency, message, manager}) {
+    return new Updated(this.app, event, options, consistency, message, manager)
   }
-  puff({event, options, consistency, message}) {
-    return new Puff(this.app, event, options, consistency, message)
+  puff({event, options, consistency, message, manager}) {
+    return new Puff(this.app, event, options, consistency, message, manager)
   }
 }

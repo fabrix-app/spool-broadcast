@@ -95,12 +95,39 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: true,
         binaryType: 'string'
       },
+      // The command string pattern
+      correlation_pattern: {
+        type: Sequelize.VIRTUAL(Sequelize.STRING, ['correlation_pattern_raw']),
+        binaryOptional: true,
+        binaryType: 'regex'
+      },
+      // The command string pattern raw
+      correlation_pattern_raw: {
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
+      },
+
       // The event string
       event_type: {
         type: Sequelize.STRING,
         binaryOptional: false,
         binaryType: 'string'
       },
+
+      // The event string pattern
+      pattern: {
+        type: Sequelize.VIRTUAL(Sequelize.STRING, ['pattern_raw']),
+        binaryOptional: true,
+        binaryType: 'regex'
+      },
+      // The event string pattern raw
+      pattern_raw: {
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
+      },
+
       primary_keys: {
         type: Sequelize.JSONB,
         set: function(val) {

@@ -10,6 +10,7 @@ import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 
 export class BroadcastProject extends FabrixGeneric {
   public message: any
+  public manager: any
   public isAcknowledged: boolean
   public consistency = 'strong'
   private _id: string
@@ -19,7 +20,8 @@ export class BroadcastProject extends FabrixGeneric {
     public event: BroadcastEvent,
     public options: {[key: string]: any},
     consistency?: string,
-    message?: string
+    message?: string,
+    manager?: any
   ) {
     super(app)
     this.event = event
@@ -30,6 +32,7 @@ export class BroadcastProject extends FabrixGeneric {
     this.isAcknowledged = false
 
     this.message = message
+    this.manager = manager
   }
 
   /**

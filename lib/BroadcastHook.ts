@@ -14,17 +14,19 @@ export class BroadcastHook extends FabrixGeneric {
   public options
   public command
   public message
+  public handler
   public isAcknowledged
   public lifecycle = 'before'
   public isCancelled
   private _id
 
-  constructor(app: FabrixApp, command, options, lifecycle?) {
+  constructor(app: FabrixApp, command, options, lifecycle?, handler?) {
     super(app)
 
     this.command = command
     this.options = options
     this.lifecycle = lifecycle || this.lifecycle
+    this.handler = handler
 
     this.id = this.command.command_uuid
     this.isAcknowledged = false

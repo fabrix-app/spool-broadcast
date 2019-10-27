@@ -25,6 +25,8 @@ export class BroadcastCommand extends FabrixGeneric {
   chain_events?: string[]
   complete = false
   breakException = null
+  pattern: RegExp
+  pattern_raw: string
   pointer: any
   cancel_methods: any
   // event_type?: string = null
@@ -60,12 +62,17 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('object is not a valid model')
     }
 
+    const { pattern, keys } = regexdot(command_type)
+    const pattern_raw = command_type
+
     // this.app = app
     this.broadcaster = broadcaster
     this.req = req
     this.command_uuid = this.generateUUID(correlation_uuid)
     this.object = object
-    this.command_type = this.replaceParams(command_type, data)
+    this.pattern = pattern
+    this.pattern_raw = pattern_raw
+    this.command_type = this.replaceParams(command_type, keys, data)
     this.causation_uuid = causation_uuid
     this.data = data
     this.metadata = metadata
@@ -87,9 +94,7 @@ export class BroadcastCommand extends FabrixGeneric {
     return uuid()
   }
 
-  replaceParams(type = '', object: any = {}) {
-
-    let { keys = [], pattern } = regexdot(type)
+  replaceParams(type = '', keys: boolean | string[] = [], object: any = {}) {
 
     if (
       keys !== false
