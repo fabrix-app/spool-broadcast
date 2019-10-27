@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.22](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.21...v1.6.22) (2019-10-27)
+
+
+### Features
+
+* adds managers to eventual events and patterns to events ([1fabcaa](https://github.com/fabrix-app/spool-broadcast/commit/1fabcaa))
+
 ### [1.6.21](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.20...v1.6.21) (2019-10-26)
 
 
