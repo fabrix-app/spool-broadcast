@@ -124,7 +124,7 @@ export class Saga extends Generic  {
       const { pattern } = regexdot(k)
       const match = pattern.test('.' + command.command_type)
       if (match) {
-        useValidators  = [...useValidators , validators[k]]
+        useValidators  = [...useValidators , {[k]: validators[k]}]
       }
     })
 

@@ -216,13 +216,17 @@ export class Broadcast extends FabrixGeneric {
       keys !== false
       && typeof keys !== 'boolean'
       && isArray(keys)
-      && !isArray(object)
     ) {
-      keys.forEach(k => {
-        if (object[k]) {
-          type = type.replace(`:${k}`, object[k])
-        }
-      })
+      if (!isArray(object)) {
+        keys.forEach(k => {
+          if (k && object && object[k]) {
+            type = type.replace(`:${k}`, `${object[k]}`)
+          }
+        })
+      }
+      else {
+        // TODO
+      }
     }
 
     return type
@@ -246,23 +250,26 @@ export class Broadcast extends FabrixGeneric {
   /**
    * Run provided validator over command data that is cleaned to JSON throws spool-error standard on failure
    * @param validators
-   * @param value
+   * @param command
    * @param options
    */
-  validate(validators = [], value, options) {
+  validate(validators = [], command, options) {
 
-    const _value = this._cleanObj(value.data)
+    const _value = this._cleanObj(command.data)
 
-    return Promise.all(validators.map(v => {
-      return v(_value)
+    return Promise.all(validators.map((v, k) => {
+      const validator: any = Object.values(v)[0]
+      const name: string = Object.keys(v)[0]
+      this.app.log.debug(`validating ${command.command_type} with ${name} schema`)
+      return validator(_value)
     }))
       .then((data) => {
         // Returns the unmodified version
-        return [value, options]
+        return [command, options]
       })
       .catch(error => {
-        const err = this.app.transformJoiError({ value, error })
-        return Promise.reject(err.error)
+        const err = this.app.transformJoiError({ value: _value, error })
+        return Promise.reject(err)
       })
   }
 

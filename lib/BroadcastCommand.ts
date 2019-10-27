@@ -100,13 +100,17 @@ export class BroadcastCommand extends FabrixGeneric {
       keys !== false
       && typeof keys !== 'boolean'
       && isArray(keys)
-      && !isArray(object)
     ) {
-      keys.forEach(k => {
-        if (object[k]) {
-          type = type.replace(`:${k}`, object[k])
-        }
-      })
+      if (!isArray(object)) {
+        keys.forEach(k => {
+          if (k && object && object[k]) {
+            type = type.replace(`:${k}`, `${object[k]}`)
+          }
+        })
+      }
+      else {
+        // TODO
+      }
     }
 
     return type
