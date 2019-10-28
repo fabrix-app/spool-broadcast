@@ -218,7 +218,26 @@ export const utils = {
         //
         return Promise.all(promises)
       })
+        .catch( function( err, msg ) {
+        // do something with the error & message
+        app.log.error('Rabbit Handler Error!', err)
+        msg.nack()
+      })
     }
+  },
+
+  onUnhandled(msg) {
+    // handle the message here
+  },
+  onReturned(msg) {
+    // Unroutable messages that were published with mandatory: true
+  },
+
+  nackUnhandled(msg) {
+    // Sends all unhandled messages back to the queue.
+  },
+  rejectUnhandled(msg) {
+    // Rejects unhandled messages so that will will not be requeued. DO NOT use this unless there are dead letter exchanges for all queues.
   },
 
   /**
@@ -228,12 +247,16 @@ export const utils = {
    * @param broadcaster
    * @param project
    * @param manager
-   * @param req
+   * @param message
    */
-  runProjector: (app: FabrixApp, client, broadcaster, project, manager, req) => {
+  runProjector: (app: FabrixApp, client, broadcaster, project, manager, message) => {
     let p
 
-    const event = app.models.BroadcastEvent.stage(req.body, { isNewRecord: false })
+    if (message.fields.redelivered) {
+      app.log.warn('Rabbit Message', message.type, 'is being redelivered!')
+    }
+
+    const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
 
     app.models.BroadcastEvent.sequelize.transaction({
       isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
@@ -244,7 +267,7 @@ export const utils = {
           event: event,
           options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
           consistency: 'eventual',
-          message: req,
+          message: message,
           manager: manager
         })
         app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)

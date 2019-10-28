@@ -59,6 +59,23 @@ export const broadcaster = {
     return Promise.resolve({})
   },
 
+  registerOnUnhandled(app: FabrixApp) {
+    //
+    return
+  },
+  registerOnReturned(app: FabrixApp) {
+    //
+    return
+  },
+  registerNackUnhandled(app: FabrixApp) {
+    //
+    return
+  },
+  registerUnhandled(app: FabrixApp) {
+    //
+    return
+  },
+
   /**
    * Build Broadcaster
    */

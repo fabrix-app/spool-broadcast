@@ -12,6 +12,7 @@ export class BroadcastProject extends FabrixGeneric {
   public message: any
   public manager: any
   public isAcknowledged: boolean
+  public isRedelivered = false
   public consistency = 'strong'
   private _id: string
 
@@ -33,6 +34,10 @@ export class BroadcastProject extends FabrixGeneric {
 
     this.message = message
     this.manager = manager
+
+    if (this.message && this.message.fields) {
+      this.isRedelivered = this.message.fields.redelivered
+    }
   }
 
   /**
