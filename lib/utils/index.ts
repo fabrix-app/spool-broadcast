@@ -233,7 +233,7 @@ export const utils = {
   runProjector: (app: FabrixApp, client, broadcaster, project, manager, req) => {
     let p
 
-    const event = app.models.BroadcastEvent.stage(req.body, { isNewRecord: false})
+    const event = app.models.BroadcastEvent.stage(req.body, { isNewRecord: false })
 
     app.models.BroadcastEvent.sequelize.transaction({
       isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
@@ -248,10 +248,12 @@ export const utils = {
           manager: manager
         })
         app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
-      } catch (err) {
+      }
+      catch (err) {
         app.log.error('Utils.runProjector', err)
         return Promise.resolve()
       }
+
       if (!client.active_broadcasts.has(broadcaster.name)) {
         const err = new Error(`Client should have active_broadcast of ${broadcaster.name}`)
         app.log.error('Utils.runProjector', err)
