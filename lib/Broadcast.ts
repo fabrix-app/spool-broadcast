@@ -140,6 +140,8 @@ export class Broadcast extends FabrixGeneric {
    * Build Event from command information
    * @param event_type
    * @param correlation_uuid
+   * @param correlation_pattern,
+   * @param correlation_pattern_raw,
    * @param causation_uuid
    * @param command
    * @param chain_before
@@ -1074,8 +1076,11 @@ export class Broadcast extends FabrixGeneric {
             }
           }
 
-          this.app.log.silly('chain_events', event.chain_events)
-          event.chain_events.push(m)
+
+          if (m) {
+            event.chain_events.push(m)
+          }
+          this.app.log.silly('current chain_events', event.chain_events)
 
           if (manager && manager.merge && manager.merge !== false) {
               event.mergeData(m, manager, _event)
@@ -1124,13 +1129,19 @@ export class Broadcast extends FabrixGeneric {
     //   }
     // })
 
-    const patterns = uniqBy(Array.from(eventualManagers.values()).map((v: {[key: string]: any}) => {
-      return v
-    }), 'patter_raw')
+    const patterns = uniqBy(
+      Array.from(eventualManagers.values())
+        .map((v: {[key: string]: any}) => {
+          return v
+        })
+        .filter(n => n.pattern_raw)
+    , 'patter_raw')
 
-    return Promise.all(patterns.map((manager) => {
-
+    patterns.forEach(manager => {
       this.app.log.debug('Broadcaster', this.name, 'publishing pattern', manager.pattern_raw)
+    })
+
+    return this.app.broadcastSeries(patterns, (manager) => {
       // Publish the eventual events
       return this.app.broadcaster.publish({
         broadcaster: this,
@@ -1140,8 +1151,17 @@ export class Broadcast extends FabrixGeneric {
         consistency: 'eventual',
         manager: manager
       })
-
-    }))
+        .catch(err => {
+          this.app.log.error('Publishing Error', err)
+          // TODO retry regression
+          return [event, options]
+        })
+    })
+      .then((res) => {
+        this.app.log.silly('Publishing Result', res)
+        // TODO retry regression
+        return [event, options]
+      })
   }
 
 

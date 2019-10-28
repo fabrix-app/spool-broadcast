@@ -433,7 +433,7 @@ export class BroadcastEvent extends BroadcastModel {
         type: Sequelize.VIRTUAL(Sequelize.JSONB, ['chain_before', 'chain_saga', 'chain_after', 'chain_events']),
         defaultValue: [],
         get: function() {
-          return [...this.chain_before, ...this.chain_saga, ...this.chain_after, ...this.chain_events]
+          return ([...this.chain_before, ...this.chain_saga, ...this.chain_after, ...this.chain_events]).filter(n => n)
         },
         binaryOptional: true,
         binaryType: 'json'
