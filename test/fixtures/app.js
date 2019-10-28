@@ -290,6 +290,15 @@ const App = {
                     expects: 'TestLogger'
                   }
                 },
+                failLogger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 3,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
+                  }
+                },
               }
             }
           }

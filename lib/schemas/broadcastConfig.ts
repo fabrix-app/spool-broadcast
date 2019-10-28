@@ -8,6 +8,7 @@ export const broadcastConfig = joi.object().keys({
   profile: joi.string().allow(null).required(),
   enabled: joi.boolean(),
   auto_queue: joi.boolean(),
+  default_publish_timeout: joi.number().allow(null).required(),
   // profiles: joi.object().pattern(/^/, joi.array().items(joi.string().regex(/(.+)\.(.+)/))),
   profiles: joi.object().pattern(/^/, joi.array().items(joi.string())),
   exchange_name: joi.string().allow(null),

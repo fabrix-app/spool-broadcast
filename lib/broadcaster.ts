@@ -7,8 +7,6 @@ import {BroadcastObjectModel} from './BroadcastObjectModel'
 
 // RabbitMQ TODO make this a generic instead of hardcode
 const rabbit = require('rabbot')
-// automatically nack exceptions in handlers
-rabbit.nackOnError()
 
 export const broadcaster = {
 
@@ -26,6 +24,11 @@ export const broadcaster = {
     //   {level: 'debug', stream: app.log.debug(process.stdout) }
     // )
     // app.spools.broadcast.broadcastTransaction = utils.resolveTransaction
+
+    // automatically nack exceptions in handlers
+    rabbit.nackOnError()
+    //
+    rabbit.rejectUnhandled()
 
     return
   },

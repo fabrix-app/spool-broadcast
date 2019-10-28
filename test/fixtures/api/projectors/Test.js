@@ -37,6 +37,15 @@ class Logger extends Project {
   }
 }
 
+class FailLogger extends Project {
+  async run() {
+    console.log('BRK FAIL LOGGED!', this.event)
+
+    const err = new Error('Testing Failing')
+    return Promise.reject(err)
+  }
+}
+
 class Created extends Project {
   async run() {
     const test = this.event.object.stage(this.event.data, { isNewRecord: true })
@@ -83,6 +92,9 @@ class Puff extends Project {
 module.exports = class Test extends Projector {
   logger({event, options, consistency, message, manager}) {
     return new Logger(this.app, event, options, consistency, message, manager)
+  }
+  failLogger({event, options, consistency, message, manager}) {
+    return new FailLogger(this.app, event, options, consistency, message, manager)
   }
   created({event, options, consistency, message, manager}) {
     return new Created(this.app, event, options, consistency, message, manager)

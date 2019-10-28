@@ -12,6 +12,10 @@ export const broadcast = {
   profile: process.env.BROADCAST_PROFILE || null,
   enabled: true,
   auto_queue: true,
+
+  // ms before publish timeout
+  default_publish_timeout: null,
+
   connection: {
     // optional, defaults to `broadcasts-work-x`
     exchange: process.env.BROADCAST_EXCHANGE || null,

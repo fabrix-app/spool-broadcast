@@ -36,6 +36,7 @@ export class Client extends FabrixGeneric {
     const expiresAfter = manager ? manager.expires_after : null
     const persistent = manager ? manager.persistent : null
     const mandatory = manager ? manager.mandatory : null
+    const timeout = manager ? manager.timeout : this.app.config.get('broadcast.default_publish_timeout')
 
     const send: {[key: string]: any} = {
       type: event_type, // type
@@ -56,6 +57,9 @@ export class Client extends FabrixGeneric {
     }
     if (mandatory !== null) {
       send.mandatroy = mandatory
+    }
+    if (timeout !== null) {
+      send.timeout = timeout
     }
 
     try {

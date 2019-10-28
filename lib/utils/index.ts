@@ -194,6 +194,11 @@ export const utils = {
     if (types.eventual && types.eventual.size > 0) {
       app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
 
+      if (types.eventual.size !== managers.size) {
+        app.log.error('Mismatch handlers to managers! Will not listen to:', types.eventual, managers)
+        return
+      }
+
       rabbit.handle(`${event_type}`, req => {
         // if (!app.api.broadcasts[broadcastName]) {
         //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
