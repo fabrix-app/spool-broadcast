@@ -21,17 +21,42 @@ export class Client extends FabrixGeneric {
   /**
    * Publish
    */
-  async publish ({broadcaster, event_type, event, options, consistency}: {
+  async publish ({broadcaster, event_type, event, options, consistency, manager}: {
     broadcaster: Broadcast,
     event_type: string,
     event: BroadcastEvent,
     options?: {[key: string]: any},
-    consistency?: string
+    consistency?: string,
+    manager?: any
   }) {
     const routingKey = broadcaster.name
     const correlationId = event.correlation_uuid
     const connectionName = null
     const sequenceNo = null
+    const expiresAfter = manager ? manager.expires_after : null
+    const persistent = manager ? manager.persistent : null
+    const mandatory = manager ? manager.mandatory : null
+
+    const send: {[key: string]: any} = {
+      type: event_type, // type
+      body: event, // message,
+      routingKey,
+      correlationId,
+      headers: {
+        causation_uuid: event.causation_uuid
+      },
+      sequenceNo
+    }
+
+    if (expiresAfter !== null) {
+      send.expiresAfter = expiresAfter
+    }
+    if (persistent !== null) {
+      send.persistent = persistent
+    }
+    if (mandatory !== null) {
+      send.mandatroy = mandatory
+    }
 
     try {
       event.toJSON()
@@ -43,12 +68,8 @@ export class Client extends FabrixGeneric {
 
     return this.messenger.publish(
       this.exchange_name,
-      event_type, // type
-      event, // message,
-      routingKey,
-      correlationId,
-      connectionName,
-      sequenceNo
+      send,
+      connectionName
     )
       .then(() => {
         return [event, options]

@@ -3,7 +3,7 @@ const Project = require('../../../../dist').BroadcastProject
 
 class Logger extends Project {
   async run() {
-    console.log('BRK LOGGED!', this.event.data)
+    console.log('BRK LOGGED!', this.event)
 
     const test = this.app.models.TestLogger.stage({
       event_type: this.event.event_type,
@@ -22,7 +22,7 @@ class Logger extends Project {
     // return userRole.destroy(this.options)
     return test.save(this.options)
       .then(_e => {
-        console.log('BRK LOGGED!', _e)
+        console.log('BRK LOGGED Result!', _e)
         return [this.event, this.options]
       })
       .catch(err => {

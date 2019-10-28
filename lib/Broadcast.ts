@@ -1,6 +1,6 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { get, isArray, uniq } from 'lodash'
+import { get, isArray, uniq, uniqBy } from 'lodash'
 import joi from 'joi'
 import { regexdot } from '@fabrix/regexdot'
 import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
@@ -929,6 +929,14 @@ export class Broadcast extends FabrixGeneric {
         }
       })
       .then(([_event, _options]) => {
+
+        // Add the eventual events to the chain as running after this transaction completes
+        eventual.forEach(e => {
+          if (e) {
+            event.chain_events.push(e)
+          }
+        })
+
         // Return the original event
         return [_event, _options]
       })
@@ -1110,34 +1118,50 @@ export class Broadcast extends FabrixGeneric {
    */
   projectEventual(eventualEvents, eventualManagers, event, options) {
 
-    eventualEvents.forEach(e => {
-      event.chain_events.push(e)
-    })
+    // eventualEvents.forEach(e => {
+    //   if (e) {
+    //     event.chain_events.push(e)
+    //   }
+    // })
 
-    const patterns = uniq(Array.from(eventualManagers.values()).map((v: {[key: string]: any}) => v.pattern_raw))
+    const patterns = uniqBy(Array.from(eventualManagers.values()).map((v: {[key: string]: any}) => {
+      return v
+    }), 'patter_raw')
 
-    return Promise.all(patterns.map((pattern: string) => {
-      this.app.log.debug('Broadcaster', this.name, 'publishing pattern', pattern)
+    return Promise.all(patterns.map((manager) => {
+
+      this.app.log.debug('Broadcaster', this.name, 'publishing pattern', manager.pattern_raw)
       // Publish the eventual events
       return this.app.broadcaster.publish({
         broadcaster: this,
-        event_type: `${pattern}`,
+        event_type: `${manager.pattern_raw}`,
         event: event,
         options: options,
-        consistency: 'eventual'
+        consistency: 'eventual',
+        manager: manager
       })
+
     }))
   }
 
 
+  /**
+   * Return map of channels
+   */
   channels() {
     return this._channels
   }
 
+  /**
+   * Return map of subscribers
+   */
   subscribers() {
     return this._subscribers
   }
 
+  /**
+   * Return map of brokers
+   */
   brokers() {
     return this._brokers
   }
