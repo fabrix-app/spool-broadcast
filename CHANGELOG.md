@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.30](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.29...v1.6.30) (2019-10-29)
+
+
+### Features
+
+* starts saga ([868202a](https://github.com/fabrix-app/spool-broadcast/commit/868202a))
+
 ### [1.6.29](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.28...v1.6.29) (2019-10-29)
 
 
