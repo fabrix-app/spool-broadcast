@@ -52,6 +52,7 @@ export class Saga extends Generic  {
     this.app.log.debug(`${this.name}.prehookRunner is not running because it's not defined in the class`)
     return Promise.resolve(data)
   }
+
   /**
    * Temporary until the distributed Model resolver is completed
    * Get's a model by name
@@ -257,21 +258,22 @@ export class Saga extends Generic  {
    * @param command
    * @param endpoint
    * @param validators
+   * @param options
    */
-  async processRequest(command, endpoint, validators): Promise<any> {
+  async processRequest(command, endpoint, validators, options): Promise<any> {
     //
-    return this.prehookRunner(endpoint, command.data)
-      .then(data => {
+    return this.prehookRunner(endpoint, command.data.get({plain: true}))
+      .then((data) => {
         return command.broadcaster.validate(validators, {
           command_type: command.command_type,
-          data: data
-        }, {})
+          object: command.object,
+          data: command.object.stage(data)
+        }, options)
       })
-      .then(data => {
+      .then(([data, _options]) => {
+        command.mergeData(`${this.name} Saga`, {}, data)
 
-        command.mergeData(`${this.name} Saga`, data, {})
-
-        return [command]
+        return [command, options]
       })
     // return Promise.resolve([command])
   }
@@ -303,10 +305,12 @@ export class Saga extends Generic  {
 
     return this.mapSeries(Array.from(saga), ([k, endpoint]) => {
       if (!breakException) {
-        return this.processRequest(command, endpoint, validators)
-          .then(result => {
-            ran.set(k, result)
-            return result
+        return this.processRequest(command, endpoint, validators, options)
+          .then(([_command, _options]) => {
+            // Record the result of each step ran
+            ran.set(k, _command)
+            //
+            return [_command, _options]
           })
           .catch(err => {
             breakException = err
