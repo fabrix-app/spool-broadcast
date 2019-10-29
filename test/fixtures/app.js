@@ -225,6 +225,15 @@ const App = {
                     expects: 'Test'
                   }
                 },
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 3,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
+                  }
+                },
               },
               /**
                * Commands subscribed to
@@ -237,6 +246,15 @@ const App = {
                     receives: 'Test',
                     merge: true,
                     expects: 'Test'
+                  }
+                },
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 3,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
                   }
                 },
               },

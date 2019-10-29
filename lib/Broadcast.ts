@@ -1142,10 +1142,11 @@ export class Broadcast extends FabrixGeneric {
     })
 
     return this.app.broadcastSeries(patterns, (manager) => {
+      const safe_event_type = manager.pattern_raw.replace(':', '_')
       // Publish the eventual events
       return this.app.broadcaster.publish({
         broadcaster: this,
-        event_type: `${manager.pattern_raw}`,
+        event_type: `${safe_event_type}`,
         event: event,
         options: options,
         consistency: 'eventual',

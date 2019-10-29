@@ -191,6 +191,8 @@ export const utils = {
   registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
     const broadcasterClient = app.broadcaster
 
+    const safe_event_type = event_type.replace(':', '_')
+
     if (types.eventual && types.eventual.size > 0) {
       app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
 
@@ -199,7 +201,7 @@ export const utils = {
         return
       }
 
-      rabbit.handle(`${event_type}`, req => {
+      rabbit.handle(`${safe_event_type}`, req => {
         // if (!app.api.broadcasts[broadcastName]) {
         //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
         //     `${JSON.stringify(event.body)}`)
@@ -210,6 +212,12 @@ export const utils = {
         if (types.eventual) {
           types.eventual.forEach((project, k) => {
             const manager = managers.get(k)
+            if (!manager) {
+              throw new app.errors.GenericError(
+                'E_UNMET_DEPENDENCY',
+                `Event ${event_type} Manager ${project.name} was undefined and will cause a queue backup!`
+              )
+            }
             promises.push(utils.runProjector(
               app,
               broadcasterClient,
@@ -293,7 +301,7 @@ export const utils = {
         return Promise.resolve()
       }
       if (typeof p.ack !== 'function') {
-        const err = new Error(`${broadcaster.name} ${p.name} should have an ack function!`)
+        const err = new app.errors.GenericError('E_BAD_REQUEST', `${broadcaster.name} ${p.name} should have an ack function!`)
         app.log.error('Utils.runProjector', err)
         return Promise.resolve()
       }
