@@ -259,6 +259,27 @@ const App = {
                 },
               },
 
+              'test.:test_uuid.test.:test_uuid.created': {
+                created: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'Test'
+                  }
+                },
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 3,
+                    receives: 'Test',
+                    merge: true,
+                    expects: 'TestLogger'
+                  }
+                },
+              },
+
               'test.created': {
                 created: {
                   consistency: 'strong',

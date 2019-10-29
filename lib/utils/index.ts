@@ -191,7 +191,7 @@ export const utils = {
   registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
     const broadcasterClient = app.broadcaster
 
-    const safe_event_type = event_type.replace(':', '_')
+    const safe_event_type = event_type.replace(/:/g, '_')
 
     if (types.eventual && types.eventual.size > 0) {
       app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)

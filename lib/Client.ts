@@ -29,6 +29,8 @@ export class Client extends FabrixGeneric {
     consistency?: string,
     manager?: any
   }) {
+    const safe_event_type = event_type.replace(/:/g, '_')
+
     const routingKey = broadcaster.name
     const correlationId = event.correlation_uuid
     const connectionName = null
@@ -38,8 +40,10 @@ export class Client extends FabrixGeneric {
     const mandatory = manager ? manager.mandatory : null
     const timeout = manager ? manager.timeout : this.app.config.get('broadcast.default_publish_timeout')
 
+    console.log('BRK safe_event_type', safe_event_type)
+
     const send: {[key: string]: any} = {
-      type: event_type, // type
+      type: safe_event_type, // type
       body: event, // message,
       routingKey,
       correlationId,

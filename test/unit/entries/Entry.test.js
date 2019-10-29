@@ -41,4 +41,17 @@ describe('Entry', () => {
         done(err)
       })
   })
+
+  it('should create with double params', (done) => {
+    global.app.entries.Test.createWithDoubleParams({}, {
+      test_uuid: uuid(),
+      name: 'test'
+    }, {})
+      .then(([_event, _options]) => {
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
 })
