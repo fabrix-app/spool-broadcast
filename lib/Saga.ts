@@ -6,6 +6,7 @@ import { BroadcastCommand } from './BroadcastCommand'
 import { mapSeries } from 'bluebird'
 import { Entry } from './Entry'
 import { regexdot } from '@fabrix/regexdot'
+import { run } from 'tslint/lib/runner'
 
 export function Story({ broadcaster, command, event, validator, annotations = null, docs = null }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
@@ -44,6 +45,12 @@ export class Saga extends Generic  {
       req_device_uuid: req.device ? req.device.device_uuid : null,
       req_session_uuid: req.channel_session ? req.channel_session.session_uuid : null,
     }
+  }
+
+  async prehookRunner(endpoint, data) {
+    // This should be overriden by the subclass
+    this.app.log.debug(`${this.name}.prehookRunner is not running because it's not defined in the class`)
+    return Promise.resolve(data)
   }
   /**
    * Temporary until the distributed Model resolver is completed
@@ -115,7 +122,13 @@ export class Saga extends Generic  {
    * @param validators
    * @param options
    */
+  // TODO send cancels on fail
   public before(command, validators, options: { transaction?: any} = {}): Promise<any> {
+
+    const ran = new Map()
+    const cancelled = new Map()
+
+    const saga = new Map(command.metadata.prehooks || [])
 
     const sagastart = process.hrtime()
     let hrstart = sagastart, useValidators = []
@@ -171,7 +184,7 @@ export class Saga extends Generic  {
           this.app.log.warn('BRK saga err', _command.breakException)
           return Promise.reject(_command.breakException)
         }
-        return this.saga(_command, _options, useValidators)
+        return this.saga(_command, saga, _options, useValidators)
       })
       .catch(err => {
         // TODO Reverse
@@ -243,20 +256,33 @@ export class Saga extends Generic  {
    *
    * @param command
    * @param endpoint
-   * @param validator
+   * @param validators
    */
-  processRequest(command, endpoint, validator): Promise<any> {
+  async processRequest(command, endpoint, validators): Promise<any> {
     //
-    return Promise.resolve([command])
+    return this.prehookRunner(endpoint, command.data)
+      .then(data => {
+        return command.broadcaster.validate(validators, {
+          command_type: command.command_type,
+          data: data
+        }, {})
+      })
+      .then(data => {
+
+        command.mergeData(`${this.name} Saga`, data, {})
+
+        return [command]
+      })
+    // return Promise.resolve([command])
   }
 
   /**
-   *
+   * TODO
    * @param command
    * @param endpoint
    * @param validator
    */
-  cancelRequest(command, endpoint, validator): Promise<any> {
+  async cancelRequest(command, endpoint, validators): Promise<any> {
     //
     return Promise.resolve([{status: 200}])
   }
@@ -264,15 +290,41 @@ export class Saga extends Generic  {
   /**
    *
    * @param command
+   * @param saga
    * @param options
-   * @param validator
+   * @param validators
    */
-  saga(command, options, validator): Promise<any> {
-    const sagas = new Map([])
+  // TODO Send cancel request on failure
+  saga(command, saga = new Map(), options, validators): Promise<any> {
     const ran = new Map()
     const cancelled = new Map()
-    // this.app.log.warn('BRK todo prehooks', (command.metadata.prehooks || []).map(a => a.application_uuid))
-    return Promise.resolve([command, options])
+
+    let breakException
+
+    return this.mapSeries(Array.from(saga), ([k, endpoint]) => {
+      if (!breakException) {
+        return this.processRequest(command, endpoint, validators)
+          .then(result => {
+            ran.set(k, result)
+            return result
+          })
+          .catch(err => {
+            breakException = err
+            return
+          })
+      }
+      else {
+        return
+      }
+    })
+      .then(() => {
+        if (breakException) {
+          return Promise.reject(breakException)
+        }
+        else {
+          return Promise.resolve([command, options])
+        }
+      })
   }
 
 }

@@ -82,7 +82,16 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
-      metadata: {}
+      metadata: {
+        prehooks: [
+          {
+            command_type: 'create.test.:test_uuid.test.:test_uuid',
+            priority: 1,
+            prehook_url: 'TestController.authorize',
+            prehook_method: 'POST'
+          }
+        ]
+      }
     })
 
     return this.before(command, validate, options)
