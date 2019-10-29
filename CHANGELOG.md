@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.29](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.28...v1.6.29) (2019-10-29)
+
+
+### Bug Fixes
+
+* fixes case with n-cases of params ([2953413](https://github.com/fabrix-app/spool-broadcast/commit/2953413))
+
 ### [1.6.28](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.27...v1.6.28) (2019-10-29)
 
 
