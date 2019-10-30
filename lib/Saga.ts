@@ -47,14 +47,14 @@ export class Saga extends Generic  {
     }
   }
 
-  async prehookRunner(endpoint, data) {
+  async prehookRunner(endpoint, command) {
     // This should be overriden by the subclass
     this.app.log.debug(
       `${this.name}.prehookRunner is not running because it's not defined in the class`
     )
     this.app.log.silly(endpoint)
-    this.app.log.silly(data)
-    return Promise.resolve(data)
+    this.app.log.silly(command)
+    return Promise.resolve([endpoint, command])
   }
 
   /**
@@ -267,12 +267,8 @@ export class Saga extends Generic  {
   async processRequest(command, endpoint, validators, options): Promise<any> {
     //
     return this.prehookRunner(endpoint, command.toJSON())
-      .then((data) => {
-        return command.broadcaster.validate(validators, {
-          command_type: command.command_type,
-          object: command.object,
-          data: command.object.stage(data)
-        }, options)
+      .then(([_endpoint, _command]) => {
+        return command.broadcaster.validate(validators, _command, options)
       })
       .then(([data, _options]) => {
         command.mergeData(`${this.name} Saga`, {}, data)
@@ -351,6 +347,14 @@ export class Saga extends Generic  {
               return [_command, _options]
             })
         })
+          .then(() => {
+            if (breakException) {
+              return Promise.reject(breakException)
+            }
+            else {
+              return Promise.resolve([command, options])
+            }
+          })
       })
   }
 

@@ -410,13 +410,15 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
       this.app.log.error('Unhandled Array merge attempted')
     }
     else {
+      const cleanData = command.data.toJSON ? command.data.toJSON() : command.data
+
       this.app.log.silly(
         this.command_type,
         'merging values',
-        Object.keys(this.data.toJSON()), '->', Object.keys(command.data.toJSON())
+        Object.keys(this.data.toJSON()), '->', cleanData
       )
 
-      Object.keys(command.data.toJSON()).forEach(k => {
+      Object.keys(cleanData).forEach(k => {
         this.data[k] = command.data[k] !== 'undefined'
           ? command.data[k]
           : this.data[k]
