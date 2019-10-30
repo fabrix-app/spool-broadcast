@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.32](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.31...v1.6.32) (2019-10-30)
+
+
+### Features
+
+* makes map of command prehooks ([6852d73](https://github.com/fabrix-app/spool-broadcast/commit/6852d73))
+
 ### [1.6.31](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.30...v1.6.31) (2019-10-29)
 
 
