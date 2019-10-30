@@ -326,11 +326,30 @@ export class BroadcastCommand extends FabrixGeneric {
 }
 
 export interface Command {
+  toJSON(): any
   getDataValue(handler, command): any
   mergeData(method, handler, command): any
   mergeAs(method, handler, command): any
   mergeEachAs(method, handler, command): any
   includeAs(method, handler, data): any
+}
+
+BroadcastCommand.prototype.toJSON = function(str) {
+
+  const res = {
+    command_type: `${this.command_type}`,
+    pattern: `${this.pattern}`,
+    pattern_raw: `${this.pattern_raw}`,
+    object: `${this.object.constructor.name}${isArray(this.data) ? '.list' : '' }`,
+    data: this.data.toJSON ? this.data.toJSON() : this.data,
+    data_updates: this.data_updates,
+    metadata: this.metadata,
+    causation_uuid: this.causation_uuid,
+    version: this.version,
+    created_at: this.created_at
+  }
+
+  return res
 }
 
 BroadcastCommand.prototype.getDataValue = function(str) {

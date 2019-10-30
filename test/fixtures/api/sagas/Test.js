@@ -84,12 +84,12 @@ module.exports = class Test extends Saga {
       correlation_uuid: req.correlation_uuid,
       metadata: {
         prehooks: [
-          {
+          [1, {
             command_type: 'create.test.:test_uuid.test.:test_uuid',
             priority: 1,
             prehook_url: 'TestController.authorize',
             prehook_method: 'POST'
-          }
+          }]
         ]
       }
     })

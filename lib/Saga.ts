@@ -49,7 +49,11 @@ export class Saga extends Generic  {
 
   async prehookRunner(endpoint, data) {
     // This should be overriden by the subclass
-    this.app.log.debug(`${this.name}.prehookRunner is not running because it's not defined in the class`)
+    this.app.log.debug(
+      `${this.name}.prehookRunner is not running because it's not defined in the class`
+    )
+    this.app.log.silly(endpoint)
+    this.app.log.silly(data)
     return Promise.resolve(data)
   }
 
@@ -262,7 +266,7 @@ export class Saga extends Generic  {
    */
   async processRequest(command, endpoint, validators, options): Promise<any> {
     //
-    return this.prehookRunner(endpoint, command.data.get({plain: true}))
+    return this.prehookRunner(endpoint, command.toJSON())
       .then((data) => {
         return command.broadcaster.validate(validators, {
           command_type: command.command_type,
@@ -282,10 +286,17 @@ export class Saga extends Generic  {
    * TODO
    * @param command
    * @param endpoint
-   * @param validator
+   * @param validators
+   * @param options
    */
-  async cancelRequest(command, endpoint, validators): Promise<any> {
-    //
+  async processCancelRequest(command, endpoint, validators, options): Promise<any> {
+    // This should be overriden by the subclass
+    this.app.log.debug(
+      `${this.name}.processCancelRequest is not running because it's not defined in the class`
+    )
+    this.app.log.silly(endpoint)
+    this.app.log.silly(command.toJSON())
+
     return Promise.resolve([{status: 200}])
   }
 
@@ -328,6 +339,18 @@ export class Saga extends Generic  {
         else {
           return Promise.resolve([command, options])
         }
+      })
+      // Send the cancel request to all that ran
+      .catch(err => {
+        return this.mapSeries(Array.from(ran), ([k, endpoint]) => {
+          return this.processCancelRequest(command, endpoint, validators, options)
+            .then(([_command, _options]) => {
+              // Record the result of each step ran
+              cancelled.set(k, _command)
+              //
+              return [_command, _options]
+            })
+        })
       })
   }
 
