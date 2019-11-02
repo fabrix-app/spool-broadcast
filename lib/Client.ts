@@ -19,7 +19,7 @@ export class Client extends FabrixGeneric {
   }
 
   /**
-   * Publish
+   * Publish's Broadcast Event
    */
   async publish ({broadcaster, event_type, event, options, consistency, manager}: {
     broadcaster: Broadcast,
@@ -29,6 +29,8 @@ export class Client extends FabrixGeneric {
     consistency?: string,
     manager?: any
   }) {
+    // RabbitMQ can route events if they have a color ":", or other reserved characters
+    // which means, for this use case we need to sanatize the event type for Broadcast pattern matching
     const safe_event_type = event_type.replace(/:/g, '_')
 
     const routingKey = broadcaster.name
@@ -53,19 +55,24 @@ export class Client extends FabrixGeneric {
       sequenceNo
     }
 
+    // Set the Manger's Expires After
     if (expiresAfter !== null) {
       send.expiresAfter = expiresAfter
     }
+    // Set the Manager's Persistent
     if (persistent !== null) {
       send.persistent = persistent
     }
+    // Set the Manager's Mandatory
     if (mandatory !== null) {
       send.mandatroy = mandatory
     }
+    // Set the Manager's timeout
     if (timeout !== null) {
       send.timeout = timeout
     }
 
+    // Attempt to convert this event from BroadcastEvent to JSON
     try {
       event.toJSON()
     }
@@ -74,6 +81,7 @@ export class Client extends FabrixGeneric {
       return [event, options]
     }
 
+    // Publish this on Rabbit MQ
     return this.messenger.publish(
       this.exchange_name,
       send,
@@ -85,7 +93,7 @@ export class Client extends FabrixGeneric {
   }
 
   /**
-   * Cancel Broadcast
+   * Cancels Broadcast Event
    */
   async cancel (event_type, event_uuid) {
     this.app.log.info(
@@ -95,9 +103,13 @@ export class Client extends FabrixGeneric {
       this.exchange_name
     )
 
+    // RabbitMQ can route events if they have a color ":", or other reserved characters
+    // which means, for this use case we need to sanatize the event type for Broadcast pattern matching
+    const safe_event_type = event_type.replace(/:/g, '_')
+
     return this.messenger.publish(
       this.exchange_name,
-      `${event_type}.interrupt`,
+      `${safe_event_type}.interrupt`,
       { event_uuid }
     )
       .then((result) => {
@@ -108,5 +120,4 @@ export class Client extends FabrixGeneric {
         return err
       })
   }
-
 }

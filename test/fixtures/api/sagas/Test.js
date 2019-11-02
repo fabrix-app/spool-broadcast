@@ -16,7 +16,10 @@ module.exports = class Test extends Saga {
     const TestBroadcast = this.app.broadcasts.Test
 
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: true})
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
 
     const command = TestBroadcast.createCommand({
       req: req,
@@ -45,7 +48,10 @@ module.exports = class Test extends Saga {
     const TestBroadcast = this.app.broadcasts.Test
 
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: true})
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
 
     const command = TestBroadcast.createCommand({
       req: req,
@@ -73,7 +79,10 @@ module.exports = class Test extends Saga {
     const TestBroadcast = this.app.broadcasts.Test
 
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: true})
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
 
     const command = TestBroadcast.createCommand({
       req: req,
@@ -111,7 +120,9 @@ module.exports = class Test extends Saga {
     const TestBroadcast = this.app.broadcasts.Test
 
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: true})
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: false
+    })
 
     const command = TestBroadcast.createCommand({
       req: req,

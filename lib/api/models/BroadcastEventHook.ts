@@ -7,9 +7,9 @@ import { BroadcastModelResolver } from '../../BroadcastModel'
 
 /**
  * @module BroadcastHook
- * @description Item Channel Model n:m
+ * @description BroadcastEventHook
  */
-export class BroadcastCommandHook extends Model {
+export class BroadcastEventHook extends Model {
 
   static get resolver() {
     return BroadcastModelResolver
@@ -22,7 +22,7 @@ export class BroadcastCommandHook extends Model {
         updatedAt: false,
         indexes: [
           {
-            name: 'broadcast_command_hook_index',
+            name: 'broadcast_event_hook_index',
             fields: ['event_uuid', 'hook_type', 'url']
           }
         ]

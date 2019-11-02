@@ -108,8 +108,14 @@ export class BroadcastCommand extends FabrixGeneric {
           }
         })
       }
-      else {
+      else if (isArray(object)) {
         // TODO
+        const o = object[0]
+        keys.forEach(k => {
+          if (k && o && o[k]) {
+            type = type.replace(`:${k}`, `${o[k]}`)
+          }
+        })
       }
     }
 

@@ -70,9 +70,11 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    */
   subscribe(command, req = {}, body = {}, options = {}) {
+
     if (!this._pipes.has(command)) {
       throw new Error(`${command} is not a valid pipeline for ${this.name}`)
     }
+
     return new PipelineEmitter(
       this.app,
       command,
@@ -82,6 +84,7 @@ export class Broadcast extends FabrixGeneric {
       body,
       options
     )
+    // .setMaxListeners(1)
   }
 
   /**
@@ -226,8 +229,14 @@ export class Broadcast extends FabrixGeneric {
           }
         })
       }
-      else {
+      else if (isArray(object)) {
         // TODO
+        const o = object[0]
+        keys.forEach(k => {
+          if (k && o && o[k]) {
+            type = type.replace(`:${k}`, `${o[k]}`)
+          }
+        })
       }
     }
 

@@ -135,18 +135,19 @@ export class BroadcastChannel extends FabrixGeneric {
     return this.broadcasters
   }
 
-  hasBroadcaster (broadcaster: Broadcast) {
+  hasBroadcaster (broadcaster: Broadcast): boolean {
     return this.broadcasters.has(broadcaster.name)
   }
 
+  // Broadcast Getters and Setters
   get broadcasters () {
     return this._broadcasters
   }
-
   set broadcasters (broadcasters) {
     throw new Error(`Can not map broadcasters through this method`)
   }
 
+  // Initial Function to run when a Socket connects this BroadcastChannel
   initialize() {
     // this.channel.write('BRK Hello World!')
     this.channel.on('connection', (spark) => {

@@ -16,4 +16,20 @@ module.exports = class Test extends Entry {
   destroy(req, body, options) {
     return this.transaction(this.app.sagas.Test.destroy, req, body, options)
   }
+
+  findByPk(req, body, options) {
+    return this.app.models.Test.findOne({
+      ...body.query,
+      where: {
+        test_uuid: body.params.test_uuid
+      },
+    })
+      .then(res => {
+        return [{
+            action: 'test.get',
+            object: this.app.models.Test,
+            data: res
+          }, options]
+      })
+  }
 }

@@ -44,6 +44,7 @@ export class Saga extends Generic  {
       req_application_uuid: req.application ? req.application.application_uuid : null,
       req_device_uuid: req.device ? req.device.device_uuid : null,
       req_session_uuid: req.channel_session ? req.channel_session.session_uuid : null,
+      req_ip: req.ip ? req.ip : null
     }
   }
 

@@ -36,16 +36,16 @@ export class BroadcastStream extends BroadcastModel {
         binaryOptional: false,
         binaryType: 'string'
       },
+      source_object: {
+        type: Sequelize.STRING,
+        binaryOptional: false,
+        binaryType: 'string'
+      },
       source_version: {
         type: Sequelize.INTEGER,
         defaultValue: 1,
         binaryOptional: false,
         binaryType: 'int'
-      },
-      source_object: {
-        type: Sequelize.STRING,
-        binaryOptional: false,
-        binaryType: 'string'
       },
       data: {
         type: Sequelize.JSONB,

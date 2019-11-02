@@ -1,6 +1,7 @@
 // tslint:disable:max-line-length
 import { isArray, isObject } from 'lodash'
 import { BroadcastModel } from '../../BroadcastModel'
+import { regexdot } from '@fabrix/regexdot'
 
 /**
  * @module BroadcastEvent
@@ -98,6 +99,10 @@ export class BroadcastEvent extends BroadcastModel {
       // The command string pattern
       correlation_pattern: {
         type: Sequelize.VIRTUAL(Sequelize.STRING, ['correlation_pattern_raw']),
+        get: function() {
+          const { pattern } = regexdot(this.correlation_pattern_raw)
+          return pattern
+        },
         binaryOptional: true,
         binaryType: 'regex'
       },
@@ -118,9 +123,14 @@ export class BroadcastEvent extends BroadcastModel {
       // The event string pattern
       pattern: {
         type: Sequelize.VIRTUAL(Sequelize.STRING, ['pattern_raw']),
+        get: function() {
+          const { pattern } = regexdot(this.pattern_raw)
+          return pattern
+        },
         binaryOptional: true,
         binaryType: 'regex'
       },
+
       // The event string pattern raw
       pattern_raw: {
         type: Sequelize.STRING,

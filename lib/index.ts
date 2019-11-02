@@ -43,7 +43,7 @@ export { BroadcastObjectModel } from './BroadcastObjectModel'
 
 export {
   BroadcastEvent,
-  BroadcastCommandHook,
+  BroadcastEventHook,
   BroadcastProjectionVersion,
   BroadcastSnapshot,
   BroadcastStream

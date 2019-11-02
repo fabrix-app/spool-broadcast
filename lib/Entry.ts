@@ -1,5 +1,6 @@
 import { FabrixGeneric as Generic, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { isEmpty, isArray, isObject } from 'lodash'
+import { GenericError } from '@fabrix/spool-errors/dist/errors'
 // import { ModelError } from '../../../errors'
 
 export function Point({ receives = null, expects = null, docs = null }) {
@@ -177,7 +178,7 @@ export class Entry extends Generic {
   // modelError(...params: string[]): ModelError {
   modelError(...params: string[]) {
     // return new ModelError(params[0], params[1] || params[0])
-    return new Error(...params)
+    return new GenericError(...params)
   }
 
   /**********************************************************
@@ -297,7 +298,7 @@ export class Entry extends Generic {
    * @param tgtModel
    * @param tgtOptions
    * @param srcModel
-   * @param srcOptions
+   * @param srcOpts
    */
   public combine({
     src = {},

@@ -4,6 +4,8 @@ const assert = require('assert')
 const uuid = require('uuid/v4')
 
 describe('Entry', () => {
+  let test_uuid
+
   it('should exist', () => {
     assert(global.app.entries)
     assert(global.app.entries.Test)
@@ -12,6 +14,7 @@ describe('Entry', () => {
   it('should create', (done) => {
     global.app.entries.Test.create({}, { name: 'test' }, {})
       .then(([_event, _options]) => {
+        test_uuid = _event.data.test_uuid
         done()
       })
     .catch(err => {
@@ -20,7 +23,10 @@ describe('Entry', () => {
   })
 
   it('should update', (done) => {
-    global.app.entries.Test.update({}, { name: 'test' }, {})
+    global.app.entries.Test.update({}, {
+      test_uuid: test_uuid,
+      name: 'test 2'
+    }, {})
       .then(([_event, _options]) => {
         done()
       })

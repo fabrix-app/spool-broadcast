@@ -1,6 +1,7 @@
 exports.broadcasts = require('./broadcasts/index')
 exports.entries = require('./entries/index')
 exports.hooks = require('./hooks/index')
+exports.pipelines = require('./pipelines/index')
 exports.processors = require('./processors/index')
 exports.projectors = require('./projectors/index')
 exports.sagas = require('./sagas/index')

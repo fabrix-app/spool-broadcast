@@ -1,5 +1,5 @@
 export { BroadcastEvent } from './BroadcastEvent'
 export { BroadcastSnapshot } from './BroadcastSnapshot'
-export { BroadcastCommandHook } from './BroadcastCommandHook'
+export { BroadcastEventHook } from './BroadcastEventHook'
 export { BroadcastProjectionVersion } from './BroadcastProjectionVersion'
 export { BroadcastStream } from './BroadcastStream'

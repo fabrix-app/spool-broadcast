@@ -112,7 +112,35 @@ const App = {
       pipelines: {
         Test: {
           broadcasters: {
-            Test: {}
+            Test: {
+              'CreateAndFindTest': {
+                'Test.create': {
+                  zip: {
+                    event_type: 'event_type',
+                    object: 'object',
+                    data: 'data'
+                  }
+                },
+                'Test.findByPk': {
+                  before: function (req, body, options) {
+                    body = {
+                      params: {
+                        test_uuid: body.data.test_uuid
+                      },
+                      query: {}
+                    }
+                    return [req, body, {parent: options}]
+                  },
+                  // after: function(req, body, options) {
+                  //   console.log('BRK trial after 2', body.data)
+                  //   return [req, body, options]
+                  // },
+                  zip: {
+                    data: 'data'
+                  }
+                }
+              }
+            }
           }
         }
       },
