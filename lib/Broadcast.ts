@@ -728,6 +728,10 @@ export class Broadcast extends FabrixGeneric {
         broker: broker
       })
         .run()
+        .then((_p) => {
+          console.log('BRK ')
+          return _p.publish()
+        })
         .then(() => {
           const notifyend = process.hrtime(notifystart)
           this.app.log.debug(
