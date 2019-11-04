@@ -74,9 +74,10 @@ const App = {
         // 'fortress maximus': require('fortress-maximus'),
         // 'mirage': require('mirage')
         // redis: PrimusRedisRooms
-        'multiplex': require('primus-multiplex'),
-        'emitter': require('primus-emitter'),
-        'resource': require('primus-resource')
+        // 'multiplex': require('primus-multiplex'),
+        // 'emitter': require('primus-emitter'),
+        // 'resource': require('primus-resource')
+        'rooms': require('primus-rooms')
       }
     },
     log: {

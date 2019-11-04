@@ -245,9 +245,88 @@ export const broadcaster = {
   makeBroadcastChannelResources: (app: FabrixApp) => {
     app.spools.broadcast.channelMap.forEach((value, key, map) => {
       const channel = app.channels[key]
+
+      const currentRooms = Array.from(value.keys()).map(k => {
+        return `${channel.name}.${k}`
+      })
+
       if (channel) {
-        channel._channel = app.sockets.channel(channel.name)
         channel.initialize()
+
+        channel._channel = app.sockets.on('connection', function (spark) {
+
+          spark.on('disconnection', function(data) {
+            channel.disonnect(spark, data)
+          })
+
+          spark.on('data', function(data) {
+            // Handle the Spark subscribing
+            if (
+              data
+              && data.channel
+              && data.subscribe
+              && data.subscribe.length > 0
+              && data.channel === channel.name
+            ) {
+              const _channel = data.channel
+              const subscribe = data.subscribe
+
+              const _rooms = subscribe.map(ev => {
+                return `${_channel}.${ev}`
+              })
+
+              _rooms.forEach(room => {
+                // check if spark is already in this room
+                if (spark.rooms().includes(room)) {
+
+                }
+                else {
+                  // join the room
+                  spark.join(room, function() {
+                    channel.subscribed(spark, room)
+                  })
+                }
+              })
+
+              spark.write({
+                subscribed: spark.rooms()
+              })
+            }
+
+            else if (
+              data
+              && data.channel
+              && data.unsubscribe
+              && data.unsubscribe.length > 0
+              && data.channel === channel.name
+            ) {
+
+              const _channel = data.channel
+              const unsubscribe = data.unsubscribe
+
+              const _rooms = unsubscribe.map(ev => {
+                return `${_channel}.${ev}`
+              })
+
+              _rooms.forEach(room => {
+                // check if spark is already in this room
+                if (spark.rooms().includes(room)) {
+                  spark.leave(room, function() {
+                    channel.unsubscribed(spark, room)
+                  })
+                }
+                else {
+
+                }
+              })
+
+              spark.write({
+                unsubscribed: _rooms,
+                subscribed: spark.rooms()
+              })
+            }
+          })
+        })
       }
     })
     return Promise.resolve()

@@ -22,19 +22,24 @@ describe('BroadcastChannel', () => {
       plugin: global.app.config.get('realtime.plugins')
     })
     client = new Socket(`http://localhost:${global.app.config.get('web.port')}`)
-    Test = client.channel('Test')
+    // Test = client.channel('Test')
   })
 
   it('should do a test subscription', (done) => {
 
-    Test.on('data', function (msg) {
+    let calls = 0
+    client.on('data', function (msg) {
       if (msg.subscribed) {
         console.log('brk SPARK subscribed', msg)
-        done()
+        calls++
+        if (calls === 1) {
+          done()
+        }
       }
     })
 
-    Test.write({
+    client.write({
+      channel: 'Test',
       subscribe: [
         'test.created',
         'test.:crud'
@@ -42,42 +47,58 @@ describe('BroadcastChannel', () => {
     })
 
   })
+
   it('should do a test connection', (done) => {
 
-    Test.on('data', function (msg) {
+    let calls = 0
+    client.on('data', function (msg) {
       console.log('brk SPARK data connection', msg)
-      if (msg.event_type) {
-        done()
+      if (
+        msg.event_type
+      ) {
+        calls++
+        if (calls === 1) {
+          done()
+        }
       }
     })
 
 
-    global.app.entries.Test.createWithParams({}, {
-      test_uuid: uuid(),
-      name: 'test'
-    }, {})
-      .then(([_event, _options]) => {
+    // Give the broadcaster just a little time to get loaded
+    setTimeout(() => {
+      global.app.entries.Test.create({}, {
+        test_uuid: uuid(),
+        name: 'test'
+      }, {})
+        .then(([_event, _options]) => {
 
-      })
-      .catch(err => {
-        done(err)
-      })
+        })
+        .catch(err => {
+          done(err)
+        })
+    }, 100)
 
   })
 
   it('should do a test unsubscribe', (done) => {
 
-    Test.on('data', function (msg) {
+    let calls = 0
+
+    client.on('data', function (msg) {
       if (msg.unsubscribed) {
         console.log('brk SPARK unsubscribed', msg)
-        done()
+        calls++
+        if (calls === 1) {
+          done()
+        }
       }
       else {
         console.log(' BRK SPARK UNHANDLED', msg)
       }
     })
 
-    Test.write({
+    client.write({
+      channel: 'Test',
       unsubscribe: [
         'test.created',
         'test.:crud'
@@ -87,7 +108,7 @@ describe('BroadcastChannel', () => {
   })
 
   after((done) => {
-    Test.end()
+    client.end()
     done()
   })
 })

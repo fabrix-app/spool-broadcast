@@ -27,7 +27,7 @@ export class BroadcastSubscriber {
     channel: BroadcastChannel,
     event: BroadcastEvent,
     options,
-    broker?
+    broker
   ) {
 
     this.app = app
@@ -44,34 +44,29 @@ export class BroadcastSubscriber {
   }
 
   async run (): Promise<BroadcastSubscriber> {
-    // throw new Error('Subclasses must override BroadcastProject.run')
     return Promise.resolve(this)
   }
 
+  /**
+   * Publishes Event to eligible "rooms"
+   */
   async publish (): Promise<BroadcastSubscriber> {
     const json = this.event.toJSON()
-    // throw new Error('Subclasses must override BroadcastProject.run')
+    const rooms = this.channel.listRooms(this.broker.pattern_raw, this.event)
 
-    console.log('brk SPARK publish 1', this.event.pattern_raw, json)
+    rooms.forEach(v => {
 
-    return this.channel.getSubscribers(this.event)
-      .then(subscribers => {
-        this.app.log.debug(`${this.channel.name}.${this.event.pattern_raw} has ${subscribers.length} subscribers listening`)
-
-        if (subscribers.length > 0) {
-
-          console.log('brk SPARK publish 2', this.event.pattern_raw, subscribers)
-
-          this.channel.channel.forEach(function (spark, id, connections) {
-            console.log('brk SPARK publish 3', spark, id)
-            if (subscribers.find(s => s.spark_id === id)) {
-              console.log('brk SPARK publish 4', spark, id)
-              spark.write(json)
-            }
-          })
-        }
-        return this
+      // Bad because this may be or may not be async
+      this.app.sockets.room(v).clients((ids = []) => {
+        console.log('brk counting', ids)
+        this.app.log.debug(`Publishing ${v} to ${(ids || []).length} subscribers`)
       })
+
+      // Send the JSON to the room
+      this.app.sockets.room(v).write(json)
+    })
+
+    return Promise.resolve(this)
   }
 
   // /**
@@ -201,76 +196,15 @@ export class BroadcastChannel extends FabrixGeneric {
   }
 
   // Initial Function to run when a Socket connects this BroadcastChannel
-  initialize() {
-    this.channel.on('connection', (spark) => {
+  initialize() { }
 
-      spark.write(`BRK SPARK welcome from ${this.name} ${spark.id}!`)
-
-      spark.on('data', (data) => {
-        if (data.subscribe && isArray(data.subscribe)) {
-          this.addSubscriptions(spark, data.subscribe)
-            .then(res => {
-              spark.write({ subscribed: data.subscribe })
-            })
-            .catch(err => {
-              spark.write({ error: err })
-            })
-        }
-        else if (data.unsubscribe && isArray(data.unsubscribe)) {
-          this.removeSubscriptions(spark, data.unsubscribe)
-            .then(res => {
-              spark.write({ unsubscribed: data.unsubscribe })
-            })
-            .catch(err => {
-              spark.write({ error: err })
-            })
-        }
-        else {
-          console.log('Spark writing to a subscribe/unsubscribe only')
-          spark.write({ error: 'This channel only supports the subscribe/unsubscribe method' })
-        }
-      })
-
-      spark.on('disconnection', (data) => {
-        this.disconnect(spark, data)
-      })
-    })
-    // throw new Error(`${this.name}.initialize should be overridden by subclass!`)
-  }
-
-  async addSubscriptions(spark, subscriptions = []) {
-    const subs = subscriptions.map(s => {
-      return {
-        spark_id: spark.id,
-        event_type: s,
-        channel: this.name
-      }
-    })
-    return this.app.models.BroadcastChannelSubscriber.bulkCreate(subs)
-  }
-
-  async removeSubscriptions(spark, subscriptions) {
-    const subs = subscriptions.map(s => {
-      return {
-        spark_id: spark.id,
-        event_type: s,
-        channel: this.name
-      }
-    })
-
-    return this.app.models.BroadcastChannelSubscriber.destroy({
-      where: subs
-    })
-  }
-
-  async getSubscribers(event) {
-
+  listRooms(pattern, event) {
     // Add the raw to the query
-    const queryOr = new Set([event.pattern_raw])
-    let built = event.pattern_raw
+    const queryOr = new Set([`${pattern}`])
+    let built = pattern
 
     // Grab the keys to build the OR query
-    const { pattern, keys } = regexdot(event.pattern_raw)
+    const { keys } = regexdot(pattern)
 
     // If the keys are viable
     if (
@@ -288,35 +222,36 @@ export class BroadcastChannel extends FabrixGeneric {
           queryOr.add(built)
 
           // Add a just replace single param version
-          const singleParam = (`${event.pattern_raw}`).replace(`:${k}`, `${compare[k]}`)
+          const singleParam = (`${pattern}`).replace(`:${k}`, `${compare[k]}`)
           queryOr.add(singleParam)
         }
       })
     }
 
-    const query: {[key: string]: any} = {
-      channel: this.name,
-      event_type: Array.from(queryOr)
-    }
-
-    return this.app.models.BroadcastChannelSubscriber.findAll({
-      where: query
+    return Array.from(queryOr).map(k => {
+      return `${this.name}.${k}`
     })
   }
 
-  connect(spark) {
+  /**
+   * Called when a spark first joins a room
+   * @param spark
+   * @param room
+   */
+  subscribed(spark, room) {
+    return
+  }
+  /**
+   * Called when a spark first leaves a room
+   * @param spark
+   * @param room
+   */
+  unsubscribed(spark, room) {
     return
   }
 
-  async disconnect(spark, data) {
-    console.log('BRK SPARK subscriber going away', spark.id, data)
-
-    return this.app.models.BroadcastChannelSubscriber.destroy({
-      where: {
-        spark_id: spark.id,
-        channel: this.name
-      }
-    })
+  disconnect(spark, data) {
+    return
   }
 
 
@@ -324,6 +259,6 @@ export class BroadcastChannel extends FabrixGeneric {
    * Destroys the Channel and all connections to it
    */
   destroy() {
-    this.channel.destroy()
+    // this.channel.destroy()
   }
 }
