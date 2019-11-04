@@ -729,7 +729,6 @@ export class Broadcast extends FabrixGeneric {
       })
         .run()
         .then((_p) => {
-          console.log('BRK ')
           return _p.publish()
         })
         .then(() => {
@@ -1236,6 +1235,9 @@ export class Broadcast extends FabrixGeneric {
         }
 
         this.app.log.silly(`Adding channel ${channel.name}.${m} to broadcaster ${this.name} for subscriber ${subscriberType}`)
+
+        channel.subscribers.set(subscriberType, m)
+
         this.addSubscriber({
           event_type: subscriberType,
           name: `${m}`,
@@ -1641,6 +1643,8 @@ export class Broadcast extends FabrixGeneric {
           throw new Error(`${hookIn.name} config is invalid`)
         }
 
+        hookIn.handlers.set(commandType, m)
+
         this.app.log.silly(`Adding hookIn ${hookIn.name}.${m} to broadcaster ${this.name} for command ${commandType}`)
         this.addCommand({
           command_type: commandType,
@@ -1924,6 +1928,8 @@ export class Broadcast extends FabrixGeneric {
           )
         }
 
+        projector.managers.set(eventType, m)
+
         this.app.log.silly(`Adding projector ${projector.name}.${m} to broadcaster ${this.name} for event ${eventType}`)
         this.addEvent({
           event_type: eventType,
@@ -1978,6 +1984,8 @@ export class Broadcast extends FabrixGeneric {
             `${processor.name} config is invalid`
           )
         }
+
+        processor.managers.set(eventType, m)
 
         this.app.log.silly(`Adding processor ${processor.name}.${m} to broadcaster ${this.name} for event ${eventType}`)
         this.addEvent({
@@ -2229,6 +2237,12 @@ export class Broadcast extends FabrixGeneric {
    */
   events() {
     return this._events
+  }
+  projectors() {
+    return this._projectors
+  }
+  processors() {
+    return this._processors
   }
 
   /**

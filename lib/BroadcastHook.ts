@@ -127,6 +127,9 @@ export class BroadcastHook extends FabrixGeneric {
 export class BroadcastHookIn extends Generic {
 
   private _broadcasters: Map<string, Broadcast> = new Map()
+
+  private _handlers: Map<string, string> = new Map()
+
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
 
   constructor(app: FabrixApp) {
@@ -182,5 +185,15 @@ export class BroadcastHookIn extends Generic {
 
   set broadcasters (broadcasters) {
     throw new Error(`Can not map broadcasters through this method`)
+  }
+
+  /**
+   * Returns the BroadcastSubsribers
+   */
+  get handlers() {
+    return this._handlers
+  }
+  hasHandler(name) {
+    return this._handlers.has(name)
   }
 }

@@ -52,13 +52,12 @@ export class BroadcastSubscriber {
    */
   async publish (): Promise<BroadcastSubscriber> {
     const json = this.event.toJSON()
-    const rooms = this.channel.listRooms(this.broker.pattern_raw, this.event)
+    const rooms = this.channel.patterns(this.broker.pattern_raw, this.event)
 
     rooms.forEach(v => {
 
       // Bad because this may be or may not be async
       this.app.sockets.room(v).clients((ids = []) => {
-        console.log('brk counting', ids)
         this.app.log.debug(`Publishing ${v} to ${(ids || []).length} subscribers`)
       })
 
@@ -117,6 +116,9 @@ export class BroadcastChannel extends FabrixGeneric {
 
   private _channel
   private _broadcasters: Map<string, Broadcast> = new Map()
+
+  private _subscribers: Map<string, string> = new Map()
+
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
 
   public permissions: Map<string, any> = new Map()
@@ -154,9 +156,15 @@ export class BroadcastChannel extends FabrixGeneric {
     return this._channel
   }
 
-  // get subscribers() {
-  //   return this._channel.
-  // }
+  /**
+   * Returns the BroadcastSubsribers
+   */
+  get subscribers() {
+    return this._subscribers
+  }
+  hasSubscriber(name) {
+    return this._subscribers.has(name)
+  }
 
   getBroadcaster (name) {
     return this._broadcasters.get(name)
@@ -198,7 +206,12 @@ export class BroadcastChannel extends FabrixGeneric {
   // Initial Function to run when a Socket connects this BroadcastChannel
   initialize() { }
 
-  listRooms(pattern, event) {
+  /**
+   * Returns the possible patterns for an event O(n)
+   * @param pattern
+   * @param event
+   */
+  patterns(pattern, event) {
     // Add the raw to the query
     const queryOr = new Set([`${pattern}`])
     let built = pattern

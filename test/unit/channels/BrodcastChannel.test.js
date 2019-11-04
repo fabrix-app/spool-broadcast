@@ -14,6 +14,7 @@ describe('BroadcastChannel', () => {
   it('should exist', () => {
     assert(global.app.channels)
     assert(global.app.channels.Test)
+    assert(global.app.channels.Test2)
   })
 
   before(() => {

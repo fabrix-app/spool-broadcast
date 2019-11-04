@@ -169,6 +169,7 @@ export class BroadcastProject extends FabrixGeneric {
 export class BroadcastProjector extends FabrixGeneric {
 
   private _broadcasters: Map<string, Broadcast> = new Map()
+  private _managers: Map<string, string> = new Map()
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
 
   constructor(app: FabrixApp) {
@@ -224,5 +225,15 @@ export class BroadcastProjector extends FabrixGeneric {
 
   set broadcasters (broadcasters) {
     throw new Error(`Can not map broadcasters through this method`)
+  }
+
+  /**
+   * Returns the BroadcastSubsribers
+   */
+  get managers() {
+    return this._managers
+  }
+  hasManager(name) {
+    return this._managers.has(name)
   }
 }

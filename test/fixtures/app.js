@@ -182,6 +182,40 @@ const App = {
               },
             }
           }
+        },
+
+        Test2: {
+          broadcasters: {
+            /**
+             * Broadcaster that the Test BroadcastChannel is listening to
+             */
+            Test: {
+              /**
+               * Events subscribed to
+               */
+              'test.:test_uuid.created': {
+                created2: {
+                  lifespan: 'eternal',
+                  config: {
+                    priority: 1,
+                    receives: 'Test'
+                  }
+                },
+              },
+              /**
+               * Events subscribed to
+               */
+              'test.:test_uuid.:crud': {
+                crud2: {
+                  lifespan: 'eternal',
+                  config: {
+                    priority: 2,
+                    receives: 'Test'
+                  }
+                },
+              },
+            }
+          }
         }
       },
       hooks: {

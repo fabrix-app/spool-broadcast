@@ -255,7 +255,8 @@ export class BroadcastSpool extends ExtensionSpool {
       broadcaster.makeChannelMap(this.app),
       broadcaster.makePipelineMap(this.app),
       broadcaster.makeHookMap(this.app),
-      broadcaster.makeProjectorMap(this.app)
+      broadcaster.makeProjectorMap(this.app),
+      broadcaster.makeProcessorMap(this.app),
     ])
       .then((maps) => {
         // Make the broadcast resources
@@ -282,7 +283,8 @@ export class BroadcastSpool extends ExtensionSpool {
     this.app.log.silly('BroadcastChannel Map', this.channelMap)
     this.app.log.silly('Pipeline Map', this.pipelineMap)
     this.app.log.silly('Hook Map', this.hookMap)
-    this.app.log.silly('Projection Map', this.projectorMap)
+    this.app.log.silly('Projector Map', this.projectorMap)
+    this.app.log.silly('Processor Map', this.processorMap)
     return Promise.resolve()
   }
 }

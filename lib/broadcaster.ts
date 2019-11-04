@@ -202,8 +202,12 @@ export const broadcaster = {
     Object.keys((app.broadcasts || {})).forEach(bk => {
       app.spools.broadcast.channelMap.set(
         app.broadcasts[bk].constructor.name,
-        app.broadcasts[bk].subscribers()
+        new Map()
       )
+      const channels = app.broadcasts[bk].channels()
+      channels.forEach(channel => {
+        app.spools.broadcast.channelMap.get(app.broadcasts[bk].constructor.name).set(channel.name, channel.subscribers)
+      })
     })
     return app.spools.broadcast.channelMap
   },
@@ -223,32 +227,74 @@ export const broadcaster = {
    * @param app
    */
   makeProjectorMap: (app: FabrixApp) => {
+    // Object.keys((app.broadcasts || {})).forEach(bk => {
+    //   app.spools.broadcast.projectorMap.set(
+    //     app.broadcasts[bk].constructor.name,
+    //     app.broadcasts[bk].projectors()
+    //   )
+    // })
+    // return app.spools.broadcast.projectorMap
+
     Object.keys((app.broadcasts || {})).forEach(bk => {
       app.spools.broadcast.projectorMap.set(
         app.broadcasts[bk].constructor.name,
-        app.broadcasts[bk].events()
+        new Map()
       )
+      const projectors = app.broadcasts[bk].projectors()
+      projectors.forEach(projector => {
+        app.spools.broadcast.projectorMap.get(app.broadcasts[bk].constructor.name).set(projector.name, projector.managers)
+      })
     })
     return app.spools.broadcast.projectorMap
   },
+  makeProcessorMap: (app: FabrixApp) => {
+    // Object.keys((app.broadcasts || {})).forEach(bk => {
+    //   app.spools.broadcast.processorMap.set(
+    //     app.broadcasts[bk].constructor.name,
+    //     app.broadcasts[bk].processors()
+    //   )
+    // })
+    // return app.spools.broadcast.projectorMap
+
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.processorMap.set(
+        app.broadcasts[bk].constructor.name,
+        new Map()
+      )
+      const processors = app.broadcasts[bk].processors()
+      processors.forEach(processor => {
+        app.spools.broadcast.processorMap.get(app.broadcasts[bk].constructor.name).set(processor.name, processor.managers)
+      })
+    })
+    return app.spools.broadcast.processorMap
+  },
 
   makeHookMap: (app: FabrixApp) => {
+    // Object.keys((app.broadcasts || {})).forEach(bk => {
+    //   app.spools.broadcast.hookMap.set(
+    //     app.broadcasts[bk].constructor.name,
+    //     app.broadcasts[bk].commands()
+    //   )
+    // })
+    // return app.spools.broadcast.hookMap
+
     Object.keys((app.broadcasts || {})).forEach(bk => {
       app.spools.broadcast.hookMap.set(
         app.broadcasts[bk].constructor.name,
-        app.broadcasts[bk].commands()
+        new Map()
       )
+      const hooks = app.broadcasts[bk].hooks()
+      hooks.forEach(hook => {
+        app.spools.broadcast.hookMap.get(app.broadcasts[bk].constructor.name).set(hook.name, hook.handlers)
+      })
     })
     return app.spools.broadcast.hookMap
   },
 
   makeBroadcastChannelResources: (app: FabrixApp) => {
-    app.spools.broadcast.channelMap.forEach((value, key, map) => {
-      const channel = app.channels[key]
-
-      const currentRooms = Array.from(value.keys()).map(k => {
-        return `${channel.name}.${k}`
-      })
+    Object.keys(app.channels).forEach((value, key) => {
+      const channel = app.channels[value]
+      const broadcasters = channel.broadcasters
 
       if (channel) {
         channel.initialize()

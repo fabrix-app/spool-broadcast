@@ -42,7 +42,7 @@ export class Client extends FabrixGeneric {
     const mandatory = manager ? manager.mandatory : null
     const timeout = manager ? manager.timeout : this.app.config.get('broadcast.default_publish_timeout')
 
-    console.log('BRK safe_event_type', safe_event_type)
+    this.app.log.debug('publishing safe_event_type', safe_event_type)
 
     const send: {[key: string]: any} = {
       type: safe_event_type, // type
