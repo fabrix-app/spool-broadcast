@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.35](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.34...v1.6.35) (2019-11-04)
+
+
+### Features
+
+* add channelsubscriber table ([b6acecb](https://github.com/fabrix-app/spool-broadcast/commit/b6acecb))
+
 ### [1.6.34](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.33...v1.6.34) (2019-11-02)
 
 
