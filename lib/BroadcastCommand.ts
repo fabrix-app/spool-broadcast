@@ -15,6 +15,8 @@ export class BroadcastCommand extends FabrixGeneric {
   object: FabrixModel
   data: {[key: string]: any} //  | {[key: string]: any}[]
   data_updates: {[key: string]: any} // | {[key: string]: any}[]
+  data_applied: {[key: string]: any}
+  data_previous: {[key: string]: any}
   metadata: {[key: string]: any}
   created_at: string // Date
   version: number
@@ -75,6 +77,8 @@ export class BroadcastCommand extends FabrixGeneric {
     this.command_type = this.replaceParams(command_type, keys, data)
     this.causation_uuid = causation_uuid
     this.data = data
+    this.data_previous = isArray(data) ? [] : {}
+    this.data_applied = isArray(data) ? [] : {}
     this.metadata = metadata
     this.version = version
     this.created_at = new Date(Date.now()).toISOString()
@@ -144,7 +148,7 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   /**
-   * Reload the data object
+   * Reload the data object from the database
    * @param _data
    * @param options
    * @private
@@ -165,6 +169,7 @@ export class BroadcastCommand extends FabrixGeneric {
     }
     else {
       updates = Object.assign({}, _data.toJSON())
+      // Call sequelize's reload function
       return _data.reload(options)
         .then(() => {
           _data.isReloaded = true
@@ -178,7 +183,7 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   /**
-   * Reload the data object|array
+   * Reload the data object|array with it's previous values
    * @param options
    */
   async reload(options) {
@@ -205,15 +210,23 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   private _approvedUpdates (_data, _updates, approved = []) {
+    const applied = {}, previous = {}
     Object.keys(_updates).forEach((k, i) => {
       if (approved.indexOf(k) > -1) {
+
+        // Record the applied changes
+        if (_data[k] !== _updates[k]) {
+          applied[k] = _updates[k]
+          previous[k] = _data[k]
+        }
+
         // Ugly sequelize hack
         _data[k] = _updates[k]
         _data.setDataValue(k, _updates[k])
         _data.set(k, _updates[k])
       }
     })
-    return _data
+    return [previous, applied]
   }
 
   /**
@@ -228,11 +241,15 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (isArray(this.data)) {
       this.data.forEach((d, i) => {
-        this._approvedUpdates(this.data[i], this.data_updates[i], approved)
+        const [ previous, applied ] = this._approvedUpdates(this.data[i], this.data_updates[i], approved)
+        this.data_applied[i] = applied
+        this.data_previous[i] = previous
       })
     }
     else {
-      this._approvedUpdates(this.data, this.data_updates, approved)
+      const [ previous, applied ] = this._approvedUpdates(this.data, this.data_updates, approved)
+      this.data_applied = applied
+      this.data_previous = previous
     }
 
     return this.data
@@ -311,15 +328,26 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (isArray(this.data)) {
       this.data.forEach((d, i) => {
-        if (d && typeof d.changed === 'function') {
-          const dChanges = d.changed() || []
-          return changes.push({[i]: dChanges})
+        if (this.data_updates[i] && this.data_applied[i]) {
+          return changes.push({[i]: Object.keys(this.data_applied[i])})
         }
+        // if (this.data_updates && this.data_updates[i]) {
+        //   //
+        // }
+        // if (d && typeof d.changed === 'function') {
+        //   const dChanges = d.changed() || []
+        //   return changes.push({[i]: dChanges})
+        // }
       })
     }
-    else if (this.data && typeof this.data.changed === 'function') {
-      changes = this.data.changed() || []
+    else if (!isArray(this.data)) {
+      if (Object.keys(this.data_applied).length > 0) {
+        changes = Object.keys(this.data_applied)
+      }
     }
+    // else if (this.data && typeof this.data.changed === 'function') {
+    //   changes = this.data.changed() || []
+    // }
 
     if (!isArray(changes)) {
       throw new Error('metadata changes should be an array')
@@ -338,7 +366,20 @@ export interface Command {
   mergeAs(method, handler, command): any
   mergeEachAs(method, handler, command): any
   includeAs(method, handler, data): any
+  changed(key?): boolean
+  // changes(key?): string[]
 }
+
+BroadcastCommand.prototype.changed = function(str?) {
+  if (str && this.metadata && this.metadata.changes) {
+    return !!this.metadata.changes[str]
+  }
+  return false
+}
+
+// BroadcastCommand.prototype.changes = function() {
+//   return this.metadata.changes
+// }
 
 BroadcastCommand.prototype.toJSON = function(str) {
 

@@ -23,8 +23,12 @@ class Create extends Hook {
 
 class Update extends Hook {
   async run() {
+
+    const approvedUpdates = ['name']
     return this.command.reload(this.options)
       .then(() => {
+
+        this.command.approveUpdates(approvedUpdates)
 
         // Log the creation time
         this.command.createdAt()

@@ -15,6 +15,7 @@ describe('Entry', () => {
     global.app.entries.Test.create({}, { name: 'test' }, {})
       .then(([_event, _options]) => {
         test_uuid = _event.data.test_uuid
+
         done()
       })
     .catch(err => {
