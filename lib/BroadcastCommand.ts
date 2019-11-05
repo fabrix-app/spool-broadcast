@@ -328,7 +328,10 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (isArray(this.data)) {
       this.data.forEach((d, i) => {
-        if (this.data_applied && this.data_applied[i]) {
+        if (d.isNewRecord) {
+          changes.push({[i]: Object.keys(d.toJSON())})
+        }
+        else if (this.data_applied && this.data_applied[i]) {
           return changes.push({[i]: Object.keys(this.data_applied[i])})
         }
         // if (this.data_updates && this.data_updates[i]) {
@@ -341,7 +344,10 @@ export class BroadcastCommand extends FabrixGeneric {
       })
     }
     else if (!isArray(this.data)) {
-      if (Object.keys(this.data_applied || {}).length > 0) {
+      if (this.data.isNewRecord) {
+        changes = Object.keys(this.data.toJSON())
+      }
+      else if (Object.keys(this.data_applied || {}).length > 0) {
         changes = Object.keys(this.data_applied)
       }
     }
