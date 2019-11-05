@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.41](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.40...v1.6.41) (2019-11-05)
+
+
+### Bug Fixes
+
+* don't call toJSON as it can be destructive ([3829e91](https://github.com/fabrix-app/spool-broadcast/commit/3829e91))
+
 ### [1.6.40](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.39...v1.6.40) (2019-11-05)
 
 
