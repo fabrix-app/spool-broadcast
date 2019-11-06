@@ -1,6 +1,6 @@
 import {FabrixApp} from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { get, isArray, isObject } from 'lodash'
+import { set, get, isArray, isObject } from 'lodash'
 import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
@@ -32,6 +32,7 @@ export class BroadcastCommand extends FabrixGeneric {
   pointer: any
   cancel_methods: any
   // event_type?: string = null
+  // _changes: string[]
 
   constructor(
     app: FabrixApp,
@@ -255,6 +256,18 @@ export class BroadcastCommand extends FabrixGeneric {
     return this.data
   }
 
+  /**
+   * Apply data so it is detected in the changes after a reload
+   * @param path
+   * @param value
+   */
+  apply(path, value) {
+    set(this.data_previous, path, get(this.data, path))
+    // set(this.data_updates, path, get(this.data, path))
+    set(this.data_applied, path, value)
+    set(this.data, path, value)
+  }
+
   private _combine (_data, _updates) {
     _updates = _updates.toJSON ? _updates.toJSON() : _updates
 
@@ -329,10 +342,10 @@ export class BroadcastCommand extends FabrixGeneric {
     if (isArray(this.data)) {
       this.data.forEach((d, i) => {
         if (d.isNewRecord) {
-          changes.push({[i]: d.attributes})
+          changes[i] = [...changes[i], ...d.attributes]
         }
         else if (this.data_applied && this.data_applied[i]) {
-          return changes.push({[i]: Object.keys(this.data_applied[i])})
+          return changes[i] = [...changes[i], ...Object.keys(this.data_applied[i])]
         }
         // if (this.data_updates && this.data_updates[i]) {
         //   //
@@ -345,11 +358,14 @@ export class BroadcastCommand extends FabrixGeneric {
     }
     else if (!isArray(this.data)) {
       if (this.data.isNewRecord) {
-        changes = this.data.attributes
+        changes = [...changes, ...this.data.attributes]
       }
       else if (Object.keys(this.data_applied || {}).length > 0) {
-        changes = Object.keys(this.data_applied)
+        changes = [...changes, ...Object.keys(this.data_applied)]
       }
+
+      // console.log('BRK non seq changes', changes, Object.keys(this.data_applied || {}))
+      // console.log('BRK seq changes', this.data.changed(), this.data.previous())
     }
     // else if (this.data && typeof this.data.changed === 'function') {
     //   changes = this.data.changed() || []

@@ -30,6 +30,8 @@ class Update extends Hook {
 
         this.command.approveUpdates(approvedUpdates)
 
+        this.command.apply('test', 'testing 1234')
+
         // Log the creation time
         this.command.createdAt()
         this.command.updatedAt()
@@ -37,6 +39,7 @@ class Update extends Hook {
         // Log the changes to the command metadata
         this.command.changes()
 
+        console.log('brk test changes', this.command.data_applied, this.command.data_updates, this.command.data_previous)
         return [this.command, this.options]
       })
   }
