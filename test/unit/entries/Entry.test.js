@@ -23,6 +23,16 @@ describe('Entry', () => {
     })
   })
 
+  it('should bulk create', (done) => {
+    global.app.entries.Test.bulkCreate({}, [{ name: 'test' }], {})
+      .then(([_event, _options]) => {
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
   it('should update', (done) => {
     global.app.entries.Test.update({}, {
       test_uuid: test_uuid,

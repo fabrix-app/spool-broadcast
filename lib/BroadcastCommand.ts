@@ -342,10 +342,10 @@ export class BroadcastCommand extends FabrixGeneric {
     if (isArray(this.data)) {
       this.data.forEach((d, i) => {
         if (d.isNewRecord) {
-          changes[i] = [...changes[i], ...d.attributes]
+          changes[i] = [...(changes[i] || []), ...d.attributes]
         }
         else if (this.data_applied && this.data_applied[i]) {
-          return changes[i] = [...changes[i], ...Object.keys(this.data_applied[i])]
+          return changes[i] = [...(changes[i] || []), ...Object.keys(this.data_applied[i])]
         }
         // if (this.data_updates && this.data_updates[i]) {
         //   //
