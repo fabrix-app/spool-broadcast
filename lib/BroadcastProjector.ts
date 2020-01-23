@@ -82,10 +82,12 @@ export class BroadcastProject extends FabrixGeneric {
    */
   async nack(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged && this.message) {
+      this.app.log.debug(`Nacking ${this.name}`)
       this.isAcknowledged = true
       return this.message.nack()
     }
     else if (!this.isAcknowledged && !this.message) {
+      this.app.log.debug(`Can not nack empty message for ${this.name}`)
       this.isAcknowledged = true
       return Promise.reject([this.event, this.options])
     }
@@ -100,10 +102,12 @@ export class BroadcastProject extends FabrixGeneric {
    */
   async reject(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged && this.message) {
+      this.app.log.debug(`Rejecting ${this.name}`)
       this.isAcknowledged = true
       return this.message.reject()
     }
     else if (!this.isAcknowledged && !this.message) {
+      this.app.log.debug(`Can not reject empty message for ${this.name}`)
       this.isAcknowledged = true
       return Promise.reject([this.event, this.options])
     }

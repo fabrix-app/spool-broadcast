@@ -377,7 +377,8 @@ export class Broadcast extends FabrixGeneric {
     let breakException
     // Setup Before Commands in priority order
     const beforeCommandsAsc = new Map([...beforeCommands.entries()].sort((a, b) => {
-      return beforeHandlers.get(a[0]).priority - beforeHandlers.get(b[0]).priority
+      return beforeHandlers
+        .get(a[0]).priority - beforeHandlers.get(b[0]).priority
     }))
     // Log the order
     const slog = []
@@ -465,7 +466,7 @@ export class Broadcast extends FabrixGeneric {
 
           if (handler && handler.include && handler.include !== false) {
             command.includeOn(m, handler, _command)
-            this.app.log.debug(`${this.name}: Before Handler ${m} included data as ${handler.includeAs}`)
+            this.app.log.debug(`${this.name}: Before Handler ${m} included data on ${handler.include}`)
           }
 
           command.complete = true
@@ -562,6 +563,7 @@ export class Broadcast extends FabrixGeneric {
             return [command, options]
           }
 
+          // Validate after the step
           return this.validate(validators, _command, options)
             .catch(err => {
               this.app.log.error(
@@ -580,15 +582,18 @@ export class Broadcast extends FabrixGeneric {
           if (handler && handler.merge && handler.merge !== false) {
             command.mergeData(m, handler, _command)
           }
+
           if (handler && handler.push && handler.push !== false) {
             command.pushOn(m, handler, _command)
           }
+
           if (handler && handler.zip && handler.zip !== false) {
             command.zip(m, handler, _command)
           }
-          if (handler && handler.include === true) {
-            command.includeAs(m, handler, _command)
-            this.app.log.debug(`After Handler ${m} included data as ${handler.includeAs}`)
+
+          if (handler && handler.include && handler.include !== false) {
+            command.includeOn(m, handler, _command)
+            this.app.log.debug(`${this.name}: After Handler ${m} included data on ${handler.include}`)
           }
 
           command.complete = true
