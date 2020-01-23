@@ -888,6 +888,11 @@ export class Broadcast extends FabrixGeneric {
       return Promise.reject(err)
     }
 
+    // Throw a warning if this is being processed without a transaction
+    if (!options.transaction) {
+      this.app.log.warn(`${this.name} broadcasting ${event.event_type} without a transaction!` )
+    }
+
     // Publish the strong events
     return this.projectStrong(strong, strongManagers, event, options)
       .then(([_event, _options]) => {
@@ -920,7 +925,7 @@ export class Broadcast extends FabrixGeneric {
             return this.projectEventual(eventual, eventualManagers, _event, _options)
               .then(results => [_event, _options])
               .catch(err => {
-                this.app.log.error(`${event.event_type} Broadcast.project.projectEventual after commit`, err)
+                this.app.log.error(`Unhandled: ${event.event_type} Broadcast.project.projectEventual after commit`, err)
                 throw new Error(err)
               })
           })
@@ -1169,13 +1174,13 @@ export class Broadcast extends FabrixGeneric {
         manager: manager
       })
         .catch(err => {
-          this.app.log.error('Publishing Error', err)
+          this.app.log.error(`Broadcast ${this.name} Publishing Error`, err)
           // TODO retry regression
           return [event, options]
         })
     })
       .then((res) => {
-        this.app.log.silly('Publishing Result', res)
+        this.app.log.silly(`Broadcast ${this.name} Publishing Result`, res)
         // TODO retry regression
         return [event, options]
       })

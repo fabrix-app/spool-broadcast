@@ -44,7 +44,7 @@ export class BroadcastSpool extends ExtensionSpool {
           return this.mapSeries
         },
         set: (newInstances) => {
-          throw new Error('broadcastSeries can not be set through FabrixApp, check spool-broadcaster instead')
+          throw new Error('broadcastSeries can not be set through FabrixApp, check spool-broadcast instead')
         },
         enumerable: true,
         configurable: true
@@ -54,7 +54,7 @@ export class BroadcastSpool extends ExtensionSpool {
           return this.transaction
         },
         set: (newInstances) => {
-          throw new Error('broadcastTransaction can not be set through FabrixApp, check spool-broadcaster instead')
+          throw new Error('broadcastTransaction can not be set through FabrixApp, check spool-broadcast instead')
         },
         enumerable: true,
         configurable: true
@@ -64,7 +64,7 @@ export class BroadcastSpool extends ExtensionSpool {
       //     return this.app.entries
       //   },
       //   set: (newInstances) => {
-      //     throw new Error('entries can not be set through FabrixApp, check spool-broadcaster instead')
+      //     throw new Error('entries can not be set through FabrixApp, check spool-broadcast instead')
       //   },
       //   enumerable: true,
       //   configurable: true

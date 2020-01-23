@@ -560,7 +560,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
             method,
             this.event_type,
             `index ${i}`,
-            'merging values',
+            'folding values',
             Object.keys(this.data[i].toJSON()), '->', Object.keys(d.toJSON())
           )
 
@@ -578,7 +578,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
       this.app.log.silly(
         method,
         this.event_type,
-        'merging values',
+        'folding values',
         Object.keys(this.data.toJSON()), '->', Object.keys(event.data.toJSON())
       )
 
@@ -587,7 +587,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
       })
     }
     this.app.log.debug(
-      `Manager ${method} merged ${this.event_type} -> ${event.event_type}`
+      `Manager ${method} folded ${this.event_type} -> ${event.event_type}`
     )
 
     return this
@@ -659,7 +659,7 @@ BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
 
 /**
  * Push data from one event to another
- * Set pushAsArray to true, if the event.data and the previous event.data are both Arrays and want the zipped
+ * Set pushAsArray to true, if the event.data and the previous event.data are both Arrays and want the zipped by primary key result
  * @param method
  * @param manager
  * @param event

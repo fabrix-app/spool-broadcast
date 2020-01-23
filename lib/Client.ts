@@ -2,6 +2,7 @@ import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
 import { BroadcastEvent } from './api/models'
 import { Broadcast } from './Broadcast'
+import { omit } from 'lodash'
 
 export class Client extends FabrixGeneric {
   public messenger
@@ -46,13 +47,27 @@ export class Client extends FabrixGeneric {
 
     const send: {[key: string]: any} = {
       type: safe_event_type, // type
-      body: event, // message,
       routingKey,
       correlationId,
       headers: {
         causation_uuid: event.causation_uuid
       },
       sequenceNo
+    }
+
+    // Attempt to convert this event from BroadcastEvent to JSON
+    // If it fails, then it can not be published to the client
+    try {
+      // Omit the build info
+      send.body = omit(event.toJSON(), [
+        '_data',
+        '_metadata',
+        '_object'
+      ])
+    }
+    catch (err) {
+      this.app.log.error('Broadcaster: Unhandled error, unable to publish to messenger', event_type, err)
+      return [event, options]
     }
 
     // Set the Manger's Expires After
@@ -70,15 +85,6 @@ export class Client extends FabrixGeneric {
     // Set the Manager's timeout
     if (timeout !== null) {
       send.timeout = timeout
-    }
-
-    // Attempt to convert this event from BroadcastEvent to JSON
-    try {
-      event.toJSON()
-    }
-    catch (err) {
-      this.app.log.error('Unhandled - Unable to publish to messenger', event_type, err)
-      return [event, options]
     }
 
     // Publish this on Rabbit MQ
