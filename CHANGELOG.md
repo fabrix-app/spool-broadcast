@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.45](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.44...v1.6.45) (2020-01-23)
+
+
+### Bug Fixes
+
+* reduces overhead of publish to client by not including `_x` ([b31f72b](https://github.com/fabrix-app/spool-broadcast/commit/b31f72b))
+
 ### [1.6.44](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.43...v1.6.44) (2020-01-23)
 
 
