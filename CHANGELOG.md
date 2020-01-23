@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.44](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.43...v1.6.44) (2020-01-23)
+
+
+### Features
+
+* add some warnings to nacking ([01677e2](https://github.com/fabrix-app/spool-broadcast/commit/01677e2))
+
 ### [1.6.43](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.42...v1.6.43) (2019-11-06)
 
 
