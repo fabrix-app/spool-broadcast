@@ -334,6 +334,24 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   /**
+   * Add an updated_at value to the data
+   */
+  deletedAt() {
+    if (isArray(this.data)) { // && this.changes().length > 0) {
+      // TODO this doesn't look right, since there will be an array of data and an array of changes
+      this.data.forEach((d, i) => {
+        if (d) {
+          d.deleted_at = new Date(Date.now()).toISOString()
+        }
+      })
+    }
+    else if (this.data) { //  && this.changes().length > 0) {
+      this.data.deleted_at = new Date(Date.now()).toISOString()
+    }
+    return this
+  }
+
+  /**
    * Log Changes into the Metadata
    */
   changes() {
@@ -375,7 +393,7 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('metadata changes should be an array')
     }
 
-    this.app.log.silly(`${this.object.constructor.name} changes`, changes)
+    this.app.log.silly(`${this.command_type} ${this.object.constructor.name} changes`, changes)
 
     return this.metadata.changes = changes
   }

@@ -1066,11 +1066,11 @@ export class Broadcast extends FabrixGeneric {
             }
 
             if (_event.action && _event.action === 'retry') {
-              this.app.log.error(`${p.name} BRK unhandled retry action for ${m}`)
+              this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
               return [event, options]
             }
             if (_event.action === false) {
-              this.app.log.debug(`${m} to continue without data`)
+              this.app.log.debug(`${this.name} ${m} to continue without data`)
               return [event, options]
             }
           }
@@ -1089,7 +1089,7 @@ export class Broadcast extends FabrixGeneric {
               }
             })
             if (_event.every(_e => _e[0].action && _e[0].action === 'retry')) {
-              this.app.log.debug.error(`${p.name} BRK unhandled retry action for ${m} in list of events`)
+              this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
               return [event, options]
             }
             if (_event.every(_e => _e[0].action && _e[0].action === false)) {
@@ -1102,7 +1102,7 @@ export class Broadcast extends FabrixGeneric {
           if (m) {
             event.chain_events.push(m)
           }
-          this.app.log.silly('current chain_events', event.chain_events)
+          this.app.log.silly(this.name, m, 'current chain_events', event.chain_events)
 
           if (manager && manager.merge && manager.merge !== false) {
               event.mergeData(m, manager, _event)
@@ -1129,7 +1129,7 @@ export class Broadcast extends FabrixGeneric {
         .catch(err => {
           breakException = err
           // TODO perhaps retry up to a limit?
-          this.app.log.error(`${p.name} threw an error - fatal`, err)
+          this.app.log.error(`${this.name} ${p.name} threw an error - fatal`, err)
           return Promise.reject(err)
         })
     })
@@ -1180,7 +1180,7 @@ export class Broadcast extends FabrixGeneric {
         })
     })
       .then((res) => {
-        this.app.log.silly(`Broadcast ${this.name} Publishing Result`, res)
+        this.app.log.silly(`Broadcast ${this.name} Published Results`, res)
         // TODO retry regression
         return [event, options]
       })
