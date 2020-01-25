@@ -65,6 +65,8 @@ Event listeners that will trigger more events
 ### Projectors
 Event listener that will save data from an event into a projection
 
+![Broadcast Event Loop](https://github.com/fabrix-app/spool-broadcast/blob/master/images/spool-broadcast-event-loop.png)
+
 
 ## Configuration
 ```js
