@@ -11,22 +11,23 @@
 
 :package: Broadcast Spool
 
-A Spool that implements CQRS/Event Sourcing patterns.
+A Spool that implements CQRS/Event Sourcing patterns, with extraordinary routing pattern matching.
 
-Spool-broadcast helps distribute your Fabrix Applications with a specialized broadcasting pattern over a PubSub and WebSockets.
+Spool-broadcast helps distribute your [Fabrix Applications](https://github.com/fabrix-app/fabrix) with a specialized broadcasting pattern over a PubSub and WebSockets.
 
 ## Install
+You will need NPM or Yarn installed to install spool-broadcast (and fabrix)
+
 ```sh
 $ npm install --save @fabrix/spool-broadcast
 ```
 
-Broadcast has a few dependency spools:
+Broadcast has a few dependency Spools:
+
+Joi, Errors, Sequelize, Realtime
 
 ```sh
-$ npm install --save @fabrix/spool-realtime
-$ npm install --save @fabrix/spool-joi
-$ npm install --save @fabrix/spool-errors
-$ npm install --save @fabrix/spool-sequelize
+$ npm install --save @fabrix/spool-realtime @fabrix/spool-joi @fabrix/spool-errors @fabrix/spool-sequelize, @fabrix/spool-realtime
 ```
 
 ## Configure
@@ -51,21 +52,44 @@ export const main = {
 ```
 ## Definitions
 ### SAGA
-A running pattern that acts as a smart circuit breaker
+A running pattern that acts as a smart circuit breaker.  For example, when there is an error in the event loop, operations that we're called in the SAGA will be given a cancel command to "Reverse" what they did.  In real life, this is something like where your operation books a flight, a hotel, and a car, if the car if the flight is not available, you would want to cancel the booking of the hotel and car.   
 
 ### Pipelines
-An Event Emitter that runs Actions and Commands in a Sequence
+An Event Emitter that runs Actions and Commands in a Sequence.  They are for "Transaction Blocks", for example: when you want certain operations to happen in a sequence that have clear and determined seperations in transactions.
 
 ### Hooks
-Command listeners that will run before or after the SAGA
+Command listeners that will run before or after the SAGA.  Once a command is requested, you may wish to do some validation on the command, imbue it with more data, or run some various logic or calculations. Hooks can be used before and after the SAGA, however, they are not reversed like operations in the SAGA are.
 
 ### Processors
-Event listeners that will trigger more events
+Event listeners that will trigger more events.  When an event is dispatched, there may be commands that you want to correlate with the command.  When a processor is called, it will return it's value before the next tick in the Broadcast Event loop. This is what allows for spool-broadcast to make exteremly in-depth trees of commands/events predictably.
 
 ### Projectors
-Event listener that will save data from an event into a projection
+Event listener that will save data from an event into a projection. A projection are just an easy Read table(s) that make reading from aggregates faster and easier to understand.
+
+### Aggregates
+TODO
+
+### Channel
+A list of socket subscribers that get notified when an event occurs. For example, you want people to know in a different application that something has happened on your application.
 
 ![Broadcast Event Loop](https://github.com/fabrix-app/spool-broadcast/blob/master/images/spool-broadcast-event-loop.png)
+
+### Concepts
+Spool-broadcast uses a transaction to make an "all or nothing" ACID transaction for the resulting Aggregate update.  You should use the SAGA pattern in the command pipe to make non-acid transactions mid flight, or use Pipelines to create transaction blocks.  This allows for complex trees of commands and events to be performed in a reliable and predictable way.
+
+A full event flow example:
+
+- Create User (command)
+  - Is User Unique (pre-hook)
+  - Tell 3rd party that user is joining (saga)
+     - Anything that fails after this point, Tell the 3rd party to redact that operation (saga reverse)
+  - Add 3rd party response to User data (post-hook)
+- User is Created (event)
+  - Add User's Profile in a database (projectors)
+  - Add User to New Friends List (processor)
+    - Create Friend List Entry (command)
+  - Update User's friends list in the database (projectors)
+  - Broadcast to a Channel that User is created (channel)
 
 
 ## Configuration
@@ -192,8 +216,7 @@ export const broadcast = {
 
 
 ## Contributing
-We love contributions! Please check out our [Contributor's Guide](https://github.com/fabrix-app/fabrix/blob/master/CONTRIBUTING.md) for more
-information on how our projects are organized and how to get started.
+We love contributions! Please check out our [Contributor's Guide](https://github.com/fabrix-app/fabrix/blob/master/CONTRIBUTING.md) for more information on how our projects are organized and how to get started.
 
 ### Release Instructions
 When the master is tagged with a release, it will automatically publish to npm, updates the Changelog and bumps the version. Fabrix uses the [standard-version library](https://www.npmjs.com/package/standard-version) to manage it all.
