@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.46](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.45...v1.6.46) (2020-01-27)
+
+
+### Features
+
+* adds diagram to readme ([1e8298e](https://github.com/fabrix-app/spool-broadcast/commit/1e8298e))
+* adds diagrams ([b407c2a](https://github.com/fabrix-app/spool-broadcast/commit/b407c2a))
+* better handle unhandled messages ([83ec422](https://github.com/fabrix-app/spool-broadcast/commit/83ec422))
+
 ### [1.6.45](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.44...v1.6.45) (2020-01-23)
 
 
