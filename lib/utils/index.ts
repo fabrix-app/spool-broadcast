@@ -191,16 +191,21 @@ export const utils = {
   registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
     const broadcasterClient = app.broadcaster
 
+    // Create a safe event type name
     const safe_event_type = event_type.replace(/:/g, '_')
 
+    // If there are eventual events for this event type
     if (types.eventual && types.eventual.size > 0) {
-      app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
 
+      // Check that there is a manager for each eventual type
       if (types.eventual.size !== managers.size) {
-        app.log.error('Mismatch handlers to managers! Will not listen to:', types.eventual, managers)
+        app.log.error('Mismatch handlers to managers! Will not listen to:', broadcaster.name, types.eventual, managers)
         return
       }
 
+      app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
+
+      // Create the Handler and subscribe it only to this que
       const handler = rabbit.handle(`${safe_event_type}`, req => {
         // if (!app.api.broadcasts[broadcastName]) {
         //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
@@ -232,6 +237,8 @@ export const utils = {
         return Promise.all(promises)
       })
 
+      // broadcaster.name
+
       handler.catch( function( err, msg ) {
         // do something with the error & message
         app.log.error('Broadcaster Rabbit Handler Error!', msg.type, err)
@@ -247,14 +254,14 @@ export const utils = {
   onUnhandled(app: FabrixApp, msg) {
     // handle the message here
     //
-    app.log.error(`Broadcaster Rabbit Unhandled ${msg.type} ${msg.body}`)
-    app.log.info(`Aacking ${msg.type} Message by Default`)
-    return msg.ack()
+    app.log.error(`Broadcaster Rabbit Unhandled ${msg.type} ${JSON.stringify(msg.body)}`)
+    app.log.info(`Nacking ${msg.type} Message by Default`)
+    return msg.nack()
   },
 
   onReturned(app: FabrixApp, msg) {
     // Unroutable messages that were published with mandatory: true
-    app.log.error(`Broadcaster Rabbit Returned ${msg.type} ${msg.body}`)
+    app.log.error(`Broadcaster Rabbit Returned ${msg.type} ${JSON.stringify(msg.body)}`)
     app.log.info(`Nacking ${msg.type} Message by Default`)
     return msg.nack()
   },
@@ -282,7 +289,7 @@ export const utils = {
     let p
 
     if (message.fields.redelivered) {
-      app.log.warn('Rabbit Message', message.type, 'is being redelivered!')
+      app.log.warn('Rabbit Message', message.type, 'was redelivered!')
     }
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
@@ -312,6 +319,7 @@ export const utils = {
           `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name}`
         )
         app.log.error('Broadcaster Utils.runProjector err', err)
+        message.nack()
         return Promise.reject(err)
       }
 
