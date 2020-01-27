@@ -201,7 +201,7 @@ export const utils = {
         return
       }
 
-      rabbit.handle(`${safe_event_type}`, req => {
+      const handler = rabbit.handle(`${safe_event_type}`, req => {
         // if (!app.api.broadcasts[broadcastName]) {
         //   app.log.error(`No projector defined for projector event: ${event_type}. event body was:` +
         //     `${JSON.stringify(event.body)}`)
@@ -231,27 +231,43 @@ export const utils = {
         //
         return Promise.all(promises)
       })
-        .catch( function( err, msg ) {
+
+      handler.catch( function( err, msg ) {
         // do something with the error & message
-        app.log.error('Rabbit Handler Error!', err)
+        app.log.error('Broadcaster Rabbit Handler Error!', msg.type, err)
+        app.log.error('Broadcaster Rabbit Handler Error Msg!', msg.type, msg)
+        app.log.info('Broadcaster Rabbit Handler Nacking by default', msg.type)
         msg.nack()
+        return err
       })
+
     }
   },
 
-  onUnhandled(msg) {
+  onUnhandled(app: FabrixApp, msg) {
     // handle the message here
-  },
-  onReturned(msg) {
-    // Unroutable messages that were published with mandatory: true
+    //
+    app.log.error(`Broadcaster Rabbit Unhandled ${msg.type} ${msg.body}`)
+    app.log.info(`Aacking ${msg.type} Message by Default`)
+    return msg.ack()
   },
 
-  nackUnhandled(msg) {
-    // Sends all unhandled messages back to the queue.
+  onReturned(app: FabrixApp, msg) {
+    // Unroutable messages that were published with mandatory: true
+    app.log.error(`Broadcaster Rabbit Returned ${msg.type} ${msg.body}`)
+    app.log.info(`Nacking ${msg.type} Message by Default`)
+    return msg.nack()
   },
-  rejectUnhandled(msg) {
+
+  // nackUnhandled(app: FabrixApp, msg) {
+  //   // Sends all unhandled messages back to the queue.
+  // },
+  // rejectUnhandled(app: FabrixApp, msg) {
     // Rejects unhandled messages so that will will not be requeued. DO NOT use this unless there are dead letter exchanges for all queues.
-  },
+  // },
+  // registerUnhandled(app: FabrixApp, msg) {
+  //   //
+  // },
 
   /**
    * Run Eventual Projections
@@ -286,24 +302,35 @@ export const utils = {
         app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
       }
       catch (err) {
-        app.log.error('Utils.runProjector', err)
-        return Promise.resolve()
+        app.log.error('Broadcaster Utils.runProjector err', err)
+        message.nack()
+        return Promise.reject(err)
       }
 
       if (!client.active_broadcasts.has(broadcaster.name)) {
-        const err = new Error(`Client should have active_broadcast of ${broadcaster.name}`)
-        app.log.error('Utils.runProjector', err)
-        return Promise.resolve()
+        const err = new Error(
+          `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name}`
+        )
+        app.log.error('Broadcaster Utils.runProjector err', err)
+        return Promise.reject(err)
       }
+
       if (typeof p.run !== 'function') {
-        const err = new Error(`${broadcaster.name} ${p.name} should have a run function!`)
-        app.log.error('Utils.runProjector', err)
-        return Promise.resolve()
+        const err = new Error(
+          `${broadcaster.name} ${p.name} should have a run function!`
+        )
+        app.log.error('Broadcaster Utils.runProjector err', err)
+        message.nack()
+        return Promise.reject(err)
       }
       if (typeof p.ack !== 'function') {
-        const err = new app.errors.GenericError('E_BAD_REQUEST', `${broadcaster.name} ${p.name} should have an ack function!`)
-        app.log.error('Utils.runProjector', err)
-        return Promise.resolve()
+        const err = new app.errors.GenericError(
+          'E_BAD_REQUEST',
+          `${broadcaster.name} ${p.name} should have an ack function!`
+        )
+        app.log.error('Broadcaster Utils.runProjector err', err)
+        message.nack()
+        return Promise.reject(err)
       }
 
       // so we know who should handle an interrupt call

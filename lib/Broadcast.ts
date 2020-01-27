@@ -1102,6 +1102,7 @@ export class Broadcast extends FabrixGeneric {
           if (m) {
             event.chain_events.push(m)
           }
+
           this.app.log.silly(this.name, m, 'current chain_events', event.chain_events)
 
           if (manager && manager.merge && manager.merge !== false) {

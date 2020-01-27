@@ -6,7 +6,7 @@ import { Client } from './Client'
 import {BroadcastObjectModel} from './BroadcastObjectModel'
 
 // RabbitMQ TODO make this a generic instead of hardcode
-const rabbit = require('rabbot')
+import rabbit from 'rabbot'
 
 export const broadcaster = {
 
@@ -23,15 +23,48 @@ export const broadcaster = {
     //   {level: 'info', stream: app.log.info(process.stdout) },
     //   {level: 'debug', stream: app.log.debug(process.stdout) }
     // )
-    // app.spools.broadcast.broadcastTransaction = utils.resolveTransaction
 
     // automatically nack exceptions in handlers
     rabbit.nackOnError()
     //
     rabbit.rejectUnhandled()
 
+    broadcaster.registerOnUnhandled(app, rabbit)
+    broadcaster.registerOnReturned(app, rabbit)
+
     return
   },
+
+  registerOnUnhandled(app: FabrixApp, _rabbit: rabbit) {
+    //
+    _rabbit.onUnhandled(function (message ) {
+      utils.onUnhandled(app, message)
+    })
+    return _rabbit
+  },
+
+  registerOnReturned(app: FabrixApp, _rabbit: rabbit) {
+    //
+    _rabbit.onReturned(function (message) {
+      utils.onReturned(app, message)
+    })
+    return _rabbit
+  },
+  // registerNackUnhandled(app: FabrixApp, _rabbit) {
+  //   //
+  //   _rabbit.nackUnhandled(function (message ) {
+  //     utils.nackUnhandled(app, message)
+  //   })
+  //   return _rabbit
+  // },
+  // registerUnhandled(app: FabrixApp, _rabbit) {
+  //
+  //   _rabbit.registerUnhandled(function (message ) {
+  //     utils.registerUnhandled(app, message)
+  //   })
+  //   return _rabbit
+  // },
+
 
   /**
    * add Model Hooks to models that inherit from BroadcastObjectModel
@@ -60,23 +93,6 @@ export const broadcaster = {
   copyDefaults: (app: FabrixApp) => {
     app.config.set('broadcastDefaults', clone(app.config.get('broadcast')))
     return Promise.resolve({})
-  },
-
-  registerOnUnhandled(app: FabrixApp) {
-    //
-    return
-  },
-  registerOnReturned(app: FabrixApp) {
-    //
-    return
-  },
-  registerNackUnhandled(app: FabrixApp) {
-    //
-    return
-  },
-  registerUnhandled(app: FabrixApp) {
-    //
-    return
   },
 
   /**
