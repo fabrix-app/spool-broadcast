@@ -3,16 +3,16 @@ import { Broadcast } from './Broadcast'
 import { FabrixApp } from '@fabrix/fabrix'
 
 export class BroadcastEntity extends Generic {
-  public _type: string = null
-
   private _broadcasters: Map<string, Broadcast> = new Map()
   private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
 
-  constructor(app: FabrixApp) {
+  constructor(app: FabrixApp, public _type) {
     super(app)
 
+    console.log('BRK TYPE', this._type)
+
     const broadcasters = Object.keys(
-      this.app.config.get(`broadcast.pipelines.${this.name}.broadcasters`)
+      this.app.config.get(`broadcast.${this._type}.${this.name}.broadcasters`)
       || {}
     )
 
@@ -28,6 +28,10 @@ export class BroadcastEntity extends Generic {
         )
       }
     })
+  }
+
+  get type() {
+    return this._type
   }
 
   get name() {

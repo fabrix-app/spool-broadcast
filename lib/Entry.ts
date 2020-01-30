@@ -35,14 +35,13 @@ export function Command({
   req = null,
   body = null,
   options = null,
-  broadcaster,
-  command,
-  event,
-  story = null,
-  docs = null
+  expects_input = null,
+  expects_response = null,
+  docs = null,
+  story = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point', target, propertyKey)
+    console.log('experimental point command', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {
@@ -70,7 +69,7 @@ export function Action({
   docs = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point', target, propertyKey)
+    console.log('experimental point action', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {

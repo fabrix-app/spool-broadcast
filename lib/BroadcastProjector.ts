@@ -172,12 +172,14 @@ export class BroadcastProject extends FabrixGeneric {
 }
 
 export class BroadcastProjector extends BroadcastEntity {
-  public _type = 'projector'
-
   private _managers: Map<string, string> = new Map()
 
+  constructor(app: FabrixApp) {
+    super(app, 'projectors')
+  }
+
   /**
-   * Returns the BroadcastSubsribers
+   * Returns the BroadcastManagers
    */
   get managers() {
     return this._managers

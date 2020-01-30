@@ -149,12 +149,14 @@ export class BroadcastProcess extends FabrixGeneric {
 }
 
 export class BroadcastProcessor extends BroadcastEntity {
-  public _type = 'processor'
-
   private _managers: Map<string, string> = new Map()
 
+  constructor(app: FabrixApp) {
+    super(app, 'processors')
+  }
+
   /**
-   * Returns the BroadcastSubscribers
+   * Returns the BroadcastManagers
    */
   get managers() {
     return this._managers

@@ -1950,7 +1950,10 @@ export class Broadcast extends FabrixGeneric {
 
         projector.managers.set(eventType, m)
 
-        this.app.log.silly(`Adding projector ${projector.name}.${m} to broadcaster ${this.name} for event ${eventType}`)
+        this.app.log.silly(
+          `Adding projector ${projector.name}.${m} to broadcaster ${this.name} for event ${eventType}`
+        )
+
         this.addEvent({
           event_type: eventType,
           consistency: events[m].consistency,

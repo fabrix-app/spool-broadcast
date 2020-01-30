@@ -6,6 +6,7 @@ import { isArray } from 'lodash'
 import { regexdot } from '@fabrix/regexdot'
 import { BroadcastEvent } from './api/models'
 import { __await } from 'tslib'
+import { BroadcastEntity } from './BroadcastEntity'
 
 export interface BroadcastSubscriberParams {
   app: FabrixApp
@@ -112,41 +113,14 @@ export class BroadcastSubscriber {
 }
 
 
-export class BroadcastChannel extends FabrixGeneric {
+export class BroadcastChannel extends BroadcastEntity {
 
   private _channel
-  private _broadcasters: Map<string, Broadcast> = new Map()
-
   private _subscribers: Map<string, string> = new Map()
-
-  private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
-
   public permissions: Map<string, any> = new Map()
 
   constructor(app: FabrixApp) {
-    super(app)
-
-    const broadcasters = Object.keys(
-      this.app.config.get(`broadcast.channels.${this.name}.broadcasters`)
-      || {}
-    )
-
-    // this._broadcasters =
-    broadcasters.forEach((k) => {
-      if (k && this.app.broadcasts[k]) {
-        this.addBroadcaster(this.app.broadcasts[k])
-      }
-      else {
-        this.app.log.error(`Attempting to register broadcast ${ k } on channel ${this.name}, but ${k} was not found in api/broadcasts`)
-      }
-    })
-  }
-
-  /**
-   * Returns the name of the BroadcastChannel Class
-   */
-  get name() {
-    return this.constructor.name
+    super(app, 'channels')
   }
 
   /**
@@ -157,50 +131,13 @@ export class BroadcastChannel extends FabrixGeneric {
   }
 
   /**
-   * Returns the BroadcastSubsribers
+   * Returns the BroadcastSubscribers
    */
   get subscribers() {
     return this._subscribers
   }
   hasSubscriber(name) {
     return this._subscribers.has(name)
-  }
-
-  getBroadcaster (name) {
-    return this._broadcasters.get(name)
-  }
-  /**
-   * Add a Broadcaster
-   * @param broadcaster
-   */
-  addBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.set(broadcaster.name, broadcaster)
-    return this.broadcasters
-  }
-
-  /**
-   * Remove a Broadcaster
-   * @param broadcaster
-   */
-  removeBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.delete(broadcaster.name)
-    return this.broadcasters
-  }
-
-  /**
-   * If has Broadcaster
-   * @param broadcaster
-   */
-  hasBroadcaster (broadcaster: Broadcast): boolean {
-    return this.broadcasters.has(broadcaster.name)
-  }
-
-  // Broadcast Getters and Setters
-  get broadcasters () {
-    return this._broadcasters
-  }
-  set broadcasters (broadcasters) {
-    throw new Error(`Can not map broadcasters through this method`)
   }
 
   // Initial Function to run when a Socket connects this BroadcastChannel

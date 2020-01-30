@@ -151,7 +151,7 @@ export const utils = {
    * @param types
    */
   registerPipelines: (app: FabrixApp, broadcaster, command_type: string, types) => {
-    app.log.debug(`Routing broadcaster ${ broadcaster.name } pipelines for command ${command_type}`)
+    app.log.debug(`Routing broadcaster ${ broadcaster.name } pipelines for pipes ${command_type}`)
     return
   },
 

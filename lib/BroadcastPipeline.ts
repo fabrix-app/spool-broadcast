@@ -287,5 +287,7 @@ export class BroadcastPipe {
  * @description Pipeline
  */
 export class BroadcastPipeline extends BroadcastEntity {
-  public _type = 'pipeline'
+  constructor(app: FabrixApp) {
+    super(app, 'pipelines')
+  }
 }

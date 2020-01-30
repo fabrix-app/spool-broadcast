@@ -126,11 +126,14 @@ export class BroadcastHook extends FabrixGeneric {
 
 
 export class BroadcastHookIn extends BroadcastEntity {
-  public _type = 'hookIn'
   private _handlers: Map<string, string> = new Map()
 
+  constructor(app: FabrixApp) {
+    super(app, 'hooks')
+  }
+
   /**
-   * Returns the BroadcastSubsribers
+   * Returns the BroadcastHandlers
    */
   get handlers() {
     return this._handlers
