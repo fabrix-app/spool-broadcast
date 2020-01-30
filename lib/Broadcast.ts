@@ -1041,6 +1041,7 @@ export class Broadcast extends FabrixGeneric {
         event,
         options,
         consistency: 'strong',
+        message: null,
         manager: manager
       })
         .run()
