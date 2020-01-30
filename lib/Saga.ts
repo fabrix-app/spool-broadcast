@@ -8,7 +8,17 @@ import { Entry } from './Entry'
 import { regexdot } from '@fabrix/regexdot'
 import { run } from 'tslint/lib/runner'
 
-export function Story({ broadcaster, command, event, validator, annotations = null, docs = null }) {
+export function Story({
+  req = null,
+  body = null,
+  options = null,
+  broadcaster,
+  command,
+  event,
+  validator,
+  annotations = null,
+  docs = null
+}) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     console.log('experimental story', target, propertyKey)
     // var originalMethod = descriptor.value;
@@ -37,7 +47,7 @@ export class Saga extends Generic  {
     return this.constructor.name
   }
 
-  metadata(req) {
+  metadata(req): {[key: string]: any} {
     return {
       req_user_uuid: req.user ? req.user.user_uuid : null,
       req_channel_uuid: req.channel ? req.channel.channel_uuid : null,
@@ -81,6 +91,10 @@ export class Saga extends Generic  {
     return this.app.spools.broadcast.entries(name)
   }
 
+  /**
+   * Convenient utility for getting Sequelize
+   * @constructor
+   */
   public Sequelize() {
     if (!this.app.spools.sequelize) {
       throw new Error('Spool-sequelize is not loaded!')
@@ -88,6 +102,10 @@ export class Saga extends Generic  {
     return this.app.spools.sequelize._datastore
   }
 
+  /**
+   * Map a Series of Commands with transactions
+   * @param args
+   */
   public mapSeries(...args): Promise<any> {
     if (
       this.app
@@ -152,6 +170,7 @@ export class Saga extends Generic  {
         new Error(`${this.name}: Command sent to before hook ${command.command_type} is not a command instance`)
       )
     }
+
     if (!(command.broadcaster instanceof Broadcast)) {
       return Promise.reject(
         new Error(`${this.name}: Command sent to before hook ${command.command_type} did not include a broadcaster instance`)
@@ -259,14 +278,13 @@ export class Saga extends Generic  {
   // }
 
   /**
-   *
+   * Process the Request and fold the response data into the command data
    * @param command
    * @param endpoint
    * @param validators
    * @param options
    */
   async processRequest(command, endpoint, validators, options): Promise<any> {
-    //
     return this.prehookRunner(endpoint, command.toJSON())
       .then(([_endpoint, _command]) => {
         return command.broadcaster.validate(validators, _command, options)
@@ -276,7 +294,6 @@ export class Saga extends Generic  {
 
         return [command, options]
       })
-    // return Promise.resolve([command])
   }
 
   /**
@@ -288,7 +305,7 @@ export class Saga extends Generic  {
    */
   async processCancelRequest(command, endpoint, validators, options): Promise<any> {
     // This should be overriden by the subclass
-    this.app.log.debug(
+    this.app.log.warn(
       `${this.name}.processCancelRequest is not running because it's not defined in the class`
     )
     this.app.log.silly(endpoint)

@@ -34,7 +34,7 @@ export { Saga, Story } from './Saga'
 export { BroadcastCommand } from './BroadcastCommand'
 
 // Entry Class and Metadata
-export { Entry, Point } from './Entry'
+export { Entry, Point, Command, Action } from './Entry'
 
 // Broadcast Model classes
 export { BroadcastResolver } from './BroadcastResolver'
@@ -48,6 +48,8 @@ export {
   BroadcastSnapshot,
   BroadcastStream
 } from './api/models'
+
+export { BroadcastEntity } from './BroadcastEntity'
 
 
 // Interfaces

@@ -164,7 +164,7 @@ const App = {
                   lifespan: 'eternal',
                   config: {
                     priority: 1,
-                    receives: 'Test'
+                    expects_input: 'Test'
                   }
                 },
               },
@@ -176,7 +176,7 @@ const App = {
                   lifespan: 'eternal',
                   config: {
                     priority: 2,
-                    receives: 'Test'
+                    expects_input: 'Test'
                   }
                 },
               },
@@ -198,7 +198,7 @@ const App = {
                   lifespan: 'eternal',
                   config: {
                     priority: 1,
-                    receives: 'Test'
+                    expects_input: 'Test'
                   }
                 },
               },
@@ -210,7 +210,7 @@ const App = {
                   lifespan: 'eternal',
                   config: {
                     priority: 2,
-                    receives: 'Test'
+                    expects_input: 'Test'
                   }
                 },
               },
@@ -236,9 +236,9 @@ const App = {
                   lifecycle: 'before',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_response: 'Test'
                   }
                 },
               },
@@ -247,9 +247,9 @@ const App = {
                   lifecycle: 'before',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_response: 'Test'
                   }
                 },
               },
@@ -258,9 +258,9 @@ const App = {
                   lifecycle: 'before',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_response: 'Test'
                   }
                 },
               }
@@ -283,18 +283,18 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 logger: {
                   consistency: 'eventual',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
               },
@@ -306,18 +306,18 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 logger: {
                   consistency: 'eventual',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
               },
@@ -327,18 +327,18 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 logger: {
                   consistency: 'eventual',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
               },
@@ -348,27 +348,27 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 created2: {
                   consistency: 'strong',
                   config: {
                     priority: 2,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 logger: {
                   consistency: 'eventual',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
               },
@@ -378,27 +378,27 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'Test'
+                    expects_output: 'Test'
                   }
                 },
                 logger: {
                   consistency: 'eventual',
                   config: {
                     priority: 2,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
                 failLogger: {
                   consistency: 'eventual',
                   config: {
                     priority: 3,
-                    receives: 'Test',
+                    expects_input: 'Test',
                     merge: true,
-                    expects: 'TestLogger'
+                    expects_output: 'TestLogger'
                   }
                 },
               }
@@ -424,9 +424,10 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
+                    dispatches_command: 'update.test.:test_uuid',
+                    expects_response: 'Test',
                     merge: true,
-                    expects: 'Test'
                   }
                 },
               },
@@ -436,9 +437,10 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
+                    expects_input: 'Test',
+                    dispatches_command: 'update.test.:test_uuid',
+                    expects_response: 'Test',
                     merge: true,
-                    expects: 'Test'
                   }
                 },
               },
@@ -448,9 +450,10 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
-                    merge: true,
-                    expects: 'Test'
+                    expects_input: 'Test',
+                    dispatches_command: 'destroy.test.:test_uuid',
+                    expects_response: 'Test',
+                    merge: true
                   }
                 },
               },
@@ -460,9 +463,10 @@ const App = {
                   consistency: 'strong',
                   config: {
                     priority: 1,
-                    receives: 'Test',
-                    merge: true,
-                    expects: 'Test'
+                    expects_input: 'Test',
+                    dispatches_command: 'destroy.test.:test_uuid',
+                    expects_response: 'Test',
+                    merge: true
                   }
                 },
               }

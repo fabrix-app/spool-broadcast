@@ -509,25 +509,25 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
   // If merge: true
   else {
 
-    // If the manager expects certain data...
-    if (manager.expects) {
-      if (typeof manager.expects === 'string' && event.getDataValue('object') !== manager.expects) {
-        throw new Error(`${method} merge expected ${manager.expects} but got ${event.getDataValue('object')} for ${event.event_type}`)
+    // If the manager expects_response certain data...
+    if (manager.expects_response) {
+      if (typeof manager.expects_response === 'string' && event.getDataValue('object') !== manager.expects_response) {
+        throw new Error(`${method} merge expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${event.event_type}`)
       }
-      else if (Array.isArray(manager.expects) && manager.expects.indexOf(event.getDataValue('object')) === -1) {
+      else if (Array.isArray(manager.expects_response) && manager.expects_response.indexOf(event.getDataValue('object')) === -1) {
         throw new Error(
-          `${method} merge expected ${manager.expects.join(', ')} but got ${event.getDataValue('object')} for ${event.event_type}`
+          `${method} merge expected ${manager.expects_response.join(', ')} but got ${event.getDataValue('object')} for ${event.event_type}`
         )
       }
     }
     // If the manager doesn't expect certain data, but the data is completely different...
     else if (
-      !manager.expects
+      !manager.expects_response
       && this.getDataValue('object') !== event.getDataValue('object')
     ) {
       this.app.log.warn(
         method, 'Merge Data',
-        this.event_type, 'assuming it expects',
+        this.event_type, 'assuming it expects_response',
         this.getDataValue('object'), 'and received', event.getDataValue('object')
       )
     }
@@ -614,13 +614,13 @@ BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
   }
 
   if (
-    manager.expects
-    && event.getDataValue('object') !== manager.expects
+    manager.expects_response
+    && event.getDataValue('object') !== manager.expects_response
   ) {
-    throw new Error(`${method} mergeAs expected ${manager.expects} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+    throw new Error(`${method} mergeAs expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
   }
   else if (
-    !manager.expects
+    !manager.expects_response
     && this.getDataValue('object') !== event.getDataValue('object')
   ) {
     this.app.log.debug(
@@ -677,13 +677,13 @@ BroadcastEvent.prototype.pushOn = function(method, manager, event) {
   }
 
   if (
-    manager.expects
-    && event.getDataValue('object') !== manager.expects
+    manager.expects_response
+    && event.getDataValue('object') !== manager.expects_response
   ) {
-    throw new Error(`${method} pushOn expected ${manager.expects} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+    throw new Error(`${method} pushOn expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
   }
   else if (
-    !manager.expects
+    !manager.expects_response
     && this.getDataValue('object') !== event.getDataValue('object')
   ) {
     this.app.log.debug(
@@ -738,7 +738,7 @@ BroadcastEvent.prototype.mergeEachAs = function(method, manager, events) {
   }
   if (!isArray(this.data) && !isArray(events)) {
     this.app.log.debug(
-      `${method} BroadcastEvent.merge.each.as expects data and the events to both be arrays`
+      `${method} BroadcastEvent.merge.each.as expects_response data and the events to both be arrays`
     )
     return this
   }
@@ -755,12 +755,12 @@ BroadcastEvent.prototype.mergeEachAs = function(method, manager, events) {
       || events[i][0].action !== 'retry')
     ) {
       if (
-        manager.expects
+        manager.expects_response
         && events[i][0].getDataValue
-        && events[i][0].getDataValue('object') !== manager.expects
+        && events[i][0].getDataValue('object') !== manager.expects_response
       ) {
         throw new Error(
-          `mergeAs expected ${manager.expects} but got ${events[i][0].getDataValue('object')} for ${ events[i][0].event_type}`
+          `mergeAs expected ${manager.expects_response} but got ${events[i][0].getDataValue('object')} for ${ events[i][0].event_type}`
         )
       }
       d[as] = events[i][0].data
@@ -793,7 +793,7 @@ BroadcastEvent.prototype.pushEachOn = function(method, manager, events) {
   }
   if (!isArray(this.data) && !isArray(events)) {
     this.app.log.debug(
-      `${method} BroadcastEvent.merge.each.as expects data and the events to both be arrays`
+      `${method} BroadcastEvent.merge.each.as expects_response data and the events to both be arrays`
     )
     return this
   }
@@ -808,12 +808,12 @@ BroadcastEvent.prototype.pushEachOn = function(method, manager, events) {
       || events[i][0].action !== 'retry')
     ) {
       if (
-        manager.expects
+        manager.expects_response
         && events[i][0].getDataValue
-        && events[i][0].getDataValue('object') !== manager.expects
+        && events[i][0].getDataValue('object') !== manager.expects_response
       ) {
         throw new Error(
-          `pushOn expected ${manager.expects} but got ${events[i][0].getDataValue('object')} for ${ events[i][0].event_type}`
+          `pushOn expected ${manager.expects_response} but got ${events[i][0].getDataValue('object')} for ${ events[i][0].event_type}`
         )
       }
       d[on] = d[on] || []
@@ -845,8 +845,8 @@ BroadcastEvent.prototype.includeOn = function(method, manager, event) {
   // If include: true
   else {
 
-    if (manager.expects && event.getDataValue('object') !== manager.expects) {
-      throw new Error(`${method} includeAs expected ${manager.expects} but got ${event.getDataValue('object')} for ${event.event_type}`)
+    if (manager.expects_response && event.getDataValue('object') !== manager.expects_response) {
+      throw new Error(`${method} includeAs expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${event.event_type}`)
     }
     this.includes = this.includes || {}
     this.includes[event.getDataValue('object')] = event.data
@@ -865,8 +865,8 @@ BroadcastEvent.prototype.includeAs = function(method, manager, event) {
     return this
   }
 
-  if (manager.expects && event.getDataValue('object') !== manager.expects) {
-    throw new Error(`${method} includeAs expected ${manager.expects} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+  if (manager.expects_response && event.getDataValue('object') !== manager.expects_response) {
+    throw new Error(`${method} includeAs expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
   }
 
   this.includes = this.includes || {}
@@ -885,8 +885,8 @@ BroadcastEvent.prototype.zip = function(method, manager, event) {
     return this
   }
 
-  if (manager.expects && event.getDataValue('object') !== manager.expects) {
-    throw new Error(`${method} zip expected ${manager.expects} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+  if (manager.expects_response && event.getDataValue('object') !== manager.expects_response) {
+    throw new Error(`${method} zip expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
   }
 
   // Scenario 1: Both the event and sub-event are arrays

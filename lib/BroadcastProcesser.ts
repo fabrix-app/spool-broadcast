@@ -1,15 +1,15 @@
 import { FabrixApp } from '@fabrix/fabrix'
-import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { mapSeries } from 'bluebird'
-import { Broadcast } from './Broadcast'
+import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
+
 import { BroadcastEvent } from './api/models'
 import { Entry } from './Entry'
-// import uuid from 'uuid/v4'
 import { BroadcastAction, BroadcastOptions } from './Interface'
+import { BroadcastEntity } from './BroadcastEntity'
 
 export class BroadcastProcess extends FabrixGeneric {
   public message: any
   public isAcknowledged: boolean
+  public isRedelivered = false
   public consistency = 'strong'
   public versions = [1]
   private _id: string
@@ -18,16 +18,27 @@ export class BroadcastProcess extends FabrixGeneric {
     app: FabrixApp,
     public event: BroadcastEvent,
     public options: BroadcastOptions,
+    consistency?: string,
+    message?: string,
     public manager?
   ) {
     super(app)
 
     this.event = event
     this.options = options
+    this.consistency = consistency || this.consistency
+
+    this.message = message
     this.manager = manager
 
     this.id = this.event.event_uuid
     this.isAcknowledged = false
+
+
+
+    if (this.message && this.message.fields) {
+      this.isRedelivered = this.message.fields.redelivered
+    }
   }
 
   /**
@@ -137,70 +148,13 @@ export class BroadcastProcess extends FabrixGeneric {
   }
 }
 
-export class BroadcastProcessor extends FabrixGeneric {
+export class BroadcastProcessor extends BroadcastEntity {
+  public _type = 'processor'
 
-  private _broadcasters: Map<string, Broadcast> = new Map()
   private _managers: Map<string, string> = new Map()
 
-  private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
-
-  constructor(app: FabrixApp) {
-    super(app)
-    const broadcasters = Object.keys(
-      this.app.config.get(`broadcast.projectors.${this.name}.broadcasters`)
-      || {}
-    )
-
-    // this._broadcasters =
-    broadcasters.forEach((k) => {
-      if (k && this.app.broadcasts[k]) {
-        this.addBroadcaster(this.app.broadcasts[k])
-      }
-      else {
-        this.app.log.error(`Attempting to register broadcast ${ k } on projector ${this.name}, but ${k} was not found in api/broadcasts`)
-      }
-    })
-  }
-
-  get name() {
-    return this.constructor.name
-  }
-
-  getBroadcaster (name) {
-    return this._broadcasters.get(name)
-  }
   /**
-   * Add a Broadcaster
-   * @param broadcaster
-   */
-  addBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.set(broadcaster.name, broadcaster)
-    return this.broadcasters
-  }
-
-  /**
-   * Remove a Broadcaster
-   * @param broadcaster
-   */
-  removeBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.delete(broadcaster.name)
-    return this.broadcasters
-  }
-
-  hasBroadcaster (broadcaster: Broadcast) {
-    return this.broadcasters.has(broadcaster.name)
-  }
-
-  get broadcasters () {
-    return this._broadcasters
-  }
-
-  set broadcasters (broadcasters) {
-    throw new Error(`Can not map broadcasters through this method`)
-  }
-
-  /**
-   * Returns the BroadcastSubsribers
+   * Returns the BroadcastSubscribers
    */
   get managers() {
     return this._managers

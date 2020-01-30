@@ -84,7 +84,7 @@ export class BroadcastCommand extends FabrixGeneric {
     this.version = version
     this.created_at = new Date(Date.now()).toISOString()
     this.chain_events = chain_events
-    // the initial (root) event this command expects to dispatch as a result of the command
+    // the initial (root) event this command expects_response to dispatch as a result of the command
     // this.event_type = event_type
   }
 
@@ -465,9 +465,9 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
   }
   // If merge: true
   else {
-    if (handler.expects && command.getDataValue('object') !== handler.expects) {
+    if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
       throw new Error(
-        `Hook: ${method} merge expected ${handler.expects} but got ${command.getDataValue('object')} for ${ command.command_type}`
+        `Hook: ${method} merge expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`
       )
     }
 
@@ -525,8 +525,8 @@ BroadcastCommand.prototype.mergeAs = function(method, handler, command) {
     this.app.log.debug(`BroadcastCommand.mergeAs was passed empty handler mergeAs property or command.data for ${command.command_type}`)
     return this
   }
-  if (handler.expects && command.getDataValue('object') !== handler.expects) {
-    throw new Error(`mergeAs expected ${handler.expects} but got ${command.getDataValue('object')} for ${ command.command_type}`)
+  if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+    throw new Error(`mergeAs expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`)
   }
 
   const as = handler.mergeAs || handler.merge.as
@@ -557,8 +557,9 @@ BroadcastCommand.prototype.mergeEachAs = function(method, handler, command) {
     `Handler ${method} merged each ${this.command_type} -> ${command.command_type}`,
     ` as ${ handler.mergeEachAs || handler.merge.as }`
   )
-  // if (handler.expects && command.getDataValue('object') !== handler.expects) {
-  //   throw new Error(`mergeAs expected ${handler.expects} but got ${command.getDataValue('object')} for ${ command.command_type}`)
+  // if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+  //   throw new Error(`mergeAs expected ${handler.expects_response}
+  //   but got ${command.getDataValue('object')} for ${ command.command_type}`)
   // }
   // this.data[handler.mergeAs] = command.data
   // if (this.data instanceof this.object.instance) {
@@ -576,8 +577,8 @@ BroadcastCommand.prototype.includeAs = function(method, handler, command) {
     return this
   }
 
-  if (handler.expects && command.getDataValue('object') !== handler.expects) {
-    throw new Error(`includeAs expected ${handler.expects} but got ${command.getDataValue('object')} for ${ command.command_type}`)
+  if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+    throw new Error(`includeAs expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`)
   }
 
   this.includes = this.includes || {}

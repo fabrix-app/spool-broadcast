@@ -4,6 +4,7 @@ import { Broadcast } from './Broadcast'
 import { BroadcastCommand } from './BroadcastCommand'
 import { FabrixApp } from '@fabrix/fabrix'
 import { mapSeries } from 'bluebird'
+import { BroadcastEntity } from './BroadcastEntity'
 
 /**
  * @module Hook
@@ -124,68 +125,9 @@ export class BroadcastHook extends FabrixGeneric {
 }
 
 
-export class BroadcastHookIn extends Generic {
-
-  private _broadcasters: Map<string, Broadcast> = new Map()
-
+export class BroadcastHookIn extends BroadcastEntity {
+  public _type = 'hookIn'
   private _handlers: Map<string, string> = new Map()
-
-  private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
-
-  constructor(app: FabrixApp) {
-    super(app)
-    const broadcasters = Object.keys(
-      this.app.config.get(`broadcast.hooks.${this.name}.broadcasters`)
-      || {}
-    )
-
-    // this._broadcasters =
-    broadcasters.forEach((k) => {
-      if (k && this.app.broadcasts[k]) {
-        this.addBroadcaster(this.app.broadcasts[k])
-      }
-      else {
-        this.app.log.error(`Attempting to register broadcast ${ k } on hook ${this.name}, but ${k} was not found in api/broadcasts`)
-      }
-    })
-  }
-
-  get name() {
-    return this.constructor.name
-  }
-
-  getBroadcaster (name) {
-    return this._broadcasters.get(name)
-  }
-  /**
-   * Add a Broadcaster
-   * @param broadcaster
-   */
-  addBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.set(broadcaster.name, broadcaster)
-    return this.broadcasters
-  }
-
-  /**
-   * Remove a Broadcaster
-   * @param broadcaster
-   */
-  removeBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.delete(broadcaster.name)
-    return this.broadcasters
-  }
-
-  hasBroadcaster (broadcaster: Broadcast) {
-    return this.broadcasters.has(broadcaster.name)
-  }
-
-  get broadcasters () {
-    return this._broadcasters
-  }
-
-  set broadcasters (broadcasters) {
-    throw new Error(`Can not map broadcasters through this method`)
-  }
 
   /**
    * Returns the BroadcastSubsribers

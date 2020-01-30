@@ -691,30 +691,30 @@ export class Broadcast extends FabrixGeneric {
       const broker = brokers.get(m)
 
       // Receiver Test
-      if (broker && broker.receives) {
+      if (broker && broker.expects_input) {
         if (
-          typeof broker.receives === 'string'
-          && event.getDataValue('object') !== broker.receives
+          typeof broker.expects_input === 'string'
+          && event.getDataValue('object') !== broker.expects_input
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} subscriber receives ${broker.receives}
+            `${m} subscriber expects_input ${broker.expects_input}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
         else if (
-          Array.isArray(broker.receives)
-          && broker.receives.includes(event.getDataValue('object'))
+          Array.isArray(broker.expects_input)
+          && broker.expects_input.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} subscriber receives one of ${broker.receives.join(', ')}
+            `${m} subscriber expects_input one of ${broker.expects_input.join(', ')}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
       }
       else {
-        this.app.log.debug(`${event.event_type} broker ${m} subscriber assuming it receives ${event.getDataValue('object')}`)
+        this.app.log.debug(`${event.event_type} broker ${m} subscriber assuming it expects_input ${event.getDataValue('object')}`)
       }
 
       // Check and promise events
@@ -1001,31 +1001,31 @@ export class Broadcast extends FabrixGeneric {
       const manager = strongManagers.get(m)
 
       // Receiver Test
-      if (manager && manager.receives) {
+      if (manager && manager.expects_input) {
         if (
-          typeof manager.receives === 'string'
-          && String(event.getDataValue('object')) !== manager.receives
+          typeof manager.expects_input === 'string'
+          && String(event.getDataValue('object')) !== manager.expects_input
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives ${manager.receives}
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} expects_input ${manager.expects_input}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
         else if (
-          Array.isArray(manager.receives)
-          && manager.receives.includes(event.getDataValue('object'))
+          Array.isArray(manager.expects_input)
+          && manager.expects_input.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} receives one of ${manager.receives.join(', ')}
+            `${m} ${manager.is_processor ? 'processor' : 'projector'} expects one of ${manager.expects_input.join(', ')} as input,
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
       }
       else {
         this.app.log.debug(`${event.event_type} manager ${m} ${manager.is_processor ? 'processor' : 'projector'}
-        assuming it receives ${event.getDataValue('object')}`)
+        assuming it expects_input ${event.getDataValue('object')}`)
       }
 
       // Check and promise events

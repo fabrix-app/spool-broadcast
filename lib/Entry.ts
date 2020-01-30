@@ -3,7 +3,72 @@ import { isEmpty, isArray, isObject } from 'lodash'
 import { GenericError } from '@fabrix/spool-errors/dist/errors'
 // import { ModelError } from '../../../errors'
 
-export function Point({ receives = null, expects = null, docs = null }) {
+export function Point({
+  req = null,
+  body = null,
+  options = null,
+  expects_input = null,
+  expects_response = null,
+  docs = null
+}) {
+  return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+    console.log('experimental point', target, propertyKey)
+    // var timeout:any;
+    // var originalMethod = descriptor.value;
+    // descriptor.value = function() {
+    //   var context = this
+    //   var args = arguments;
+    //   var later = function() {
+    //     timeout = null;
+    //     if (!immediate) originalMethod.apply(context, args);
+    //   };
+    //   var callNow = immediate && !timeout;
+    //   clearTimeout(timeout);
+    //   timeout = setTimeout(later, wait);
+    //   if (callNow) originalMethod.apply(context, args);
+    // };
+    return descriptor
+  }
+}
+
+export function Command({
+  req = null,
+  body = null,
+  options = null,
+  broadcaster,
+  command,
+  event,
+  story = null,
+  docs = null
+}) {
+  return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+    console.log('experimental point', target, propertyKey)
+    // var timeout:any;
+    // var originalMethod = descriptor.value;
+    // descriptor.value = function() {
+    //   var context = this
+    //   var args = arguments;
+    //   var later = function() {
+    //     timeout = null;
+    //     if (!immediate) originalMethod.apply(context, args);
+    //   };
+    //   var callNow = immediate && !timeout;
+    //   clearTimeout(timeout);
+    //   timeout = setTimeout(later, wait);
+    //   if (callNow) originalMethod.apply(context, args);
+    // };
+    return descriptor
+  }
+}
+
+export function Action({
+  req = null,
+  body = null,
+  options = null,
+  expects_input = null,
+  expects_response = null,
+  docs = null
+}) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     console.log('experimental point', target, propertyKey)
     // var timeout:any;

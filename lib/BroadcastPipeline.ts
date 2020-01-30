@@ -3,7 +3,32 @@ import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
 import { isEmpty } from 'lodash'
 import EventEmitter from 'events'
+import { BroadcastEntity } from './BroadcastEntity'
 
+export function Pipeline({
+  expects_input = null,
+  expects_response = null,
+  docs = null
+}) {
+  return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+    console.log('experimental point', target, propertyKey)
+    // var timeout:any;
+    // var originalMethod = descriptor.value;
+    // descriptor.value = function() {
+    //   var context = this
+    //   var args = arguments;
+    //   var later = function() {
+    //     timeout = null;
+    //     if (!immediate) originalMethod.apply(context, args);
+    //   };
+    //   var callNow = immediate && !timeout;
+    //   clearTimeout(timeout);
+    //   timeout = setTimeout(later, wait);
+    //   if (callNow) originalMethod.apply(context, args);
+    // };
+    return descriptor
+  }
+}
 
 export class PipelineEmitter extends EventEmitter {
   public command: string
@@ -261,65 +286,6 @@ export class BroadcastPipe {
  * @module Pipeline
  * @description Pipeline
  */
-export class BroadcastPipeline extends Generic {
-
-
-  private _broadcasters: Map<string, Broadcast> = new Map()
-  private _protectedMethods = ['getBroadcaster', 'addBroadcaster', 'removeBroadcaster', 'hasBroadcaster']
-
-  constructor(app: FabrixApp) {
-    super(app)
-    const broadcasters = Object.keys(
-      this.app.config.get(`broadcast.pipelines.${this.name}.broadcasters`)
-      || {}
-    )
-
-    // this._broadcasters =
-    broadcasters.forEach((k) => {
-      if (k && this.app.broadcasts[k]) {
-        this.addBroadcaster(this.app.broadcasts[k])
-      }
-      else {
-        this.app.log.error(`Attempting to register broadcast ${ k } on pipeline ${this.name}, but ${k} was not found in api/broadcasts`)
-      }
-    })
-  }
-
-  get name() {
-    return this.constructor.name
-  }
-
-  getBroadcaster (name) {
-    return this._broadcasters.get(name)
-  }
-  /**
-   * Add a Broadcaster
-   * @param broadcaster
-   */
-  addBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.set(broadcaster.name, broadcaster)
-    return this.broadcasters
-  }
-
-  /**
-   * Remove a Broadcaster
-   * @param broadcaster
-   */
-  removeBroadcaster (broadcaster: Broadcast) {
-    this._broadcasters.delete(broadcaster.name)
-    return this.broadcasters
-  }
-
-  hasBroadcaster (broadcaster: Broadcast) {
-    return this.broadcasters.has(broadcaster.name)
-  }
-
-  get broadcasters () {
-    return this._broadcasters
-  }
-
-  set broadcasters (broadcasters) {
-    throw new Error(`Can not map broadcasters through this method`)
-  }
-
+export class BroadcastPipeline extends BroadcastEntity {
+  public _type = 'pipeline'
 }

@@ -265,7 +265,7 @@ export class BroadcastResolver extends SequelizeResolver {
               data.map(d => {
                 d = fn(d, options)
                 if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.pre expects sync functions, promise was passed')
+                  throw new Error('stage.options.pre expects_response sync functions, promise was passed')
                 }
                 return d
               })
@@ -273,7 +273,7 @@ export class BroadcastResolver extends SequelizeResolver {
             else {
               data = fn(data, options)
               if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.pre expects sync functions, promise was passed')
+                throw new Error('stage.options.pre expects_response sync functions, promise was passed')
               }
             }
           }
@@ -308,7 +308,7 @@ export class BroadcastResolver extends SequelizeResolver {
                   raw[i] = defaultsDeep(raw[i], d.toJSON())
                 }
                 if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.configure expects sync functions, promise was passed')
+                  throw new Error('stage.options.configure expects_response sync functions, promise was passed')
                 }
                 return d
               })
@@ -327,7 +327,7 @@ export class BroadcastResolver extends SequelizeResolver {
               }
 
               if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.configure expects sync functions, promise was passed')
+                throw new Error('stage.options.configure expects_response sync functions, promise was passed')
               }
             }
           }
@@ -366,7 +366,7 @@ export class BroadcastResolver extends SequelizeResolver {
 
                 d = fn(d, options)
                 if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.before expects sync functions, promise was passed')
+                  throw new Error('stage.options.before expects_response sync functions, promise was passed')
                 }
                 raw[i] = defaultsDeep(raw[i], d.toJSON())
                 return d
@@ -383,7 +383,7 @@ export class BroadcastResolver extends SequelizeResolver {
               data = fn(data, options)
               raw = defaultsDeep(raw, data.toJSON())
               if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.before expects sync functions, promise was passed')
+                throw new Error('stage.options.before expects_response sync functions, promise was passed')
               }
             }
           }
@@ -414,7 +414,7 @@ export class BroadcastResolver extends SequelizeResolver {
 
                 d = fn(d, options)
                 if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.after expects sync functions, promise was passed')
+                  throw new Error('stage.options.after expects_response sync functions, promise was passed')
                 }
                 raw[i] = defaultsDeep(raw[i], d.toJSON())
                 return d
@@ -430,7 +430,7 @@ export class BroadcastResolver extends SequelizeResolver {
               data = fn(data, options)
               raw = defaultsDeep(raw, data.toJSON())
               if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.after expects sync functions, promise was passed')
+                throw new Error('stage.options.after expects_response sync functions, promise was passed')
               }
             }
           }
