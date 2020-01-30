@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.49](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.48...v1.6.49) (2020-01-30)
+
+
+### Bug Fixes
+
+* fixes broadcast entity to use correct values ([591b797](https://github.com/fabrix-app/spool-broadcast/commit/591b797))
+* make projector and processor run the same way. ([105e342](https://github.com/fabrix-app/spool-broadcast/commit/105e342))
+
 ### [1.6.48](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.47...v1.6.48) (2020-01-30)
 
 
