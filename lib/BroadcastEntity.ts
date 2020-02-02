@@ -9,8 +9,6 @@ export class BroadcastEntity extends Generic {
   constructor(app: FabrixApp, public _type) {
     super(app)
 
-    console.log('BRK TYPE', this._type)
-
     const broadcasters = Object.keys(
       this.app.config.get(`broadcast.${this._type}.${this.name}.broadcasters`)
       || {}

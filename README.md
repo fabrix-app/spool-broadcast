@@ -30,6 +30,8 @@ Joi, Errors, Sequelize, Realtime
 $ npm install --save @fabrix/spool-realtime @fabrix/spool-joi @fabrix/spool-errors @fabrix/spool-sequelize, @fabrix/spool-realtime
 ```
 
+Additionally, If you install the plugin `sequelize-hierarchy`, then it will turn the BroadcastEvent into a CTE, which is useful for debugging and create a help table, broadcasteventancetors.
+
 ## Configure
 
 ```js

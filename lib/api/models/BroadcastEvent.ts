@@ -14,16 +14,37 @@ export class BroadcastEvent extends BroadcastModel {
       options: {
         underscored: true,
         updatedAt: false,
+        // hierarchy: {
+        //   childrenAs: 'causations',
+        //   levelFieldName: 'causation_hierarchy_level',
+        //   foreignKey: 'causation_uuid',
+        //   through: 'BroadcastEventAncestor',
+        //   throughKey: 'event_uuid',
+        //   throughForeignKey: 'ancestor_uuid',
+        //   throughTable: 'broadcasteventancestors'
+        // },
         indexes: [
           {
             name: 'broadcast_event_index',
             fields: ['event_uuid']
           },
           {
+            name: 'broadcast_event_type_index',
+            fields: ['event_type', 'object']
+          },
+          {
             name: 'broadcast_event_primary_keys_index',
             fields: ['primary_keys'],
             using: 'GIN',
             operator: 'jsonb_path_ops'
+          },
+          {
+            name: 'broadcast_event_artifact_uuids_index',
+            fields: ['causation_uuid', 'correlation_uuid']
+          },
+          {
+            name: 'broadcast_event_artifact_patterns_index',
+            fields: ['pattern_raw', 'correlation_pattern_raw']
           }
         ],
         hooks: {
@@ -38,12 +59,14 @@ export class BroadcastEvent extends BroadcastModel {
 
               if (isArray(event.data)) {
                 event.data.map(d => {
+                  // If the data models have an encryption method, then make sure it encrypts
                   if (typeof d.encrypt === 'function') {
                     return d.encrypt()
                   }
                 })
               }
               else {
+                // If the data model has an encryption method, then make sure it encrypts
                 if (typeof event.data.encrypt === 'function') {
                   event.data.encrypt()
                 }
@@ -56,12 +79,14 @@ export class BroadcastEvent extends BroadcastModel {
 
               if (isArray(event.data)) {
                 event.data.map(d => {
+                  // If the data models have a decryption method, then make sure it decrypts
                   if (typeof d.decrypt === 'function') {
                     return d.decrypt()
                   }
                 })
               }
               else {
+                // If the data model has an decryption method, then make sure it decrypts
                 if (typeof event.data.decrypt === 'function') {
                   event.data.decrypt()
                 }
@@ -84,11 +109,25 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: false,
         binaryType: 'string'
       },
-      // Causation Id of the event is the Event Id of the event we are responding to
+      // CTE: Causation Id of the event is the Event Id of the event we are responding to
       causation_uuid: {
         type: Sequelize.UUID,
+        // references: {
+        //   // This is a reference to another model
+        //   model: app.models.BroadcastEvent.instance,
+        //   // This is the column name of the referenced model
+        //   key: 'event_uuid',
+        //   // This declares when to check the foreign key constraint.
+        //   deferrable: Sequelize.Deferrable.INITIALLY_DEFERRED
+        // },
         binaryOptional: true,
         binaryType: 'string'
+      },
+      // CTE Helper
+      causation_hierarchy_level: {
+        type: Sequelize.INTEGER,
+        binaryOptional: true,
+        binaryType: 'int'
       },
       // Correlation Id of the event we are responding to in our event
       correlation_uuid: {
@@ -434,6 +473,10 @@ export class BroadcastEvent extends BroadcastModel {
       // The events that were fried
       chain_events: {
         type: Sequelize.JSONB,
+        set: function(values) {
+          values = ([...values]).filter(n => n)
+          return this.setDataValue('chain_events', values)
+        },
         defaultValue: [],
         binaryOptional: true,
         binaryType: 'json'
@@ -455,6 +498,7 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: true,
         binaryType: 'boolean'
       },
+      // When this event was created
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.NOW,

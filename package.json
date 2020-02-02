@@ -64,6 +64,8 @@
     "nyc": "^14.1.1",
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
+    "sequelize-cli": "^5.5.1",
+    "sequelize-hierarchy": "^2.0.4",
     "should": "^13.2.3",
     "smokesignals": "^3.0.4",
     "source-map-support": "^0.5.13",

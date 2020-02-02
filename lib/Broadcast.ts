@@ -152,6 +152,7 @@ export class Broadcast extends FabrixGeneric {
    * @param chain_after
    * @param chain_events
    */
+  // TODO handle version
   buildEvent({
      command,
      event_type,
@@ -186,25 +187,37 @@ export class Broadcast extends FabrixGeneric {
       throw new Error('Broadcast.buildEvent called with a non Command object')
     }
 
+    // Create the event_type patterns and make a "raw" alias as a pointer
     const { pattern, keys } = regexdot(event_type)
     const pattern_raw = event_type
+
     // Replace any parameters in the event_type with the data
     event_type = this.replaceParams(event_type, keys, command.data)
 
+    // Create the data for the Event Model
     const data = {
       event_type, // || command.event_type,
       // This is the command uuid that started this event chain
       correlation_uuid,
+      // This is the REGEX pattern that the command used
       correlation_pattern: correlation_pattern || command.pattern,
+      // This is the string pattern that the command used
       correlation_pattern_raw: correlation_pattern_raw || command.pattern_raw,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: causation_uuid || command.causation_uuid,
+      // report list of functions that ran before this event's saga (combined)
       chain_before: chain_before || command.chain_before,
+      // report list of functions that ran during this event's saga (combined)
       chain_saga: chain_saga || command.chain_saga,
+      // report list of functions that ran after this event's saga (combined)
       chain_after: chain_after || command.chain_after,
+      // report list of functions that ran before this event's saga (combined)
       chain_events: chain_events || command.chain_events,
+      // All the information from the command
       ...command,
+      // the event_type REGEX pattern
       pattern: pattern,
+      // the event_type string pattern
       pattern_raw: pattern_raw
     }
 
@@ -215,6 +228,12 @@ export class Broadcast extends FabrixGeneric {
       .generateUUID()
   }
 
+  /**
+   * Utility to replace pattern variables with data values
+   * @param type
+   * @param keys
+   * @param object
+   */
   replaceParams(type = '', keys: boolean | string[] = [], object: any = {}) {
 
     if (
@@ -252,8 +271,8 @@ export class Broadcast extends FabrixGeneric {
     const cleanObj = isArray(obj)
       ? obj.map(d => d.toJSON ? d.toJSON() : d)
       : obj.toJSON
-      ? obj.toJSON()
-      : obj
+        ? obj.toJSON()
+        : obj
 
     return cleanObj
   }
@@ -650,9 +669,34 @@ export class Broadcast extends FabrixGeneric {
       return Promise.reject(err)
     }
 
-    // console.log('BRK TEST NOTIFY', subscribers, brokers, eternal, eternalBrokers, ephemeral, ephemeralBrokers)
+    // Check that there is a transaction chain, and that we are listening to the root one
+    const topLevelTransaction = this.unnestTransaction(options)
 
-    return this.notifySubscribers(subscribers, brokers, event, options)
+    const elog = []
+    subscribers.forEach((v, k) => elog.push(k))
+
+    if (
+      topLevelTransaction
+      && !topLevelTransaction.finished
+    ) {
+      // Setup Transaction afterCommit Hook from the original options
+      topLevelTransaction.afterCommit((transaction) => {
+        this.app.log.debug(
+          `Broadcaster ${this.name}`,
+          `${subscribers.size} subscribers will be notified for event ${event.event_type}`,
+          `after transaction commit ${topLevelTransaction.id}`,
+          `: ${elog.map(k => k).join(' -> ')}`
+        )
+        // console.log('BRK TEST NOTIFY', subscribers, brokers, eternal, eternalBrokers, ephemeral, ephemeralBrokers)
+        return this.notifySubscribers(subscribers, brokers, event, options)
+      })
+
+      return [event, options]
+    }
+    else {
+      // console.log('BRK TEST NOTIFY', subscribers, brokers, eternal, eternalBrokers, ephemeral, ephemeralBrokers)
+      return this.notifySubscribers(subscribers, brokers, event, options)
+    }
   }
 
   /**
@@ -664,7 +708,7 @@ export class Broadcast extends FabrixGeneric {
    */
   notifySubscribers(subscribers, brokers, event, options) {
     let breakException
-    // Setup Strong Events in priority order
+    // Setup Subscribers in priority order
     const subscribersAsc = new Map([...subscribers.entries()].sort((a, b) => {
       return brokers.get(a[0]).priority - brokers.get(b[0]).priority
     }))
@@ -679,6 +723,7 @@ export class Broadcast extends FabrixGeneric {
       `: ${slog.map(k => k).join(' -> ')}`
     )
 
+    // List the promises to execute
     const promises = Array.from(subscribersAsc.entries())
 
     return this.process(brokers, promises, ([m, p], k) => {
@@ -704,7 +749,7 @@ export class Broadcast extends FabrixGeneric {
         }
         else if (
           Array.isArray(broker.expects_input)
-          && broker.expects_input.includes(event.getDataValue('object'))
+          && !broker.expects_input.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
@@ -741,6 +786,10 @@ export class Broadcast extends FabrixGeneric {
           this.app.log.debug(
             `${this.name}.${m}: ${event.event_type} Execution time (hr): ${notifyend[0]}s ${notifyend[1] / 1000000}ms`
           )
+          if (broker.lifespan === 'ephemeral') {
+            this.app.log.debug('removing ephemeral subscriber', m, 'for event', event.event_type)
+            this.removeSubscriber({ event_type: event.event_type, lifespan: 'ephemeral', name: m })
+          }
           return [event, options]
         })
         .catch(err => {
@@ -1014,7 +1063,7 @@ export class Broadcast extends FabrixGeneric {
         }
         else if (
           Array.isArray(manager.expects_input)
-          && manager.expects_input.includes(event.getDataValue('object'))
+          && !manager.expects_input.includes(event.getDataValue('object'))
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
@@ -1245,7 +1294,7 @@ export class Broadcast extends FabrixGeneric {
         ) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `Neither ${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`)
+            `Neither app.channels.${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`)
         }
 
         const { error } = joi.validate(subscribers[m].config, subscriberConfig)

@@ -147,7 +147,7 @@ export class Saga extends Generic  {
    * @param options
    */
   // TODO send cancels on fail
-  public before(command, validators, options: { transaction?: any} = {}): Promise<any> {
+  public before(command, validators, options: { [key: string]: any} = {}): Promise<any> {
 
     const ran = new Map()
     const cancelled = new Map()

@@ -32,6 +32,8 @@ export interface IProjectorParams {
 export interface IProcessorParams {
   event: BroadcastEvent,
   options,
+  consistency?,
+  message?,
   manager?
 }
 

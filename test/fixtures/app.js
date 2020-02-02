@@ -18,6 +18,11 @@ const App = {
         dialect: 'postgres'
       }
     },
+    sequelize: {
+      plugins: {
+        hierarchy: require('sequelize-hierarchy')
+      }
+    },
     models: {
       defaultStore: 'sequelize',
       migrate: 'drop'
@@ -179,6 +184,13 @@ const App = {
                     expects_input: 'Test'
                   }
                 },
+                created2: {
+                  lifespan: 'ephemeral',
+                  config: {
+                    priority: 3,
+                    expects_input: ['Test', 'Test.list']
+                  }
+                },
               },
             }
           }
@@ -210,7 +222,14 @@ const App = {
                   lifespan: 'eternal',
                   config: {
                     priority: 2,
-                    expects_input: 'Test'
+                    expects_input: ['Test', 'Test.list']
+                  }
+                },
+                created2: {
+                  lifespan: 'ephemeral',
+                  config: {
+                    priority: 3,
+                    expects_input: ['Test', 'Test.list']
                   }
                 },
               },
