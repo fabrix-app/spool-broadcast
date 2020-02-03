@@ -9,6 +9,9 @@ export class BroadcastEntity extends Generic {
   constructor(app: FabrixApp, public _type) {
     super(app)
 
+    // Defines on the fabrix generic methods that are not allowed to be run when Fabrix binds?
+    super.unallowedMethods = this._protectedMethods
+
     const broadcasters = Object.keys(
       this.app.config.get(`broadcast.${this._type}.${this.name}.broadcasters`)
       || {}

@@ -1,4 +1,5 @@
 export { BroadcastEvent } from './BroadcastEvent'
+export { BroadcastEventAncestor } from './BroadcastEventAncestor'
 export { BroadcastSnapshot } from './BroadcastSnapshot'
 export { BroadcastEventHook } from './BroadcastEventHook'
 export { BroadcastProjectionVersion } from './BroadcastProjectionVersion'
