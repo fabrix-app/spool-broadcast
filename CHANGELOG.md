@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.52](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.51...v1.6.52) (2020-02-04)
+
+
+### Features
+
+* adds handeling for wildcards ([a01b0a6](https://github.com/fabrix-app/spool-broadcast/commit/a01b0a6))
+
 ### [1.6.51](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.50...v1.6.51) (2020-02-03)
 
 
