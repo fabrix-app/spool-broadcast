@@ -16,6 +16,7 @@ export const broadcastConfig = joi.object().keys({
     exchange: joi.string().allow(null),
     work_queue_name: joi.string().allow(null),
     interrupt_queue_name: joi.string().allow(null),
+    poison_queue_name: joi.string().allow(null),
     host: joi.string().allow(null),
     user: joi.string().allow(null),
     pass: joi.string().allow(null),

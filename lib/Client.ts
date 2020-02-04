@@ -32,7 +32,11 @@ export class Client extends FabrixGeneric {
   }) {
     // RabbitMQ can route events if they have a color ":", or other reserved characters
     // which means, for this use case we need to sanatize the event type for Broadcast pattern matching
-    const safe_event_type = event_type.replace(/:/g, '_')
+    const safe_event_type = event_type
+      .replace(/:/g, '_')
+      .replace(/\*/g, '_all')
+
+    this.app.log.debug('publishing safe_event_type', safe_event_type)
 
     const routingKey = broadcaster.name
     const correlationId = event.correlation_uuid
@@ -42,8 +46,6 @@ export class Client extends FabrixGeneric {
     const persistent = manager ? manager.persistent : null
     const mandatory = manager ? manager.mandatory : null
     const timeout = manager ? manager.timeout : this.app.config.get('broadcast.default_publish_timeout')
-
-    this.app.log.debug('publishing safe_event_type', safe_event_type)
 
     const send: {[key: string]: any} = {
       type: safe_event_type, // type
@@ -109,13 +111,47 @@ export class Client extends FabrixGeneric {
       this.exchange_name
     )
 
-    // RabbitMQ can route events if they have a color ":", or other reserved characters
+    // RabbitMQ can route events if they have a colon ":", or other reserved characters
     // which means, for this use case we need to sanatize the event type for Broadcast pattern matching
-    const safe_event_type = event_type.replace(/:/g, '_')
+    const safe_event_type = event_type
+      .replace(/:/g, '_')
+      .replace(/\*/g, '_all')
 
     return this.messenger.publish(
       this.exchange_name,
       `${safe_event_type}.interrupt`,
+      { event_uuid }
+    )
+      .then((result) => {
+        return result
+      })
+      .catch(err => {
+        this.app.log.error(err)
+        return err
+      })
+  }
+
+
+  /**
+   * Moves Broadcast Event to poison queue
+   */
+  async poison (event_type, event_uuid) {
+    this.app.log.info(
+      'poison type',
+      event_type,
+      event_uuid,
+      this.exchange_name
+    )
+
+    // RabbitMQ can route events if they have a colon ":", or other reserved characters
+    // which means, for this use case we need to sanatize the event type for Broadcast pattern matching
+    const safe_event_type = event_type
+      .replace(/:/g, '_')
+      .replace(/\*/g, '_all')
+
+    return this.messenger.publish(
+      this.exchange_name,
+      `${safe_event_type}.poison`,
       { event_uuid }
     )
       .then((result) => {

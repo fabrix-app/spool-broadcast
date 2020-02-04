@@ -86,7 +86,7 @@ const App = {
       }
     },
     log: {
-      logger: new smokesignals.Logger('debug')
+      logger: new smokesignals.Logger('silly')
     },
 
     broadcast: {
@@ -420,7 +420,20 @@ const App = {
                     expects_output: 'TestLogger'
                   }
                 },
-              }
+              },
+
+              // TEST a wildcard eventual event
+              'test.*': {
+                wild: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 255,
+                    expects_input: '*',
+                    expects_response: '*',
+                    expects_output: '*'
+                  }
+                },
+              },
             }
           }
         }

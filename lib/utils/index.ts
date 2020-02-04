@@ -46,6 +46,7 @@ export const utils = {
     const exchangeName = broadcasterConfig.exchange || 'broadcasts-work-x'
     const workQueueName = broadcasterConfig.work_queue_name || 'broadcasts-work-q'
     const interruptQueueName = broadcasterConfig.interrupt_queue_name || 'broadcasts-interrupt-q'
+    const poisonQueueName = broadcasterConfig.poison_queue_name || 'broadcasts-poison-q'
 
     broadcasterConfig.exchangeName = exchangeName
 
@@ -63,6 +64,10 @@ export const utils = {
       name: interruptQueueName,
       autoDelete: false,
       subscribe: true
+    }, {
+      name: poisonQueueName,
+      autoDelete: false,
+      subscribe: true
     }]
 
     broadcasterConfig.bindings = [{
@@ -73,6 +78,10 @@ export const utils = {
       exchange: exchangeName,
       target: interruptQueueName,
       keys: profile.map(broadcast => broadcast + '.interrupt')
+    }, {
+      exchange: exchangeName,
+      target: poisonQueueName,
+      keys: profile.map(broadcast => broadcast + '.poison')
     }]
 
     return broadcasterConfig
@@ -84,6 +93,7 @@ export const utils = {
       app.broadcaster.active_broadcasts.set(broadcastName, [])
       utils.registerBroadcasters(app, rabbit, broadcastName)
       utils.registerInterrupt(app, rabbit, broadcastName)
+      utils.registerPoison(app, rabbit, broadcastName)
     })
   },
 
@@ -115,6 +125,24 @@ export const utils = {
     })
   },
 
+  registerPoison: (app: FabrixApp, rabbit, broadcastName: string) => {
+    rabbit.handle(`${broadcastName}.poison`, (message) => {
+      const broadcastId = message.body.event_uuid
+      const activeBroadcasts = app.broadcaster.active_broadcasts.get(broadcastName) || []
+      const broadcast = find(activeBroadcasts, activeBroadcast => {
+        return activeBroadcast.event_uuid = broadcastId
+      })
+
+      if (!broadcast) {
+        app.log.info('Failed to poison broadcast, no active handler found for broadcast ' +
+          broadcastName + ' and id ' + broadcastId)
+        return message.reject()
+      }
+
+      return broadcast.poison(message.event_type, message.event_uuid)
+    })
+  },
+
   registerBroadcasters: (app: FabrixApp, rabbit, broadcastName: string) => {
     const broadcaster = app.broadcasts[broadcastName]
 
@@ -137,7 +165,8 @@ export const utils = {
 
     broadcaster.events().forEach((types, event_type) => {
       const managers = broadcaster.getEventualManagers(event_type)
-      utils.registerEventualProjectors(app, rabbit, broadcaster, event_type, types, managers)
+      const events = broadcaster.getEventualEvents(event_type)
+      utils.registerEventualListeners(app, rabbit, broadcaster, event_type, {eventual: events}, managers)
     })
 
     return
@@ -188,11 +217,13 @@ export const utils = {
    * @param types
    * @param managers
    */
-  registerEventualProjectors: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
+  registerEventualListeners: (app: FabrixApp, rabbit, broadcaster, event_type, types, managers) => {
     const broadcasterClient = app.broadcaster
 
     // Create a safe event type name
-    const safe_event_type = event_type.replace(/:/g, '_')
+    const safe_event_type = event_type
+      .replace(/:/g, '_')
+      .replace(/\*/g, '_all')
 
     // If there are eventual events for this event type
     if (types.eventual && types.eventual.size > 0) {
@@ -215,19 +246,22 @@ export const utils = {
         // add the current broadcast type into the list of active broadcasts,
         const promises = []
         if (types.eventual) {
-          types.eventual.forEach((project, k) => {
+          types.eventual.forEach((pro, k) => {
             const manager = managers.get(k)
             if (!manager) {
               throw new app.errors.GenericError(
                 'E_UNMET_DEPENDENCY',
-                `Event ${event_type} Manager ${project.name} was undefined and will cause a queue backup!`
+                `Event ${event_type} Manager ${pro.name} was undefined and would have caused a queue backup!`
               )
             }
-            promises.push(utils.runProjector(
+
+            const type = manager.is_processor ? utils.runProcessor : utils.runProjector
+
+            promises.push(type(
               app,
               broadcasterClient,
               broadcaster,
-              project,
+              pro,
               manager,
               req
             ))
@@ -238,7 +272,7 @@ export const utils = {
       })
 
       // broadcaster.name
-
+      // TODO: Is this going to cause an infinite loop? Perhaps we should make a poison queue?
       handler.catch( function( err, msg ) {
         // do something with the error & message
         app.log.error('Broadcaster Rabbit Handler Error!', msg.type, err)
@@ -352,12 +386,108 @@ export const utils = {
             .then(([_event, _options]) => {
               return p.ack()
             })
-        })
-        .catch(err => {
-          app.log.error(`Error in project.run() for project ${p.name}`, err)
-          return p.reject()
+            .catch(err => {
+              app.log.error(`Error in project.run() for project ${p.name}`, err)
+              return p.reject()
+            })
         })
         .then(() => {
+          // This will get cleared no matter what
+          return p.finalize()
+            .then(() => {
+              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+            })
+            .catch(() => {
+              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+            })
+        })
+    })
+  },
+
+
+  /**
+   * Run Eventual Processors
+   * @param app
+   * @param client
+   * @param broadcaster
+   * @param project
+   * @param manager
+   * @param message
+   */
+  runProcessor: (app: FabrixApp, client, broadcaster, project, manager, message) => {
+    let p
+
+    if (message.fields.redelivered) {
+      app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+    }
+
+    const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+
+    app.models.BroadcastEvent.sequelize.transaction({
+      isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
+      deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
+    }, t => {
+      try {
+        p = project({
+          event: event,
+          options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
+          consistency: 'eventual',
+          message: message,
+          manager: manager
+        })
+        app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
+      }
+      catch (err) {
+        app.log.error('Broadcaster Utils.runProcessor err', err)
+        message.nack()
+        return Promise.reject(err)
+      }
+
+      if (!client.active_broadcasts.has(broadcaster.name)) {
+        const err = new Error(
+          `Broadcaster Utils.runProcessor err Client should have active_broadcast of ${broadcaster.name}`
+        )
+        app.log.error('Broadcaster Utils.runProcessor err', err)
+        message.nack()
+        return Promise.reject(err)
+      }
+
+      if (typeof p.run !== 'function') {
+        const err = new Error(
+          `${broadcaster.name} ${p.name} should have a run function!`
+        )
+        app.log.error('Broadcaster Utils.runProcessor err', err)
+        message.nack()
+        return Promise.reject(err)
+      }
+      if (typeof p.ack !== 'function') {
+        const err = new app.errors.GenericError(
+          'E_BAD_REQUEST',
+          `${broadcaster.name} ${p.name} should have an ack function!`
+        )
+        app.log.error('Broadcaster Utils.runProcessor err', err)
+        message.nack()
+        return Promise.reject(err)
+      }
+
+      // so we know who should handle an interrupt call
+      client.active_broadcasts
+        .get(broadcaster.name)
+        .push(p)
+
+      return Promise.resolve()
+        .then(() => {
+          return p.run()
+            .then(([_event, _options]) => {
+              return p.ack()
+            })
+            .catch(err => {
+              app.log.error(`Error in processor.run() for processor ${p.name}`, err)
+              return p.reject()
+            })
+        })
+        .then(() => {
+          // This will get cleared no matter what
           return p.finalize()
             .then(() => {
               return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)

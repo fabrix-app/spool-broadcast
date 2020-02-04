@@ -1,6 +1,14 @@
 const Projector = require('../../../../dist').BroadcastProjector
 const Project = require('../../../../dist').BroadcastProject
 
+
+class Wild extends Project {
+  async run() {
+    console.log('BRK WILDCARD!', this.event)
+    return Promise.resolve([{action: false}, this.options])
+  }
+}
+
 class Logger extends Project {
   async run() {
     console.log('BRK LOGGED!', this.event)
@@ -90,6 +98,9 @@ class Puff extends Project {
 }
 
 module.exports = class Test extends Projector {
+  wild({event, options, consistency, message, manager}) {
+    return new Wild(this.app, event, options, consistency, message, manager)
+  }
   logger({event, options, consistency, message, manager}) {
     return new Logger(this.app, event, options, consistency, message, manager)
   }

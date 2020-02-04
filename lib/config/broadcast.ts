@@ -23,6 +23,8 @@ export const broadcast = {
     work_queue_name: process.env.BROADCAST_WORK_QUEUE || null,
     // optional, defaults to `broadcasts-interrupt-q`
     interrupt_queue_name: process.env.BROADCAST_INTERRUPT_QUEUE || null,
+    // optional, defaults to `broadcasts-poison-q`
+    poison_queue_name: process.env.BROADCAST_POISON_QUEUE || null,
 
     /**
      * The RabbitMQ connection information.

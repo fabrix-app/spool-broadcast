@@ -739,6 +739,7 @@ export class Broadcast extends FabrixGeneric {
       if (broker && broker.expects_input) {
         if (
           typeof broker.expects_input === 'string'
+          && broker.expects_input !== '*'
           && event.getDataValue('object') !== broker.expects_input
         ) {
           throw new this.app.errors.GenericError(
@@ -749,7 +750,7 @@ export class Broadcast extends FabrixGeneric {
         }
         else if (
           Array.isArray(broker.expects_input)
-          && !broker.expects_input.includes(event.getDataValue('object'))
+          && !broker.expects_input.includes(event.getDataValue('object') || '*')
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
@@ -1053,6 +1054,7 @@ export class Broadcast extends FabrixGeneric {
       if (manager && manager.expects_input) {
         if (
           typeof manager.expects_input === 'string'
+          && manager.expects_input !== '*'
           && String(event.getDataValue('object')) !== manager.expects_input
         ) {
           throw new this.app.errors.GenericError(
@@ -1063,7 +1065,7 @@ export class Broadcast extends FabrixGeneric {
         }
         else if (
           Array.isArray(manager.expects_input)
-          && !manager.expects_input.includes(event.getDataValue('object'))
+          && !manager.expects_input.includes(event.getDataValue('object') || '*')
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
@@ -1079,112 +1081,127 @@ export class Broadcast extends FabrixGeneric {
 
       // Check and promise events
       if (!p || typeof p !== 'function') {
-        this.app.log.warn(`${m} attempted to call a non function ${p}! - returning`)
+        this.app.log.warn(`${this.name} ${m} attempted to call a non function ${p}! Unhandled - returning without running`)
         return [event, options]
       }
 
       // Get the time for the start of the hook
       const projectstart = process.hrtime()
 
-      return p({
-        event,
-        options,
-        consistency: 'strong',
-        message: null,
-        manager: manager
+      return this.run(event, options, p, m, manager, projectstart, breakException)
+    })
+      .then(results => {
+        return [event, options]
       })
-        .run()
-        .then(([_event, _options]) => {
+  }
+
+  /**
+   * TODO, getting messy here, need to clean this up a lot
+   * Run the Process or Projection
+   * @param event
+   * @param options
+   * @param p
+   * @param m
+   * @param manager
+   * @param projectstart
+   * @param breakException
+   */
+  run(event, options, p, m, manager, projectstart, breakException) {
+    return p({
+      event,
+      options,
+      consistency: 'strong',
+      message: null,
+      manager: manager
+    })
+      .run()
+      .then(([_event, _options]) => {
+        if (!_event) {
+          throw new this.app.errors.GenericError(
+            'E_FAILED_DEPENDENCY',
+            `${p.name} Projection returned no event for ${m}! - fatal`
+          )
+        }
+        else if (!isArray(_event)) {
           if (!_event) {
             throw new this.app.errors.GenericError(
-              'E_FAILED_DEPENDENCY',
-              `${p.name} Projection returned no event for ${m}! - fatal`
+              'E_NOT_ACCEPTABLE',
+              `${p.name} Projection returned invalid response for ${m}! - fatal`
             )
           }
-          else if (!isArray(_event)) {
-            if (!_event) {
+          if (_event instanceof BroadcastCommand) {
+            throw new this.app.errors.GenericError(
+              'E_NOT_ACCEPTABLE',
+              `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`
+            )
+          }
+
+          if (_event.action && _event.action === 'retry') {
+            this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
+            return [event, options]
+          }
+          if (_event.action === false) {
+            this.app.log.debug(`${this.name} ${m} to continue without data`)
+            return [event, options]
+          }
+        }
+        else {
+          _event.forEach(_e => {
+            if (!_e) {
               throw new this.app.errors.GenericError(
-                'E_NOT_ACCEPTABLE',
+                'E_UNPROCESSABLE_ENTITY',
                 `${p.name} Projection returned invalid response for ${m}! - fatal`
               )
             }
-            if (_event instanceof BroadcastCommand) {
+            if (_e[0] instanceof BroadcastCommand) {
               throw new this.app.errors.GenericError(
                 'E_NOT_ACCEPTABLE',
-                `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`
-              )
+                `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`)
             }
-
-            if (_event.action && _event.action === 'retry') {
-              this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
-              return [event, options]
-            }
-            if (_event.action === false) {
-              this.app.log.debug(`${this.name} ${m} to continue without data`)
-              return [event, options]
-            }
+          })
+          if (_event.every(_e => _e[0].action && _e[0].action === 'retry')) {
+            this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
+            return [event, options]
           }
-          else {
-            _event.forEach(_e => {
-              if (!_e) {
-                throw new this.app.errors.GenericError(
-                  'E_UNPROCESSABLE_ENTITY',
-                  `${p.name} Projection returned invalid response for ${m}! - fatal`
-                )
-              }
-              if (_e[0] instanceof BroadcastCommand) {
-                throw new this.app.errors.GenericError(
-                  'E_NOT_ACCEPTABLE',
-                  `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`)
-              }
-            })
-            if (_event.every(_e => _e[0].action && _e[0].action === 'retry')) {
-              this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
-              return [event, options]
-            }
-            if (_event.every(_e => _e[0].action && _e[0].action === false)) {
-              this.app.log.debug(`${m} to continue without data in list of events`)
-              return [event, options]
-            }
+          if (_event.every(_e => _e[0].action && _e[0].action === false)) {
+            this.app.log.debug(`${m} to continue without data in list of events`)
+            return [event, options]
           }
+        }
 
+        if (m) {
+          event.chain_events.push(m)
+        }
 
-          if (m) {
-            event.chain_events.push(m)
-          }
+        this.app.log.silly(this.name, m, 'current chain_events', event.chain_events)
 
-          this.app.log.silly(this.name, m, 'current chain_events', event.chain_events)
+        if (manager && manager.merge && manager.merge !== false) {
+          event.mergeData(m, manager, _event)
+        }
+        if (manager && manager.push && manager.push !== false) {
+          event.pushOn(m, manager, _event)
+        }
+        if (manager && manager.zip && manager.zip !== false) {
+          event.zip(m, manager, _event)
+        }
+        if (manager && manager.include && manager.include !== false) {
+          event.includeOn(m, manager, _event)
+        }
 
-          if (manager && manager.merge && manager.merge !== false) {
-              event.mergeData(m, manager, _event)
-          }
-          if (manager && manager.push && manager.push !== false) {
-            event.pushOn(m, manager, _event)
-          }
-          if (manager && manager.zip && manager.zip !== false) {
-            event.zip(m, manager, _event)
-          }
-          if (manager && manager.include && manager.include !== false) {
-            event.includeOn(m, manager, _event)
-          }
+        const projectend = process.hrtime(projectstart)
+        const t = `${manager.is_processor ? 'BroadcastProcessor' : 'BroadcastProjector'}`
+        this.app.log.debug(
+          `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+        )
 
-
-          const projectend = process.hrtime(projectstart)
-          const t = `${manager.is_processor ? 'BroadcastProcessor' : 'Projector'}`
-          this.app.log.debug(
-            `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
-          )
-
-          return [event, options]
-        })
-        .catch(err => {
-          breakException = err
-          // TODO perhaps retry up to a limit?
-          this.app.log.error(`${this.name} ${p.name} threw an error - fatal`, err)
-          return Promise.reject(err)
-        })
-    })
-      .then(results => [event, options])
+        return [event, options]
+      })
+      .catch(err => {
+        breakException = err
+        // TODO perhaps retry up to a limit?
+        this.app.log.error(`${this.name} ${p.name} threw an error - fatal`, err)
+        return Promise.reject(err)
+      })
   }
 
   /**
@@ -1988,7 +2005,7 @@ export class Broadcast extends FabrixGeneric {
           throw new Error(`${projector.name} method is undefined`)
         }
 
-        const {error} = joi.validate(events[m].config, projectorConfig)
+        const { error } = joi.validate(events[m].config, projectorConfig)
 
         if (error) {
           throw new this.app.errors.GenericError(
@@ -2250,7 +2267,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Get events by type with eventual consitency
+   * Get events by type with eventual consistency
    * @param event_type
    */
   getEventualEvents(event_type): Map<string, any> {
@@ -2277,7 +2294,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
-   * Get events by type with eventual consitency
+   * Get events by type with eventual consistency
    * @param event_type
    */
   getEventualManagers(event_type): Map<string, any> {
@@ -2310,6 +2327,10 @@ export class Broadcast extends FabrixGeneric {
   events() {
     return this._events
   }
+  // eventualEvents() {
+  //   console.log('BRK EVENTUAL', this._events)
+  //   return this._events
+  // }
   projectors() {
     return this._projectors
   }

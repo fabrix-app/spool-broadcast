@@ -465,7 +465,10 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
   }
   // If merge: true
   else {
-    if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+    if (
+      handler.expects_response
+      && handler.expects_response !== '*'
+      && command.getDataValue('object') !== handler.expects_response) {
       throw new Error(
         `Hook: ${method} merge expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`
       )
@@ -525,7 +528,11 @@ BroadcastCommand.prototype.mergeAs = function(method, handler, command) {
     this.app.log.debug(`BroadcastCommand.mergeAs was passed empty handler mergeAs property or command.data for ${command.command_type}`)
     return this
   }
-  if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+  if (
+    handler.expects_response
+    && handler.expects_response !== '*'
+    && command.getDataValue('object') !== handler.expects_response
+  ) {
     throw new Error(`mergeAs expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`)
   }
 
@@ -577,7 +584,11 @@ BroadcastCommand.prototype.includeAs = function(method, handler, command) {
     return this
   }
 
-  if (handler.expects_response && command.getDataValue('object') !== handler.expects_response) {
+  if (
+    handler.expects_response
+    && handler.expects_response !== '*'
+    && command.getDataValue('object') !== handler.expects_response
+  ) {
     throw new Error(`includeAs expected ${handler.expects_response} but got ${command.getDataValue('object')} for ${ command.command_type}`)
   }
 
