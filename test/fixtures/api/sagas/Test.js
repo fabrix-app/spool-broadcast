@@ -4,6 +4,7 @@ const Validator = require('../../../../dist').Validator
 
 const validate = {
   'create.test': (data) => Validator.joiPromise(data, joi.object()),
+  'test.eventual': (data) => Validator.joiPromise(data, joi.object()),
   'create.test.list': (data) => Validator.joiPromiseMap(data, joi.object()),
   'create.:test_uuid.test': (data) => Validator.joiPromise(data, joi.object()),
   'create.test.:test_uuid.test.:test_uuid': (data) => Validator.joiPromise(data, joi.object()),
@@ -36,6 +37,37 @@ module.exports = class Test extends Saga {
       .then(([_command, _options]) => {
         const event = TestBroadcast.buildEvent({
           event_type: 'test.created',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
+  createEventual(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'test.eventual',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'eventual.tested',
           correlation_uuid: _command.command_uuid,
           command: _command
         })

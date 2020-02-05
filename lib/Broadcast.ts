@@ -2107,14 +2107,17 @@ export class Broadcast extends FabrixGeneric {
     const key =  event_type // pattern // .toString()
 
     // Add default configs
+    // These values will get replaced by the config if set
     config = {
       priority: 255,
       retry_limit: 0,
-      processing: 'serial',
+      // By Default, processors or strong projectors should be serial because of transactions
+      processing: is_processor || consistency === 'strong' ? 'serial' : 'parallel',
       is_processor: is_processor,
       params: keys,
       pattern: pattern,
       pattern_raw: event_type,
+      consistency: consistency,
       ...config
     }
 

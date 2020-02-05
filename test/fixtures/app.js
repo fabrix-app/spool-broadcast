@@ -436,7 +436,42 @@ const App = {
               },
             }
           }
-        }
+        },
+        TestMulti: {
+          broadcasters: {
+            /**
+             * Broadcaster that the Test Projectors are responding to
+             */
+            Test: {
+              'eventual.tested': {
+                one: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 1,
+                    expects_input: 'Test',
+                    retry_limit: 1
+                  }
+                },
+                two: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 2,
+                    expects_input: 'Test',
+                    retry_limit: 2
+                  }
+                },
+                three: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 3,
+                    expects_input: 'Test',
+                    retry_limit: 3
+                  }
+                },
+              },
+            },
+          }
+        },
       },
       processors: {
         /**

@@ -7,6 +7,10 @@ module.exports = class Test extends Entry {
     return this.transaction(this.app.sagas.Test.create, req, body, options)
   }
 
+  createEventual(req, body, options) {
+    return this.transaction(this.app.sagas.Test.createEventual, req, body, options)
+  }
+
   // @Point({})
   // @Command({})
   bulkCreate(req, body, options) {
