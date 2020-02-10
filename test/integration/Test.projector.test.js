@@ -36,7 +36,7 @@ describe('Test Projectors', () => {
         .then((res) => {
           console.log('BRK EVENTUAL RESULTS', res)
           assert.ok(res)
-          assert.ok(res.length === 3)
+          assert.ok(res.length >= 3)
           done()
         })
         .catch(err => {

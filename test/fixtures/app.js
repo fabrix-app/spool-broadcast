@@ -536,6 +536,19 @@ const App = {
                     merge: true
                   }
                 },
+              },
+
+              'eventual.tested': {
+                eventual: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 4,
+                    expects_input: 'Test',
+                    retry_limit: 1,
+                    expects_response: 'Test',
+                    expects_output: 'Test',
+                  }
+                },
               }
             }
           }
