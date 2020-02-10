@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.54](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.53...v1.6.54) (2020-02-10)
+
+
+### Bug Fixes
+
+* fixes active_broadcasts not getting cleared. ([d9db1f7](https://github.com/fabrix-app/spool-broadcast/commit/d9db1f7))
+
+
+### Features
+
+* allows eventual processors ([6c15e9b](https://github.com/fabrix-app/spool-broadcast/commit/6c15e9b)), closes [#8](https://github.com/fabrix-app/spool-broadcast/issues/8)
+
 ### [1.6.53](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.52...v1.6.53) (2020-02-05)
 
 
