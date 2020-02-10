@@ -134,6 +134,22 @@ export class BroadcastProcess extends FabrixGeneric {
     }
   }
 
+  /**
+   * Interrupt the event
+   */
+  async interrupt (msg): Promise<any> {
+    this.app.log.debug(`${this.name} Interrupt:`, msg)
+  }
+
+  /**
+   * Cleanup any artifacts
+   * @param event
+   * @param options
+   */
+  async finalize (): Promise<any> {
+    this.app.log.debug(`${this.name} Finalize:`, this.event.event_type)
+  }
+
   public entries(name): Entry {
     if (!this.app.spools.broadcast) {
       throw new Error('Spool-broadcast is not loaded!')

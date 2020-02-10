@@ -103,7 +103,8 @@ export const utils = {
   clearHandler: (activeBroadcasts, broadcast) => {
     // remove the broadcast from the broadcasterClient handlers list
     remove(activeBroadcasts, activeBroadcast => {
-      return broadcast.event_uuid = activeBroadcast['event_uuid']
+      return broadcast.event.event_uuid === activeBroadcast.event.event_uuid
+        && broadcast.constructor.name === activeBroadcast.constructor.name
     })
   },
 
@@ -112,7 +113,7 @@ export const utils = {
       const broadcastId = message.body.event_uuid
       const activeBroadcasts = app.broadcaster.active_broadcasts.get(broadcastName) || []
       const broadcast = find(activeBroadcasts, activeBroadcast => {
-        return activeBroadcast.event_uuid = broadcastId
+        return activeBroadcast.event.event_uuid = broadcastId
       })
 
       if (!broadcast) {
@@ -130,7 +131,7 @@ export const utils = {
       const broadcastId = message.body.event_uuid
       const activeBroadcasts = app.broadcaster.active_broadcasts.get(broadcastName) || []
       const broadcast = find(activeBroadcasts, activeBroadcast => {
-        return activeBroadcast.event_uuid = broadcastId
+        return activeBroadcast.event.event_uuid = broadcastId
       })
 
       if (!broadcast) {
@@ -327,15 +328,17 @@ export const utils = {
     }
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+    let options
 
     app.models.BroadcastEvent.sequelize.transaction({
       isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
       deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
     }, t => {
       try {
+        options = { transaction: t }
         p = project({
           event: event,
-          options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
+          options: options, // This keeps namespace clean for eventual events and they can use their own transaction
           consistency: 'eventual',
           message: message,
           manager: manager
@@ -350,7 +353,7 @@ export const utils = {
 
       if (!client.active_broadcasts.has(broadcaster.name)) {
         const err = new Error(
-          `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name}`
+          `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name} - fatal`
         )
         app.log.error('Broadcaster Utils.runProjector err', err)
         message.nack()
@@ -361,16 +364,17 @@ export const utils = {
         const err = new Error(
           `${broadcaster.name} ${p.name} should have a run function!`
         )
-        app.log.error('Broadcaster Utils.runProjector err', err)
+        app.log.error('Broadcaster Utils.runProjector err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
+
       if (typeof p.ack !== 'function') {
         const err = new app.errors.GenericError(
           'E_BAD_REQUEST',
           `${broadcaster.name} ${p.name} should have an ack function!`
         )
-        app.log.error('Broadcaster Utils.runProjector err', err)
+        app.log.error('Broadcaster Utils.runProjector err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
@@ -387,7 +391,7 @@ export const utils = {
               return p.ack()
             })
             .catch(err => {
-              app.log.error(`Error in project.run() for project ${p.name}`, err)
+              app.log.error(`Error in project.run() for project ${p.name} - fatal`, err)
               return p.reject()
             })
         })
@@ -435,10 +439,11 @@ export const utils = {
           message: message,
           manager: manager
         })
+        // Log that this is happening
         app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
       }
       catch (err) {
-        app.log.error('Broadcaster Utils.runProcessor err', err)
+        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
@@ -447,7 +452,7 @@ export const utils = {
         const err = new Error(
           `Broadcaster Utils.runProcessor err Client should have active_broadcast of ${broadcaster.name}`
         )
-        app.log.error('Broadcaster Utils.runProcessor err', err)
+        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
@@ -456,7 +461,7 @@ export const utils = {
         const err = new Error(
           `${broadcaster.name} ${p.name} should have a run function!`
         )
-        app.log.error('Broadcaster Utils.runProcessor err', err)
+        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
@@ -465,7 +470,7 @@ export const utils = {
           'E_BAD_REQUEST',
           `${broadcaster.name} ${p.name} should have an ack function!`
         )
-        app.log.error('Broadcaster Utils.runProcessor err', err)
+        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
         message.nack()
         return Promise.reject(err)
       }
@@ -482,7 +487,7 @@ export const utils = {
               return p.ack()
             })
             .catch(err => {
-              app.log.error(`Error in processor.run() for processor ${p.name}`, err)
+              app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
               return p.reject()
             })
         })

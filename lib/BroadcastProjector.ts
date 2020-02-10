@@ -25,6 +25,7 @@ export class BroadcastProject extends FabrixGeneric {
     public manager?: any
   ) {
     super(app)
+
     this.event = event
     this.options = options
     this.consistency = consistency || this.consistency
@@ -75,6 +76,10 @@ export class BroadcastProject extends FabrixGeneric {
       this.isAcknowledged = true
       return Promise.resolve([this.event, this.options])
     }
+    // else if (this.isAcknowledged && !this.message) {
+    //   this.app.log.warn(`Projector ${this.name} attempting to ack a message that already responded`)
+    //   return Promise.resolve([this.event, this.options])
+    // }
     else {
       this.app.log.warn(`Projector ${this.name} attempting to ack a message that already responded`)
       return Promise.resolve([this.event, this.options])
@@ -98,6 +103,11 @@ export class BroadcastProject extends FabrixGeneric {
       this.isAcknowledged = true
       return Promise.reject([this.event, this.options])
     }
+    else if (this.isAcknowledged && this.message) {
+      this.app.log.debug(`Can not nack acknowledged message for Projector ${this.name}`)
+      this.isAcknowledged = true
+      return Promise.reject([this.event, this.options])
+    }
     else {
       this.app.log.warn(`Projector ${this.name} attempting to nack a message that already responded`)
       return Promise.reject([this.event, this.options])
@@ -109,7 +119,7 @@ export class BroadcastProject extends FabrixGeneric {
    */
   async reject(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged && this.message) {
-      this.app.log.debug(`Rejecting ${this.name}`)
+      this.app.log.debug(`Projector Rejecting ${this.name}`)
       this.isAcknowledged = true
       return this.message.reject()
         // .then(() => {
@@ -117,8 +127,12 @@ export class BroadcastProject extends FabrixGeneric {
         // })
     }
     else if (!this.isAcknowledged && !this.message) {
-      this.app.log.debug(`Can not reject empty message for ${this.name}`)
+      this.app.log.debug(`Can not reject empty message for Projector ${this.name}`)
       this.isAcknowledged = true
+      return Promise.reject([this.event, this.options])
+    }
+    else if (this.isAcknowledged && this.message) {
+      this.app.log.debug(`Can not reject acknowledged message for Projector ${this.name}`)
       return Promise.reject([this.event, this.options])
     }
     else {
@@ -136,10 +150,11 @@ export class BroadcastProject extends FabrixGeneric {
 
   /**
    * Cleanup any artifacts
-   * @param results
+   * @param event
+   * @param options
    */
-  async finalize (results?): Promise<any> {
-    this.app.log.debug(`${this.name} Finalize:`, results)
+  async finalize (): Promise<any> {
+    this.app.log.debug(`${this.name} Finalize:`, this.event.event_type)
   }
 
   public entries(name): Entry {
