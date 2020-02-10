@@ -405,6 +405,10 @@ export const utils = {
               return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
             })
         })
+        .catch((err) => {
+          app.log.error(`Unhandled Error for project ${p.name} - fatal`, err)
+          return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+        })
     })
   },
 
@@ -500,6 +504,10 @@ export const utils = {
             .catch(() => {
               return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
             })
+        })
+        .catch((err) => {
+          app.log.error(`Unhandled Error for process ${p.name} - fatal`, err)
+          return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
         })
     })
   },

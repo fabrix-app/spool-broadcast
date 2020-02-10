@@ -101,16 +101,16 @@ export class BroadcastProject extends FabrixGeneric {
     else if (!this.isAcknowledged && !this.message) {
       this.app.log.debug(`Can not nack empty message for Projector ${this.name}`)
       this.isAcknowledged = true
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
     else if (this.isAcknowledged && this.message) {
       this.app.log.debug(`Can not nack acknowledged message for Projector ${this.name}`)
       this.isAcknowledged = true
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
     else {
       this.app.log.warn(`Projector ${this.name} attempting to nack a message that already responded`)
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
   }
 
@@ -129,15 +129,15 @@ export class BroadcastProject extends FabrixGeneric {
     else if (!this.isAcknowledged && !this.message) {
       this.app.log.debug(`Can not reject empty message for Projector ${this.name}`)
       this.isAcknowledged = true
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
     else if (this.isAcknowledged && this.message) {
       this.app.log.debug(`Can not reject acknowledged message for Projector ${this.name}`)
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
     else {
       this.app.log.warn(`${this.name} attempting to reject a message that already responded`)
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
   }
 

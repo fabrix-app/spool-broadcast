@@ -103,12 +103,12 @@ export class BroadcastProcess extends FabrixGeneric {
           // })
       }
       else {
-        return Promise.reject([this.event, this.options])
+        return Promise.resolve([this.event, this.options])
       }
     }
     else {
       this.app.log.warn(`${this.name} attempting to nack a message that already responded`)
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
   }
 
@@ -125,12 +125,12 @@ export class BroadcastProcess extends FabrixGeneric {
           // })
       }
       else {
-        return Promise.reject([this.event, this.options])
+        return Promise.resolve([this.event, this.options])
       }
     }
     else {
       this.app.log.warn(`${this.name} attempting to reject a message that already responded`)
-      return Promise.reject([this.event, this.options])
+      return Promise.resolve([this.event, this.options])
     }
   }
 
