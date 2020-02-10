@@ -56,6 +56,7 @@
     "@fabrix/lint": "^1.0.0-alpha.3",
     "@fabrix/spool-express": "^1.6.7",
     "@fabrix/spool-realtime": "^1.6.6",
+    "@fabrix/spool-retry": "^1.6.0",
     "@fabrix/spool-router": "^1.6.4",
     "@fabrix/spool-sequelize": "1.6.18",
     "@types/node": "~10.3.4",

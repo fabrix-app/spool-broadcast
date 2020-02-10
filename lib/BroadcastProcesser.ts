@@ -66,10 +66,22 @@ export class BroadcastProcess extends FabrixGeneric {
   async ack(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
-      return Promise.resolve([this.event, this.options])
+      if (this.message) {
+        return this.message.ack()
+          // .then(() => {
+          //   return [this.event, this.options]
+          // })
+          // .catch(err => {
+          //   this.app.log.warn(`Processor ${this.name} attempting to ack a message, but failed!`, err)
+          //   return [this.event, this.options]
+          // })
+      }
+      else {
+        return Promise.resolve([this.event, this.options])
+      }
     }
     else {
-      this.app.log.warn(`${this.name} attempting to ack a message that already responded`)
+      this.app.log.warn(`Processor ${this.name} attempting to ack a message that already responded`)
       return Promise.resolve([this.event, this.options])
     }
   }
@@ -80,7 +92,19 @@ export class BroadcastProcess extends FabrixGeneric {
   async nack(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
-      return Promise.reject([this.event, this.options])
+      if (this.message) {
+        return this.message.nack()
+          // .then(() => {
+          //   return Promise.reject([this.event, this.options])
+          // })
+          // .catch(err => {
+          //   this.app.log.warn(`Processor ${this.name} attempting to nack a message, but failed!`, err)
+          //   return [this.event, this.options]
+          // })
+      }
+      else {
+        return Promise.reject([this.event, this.options])
+      }
     }
     else {
       this.app.log.warn(`${this.name} attempting to nack a message that already responded`)
@@ -94,7 +118,15 @@ export class BroadcastProcess extends FabrixGeneric {
   async reject(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
-      return Promise.reject([this.event, this.options])
+      if (this.message) {
+        return this.message.reject()
+          // .then(() => {
+          //   return Promise.reject([this.event, this.options])
+          // })
+      }
+      else {
+        return Promise.reject([this.event, this.options])
+      }
     }
     else {
       this.app.log.warn(`${this.name} attempting to reject a message that already responded`)

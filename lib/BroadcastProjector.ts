@@ -67,13 +67,16 @@ export class BroadcastProject extends FabrixGeneric {
     if (!this.isAcknowledged && this.message) {
       this.isAcknowledged = true
       return this.message.ack()
+        // .then(() => {
+        //   return Promise.resolve([this.event, this.options])
+        // })
     }
     else if (!this.isAcknowledged && !this.message) {
       this.isAcknowledged = true
       return Promise.resolve([this.event, this.options])
     }
     else {
-      this.app.log.warn(`${this.name} attempting to ack a message that already responded`)
+      this.app.log.warn(`Projector ${this.name} attempting to ack a message that already responded`)
       return Promise.resolve([this.event, this.options])
     }
   }
@@ -86,14 +89,17 @@ export class BroadcastProject extends FabrixGeneric {
       this.app.log.debug(`Nacking ${this.name}`)
       this.isAcknowledged = true
       return this.message.nack()
+        // .then(() => {
+        //   return Promise.reject([this.event, this.options])
+        // })
     }
     else if (!this.isAcknowledged && !this.message) {
-      this.app.log.debug(`Can not nack empty message for ${this.name}`)
+      this.app.log.debug(`Can not nack empty message for Projector ${this.name}`)
       this.isAcknowledged = true
       return Promise.reject([this.event, this.options])
     }
     else {
-      this.app.log.warn(`${this.name} attempting to nack a message that already responded`)
+      this.app.log.warn(`Projector ${this.name} attempting to nack a message that already responded`)
       return Promise.reject([this.event, this.options])
     }
   }
@@ -106,6 +112,9 @@ export class BroadcastProject extends FabrixGeneric {
       this.app.log.debug(`Rejecting ${this.name}`)
       this.isAcknowledged = true
       return this.message.reject()
+        // .then(() => {
+        //   return Promise.reject([this.event, this.options])
+        // })
     }
     else if (!this.isAcknowledged && !this.message) {
       this.app.log.debug(`Can not reject empty message for ${this.name}`)
