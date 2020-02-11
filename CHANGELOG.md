@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.57](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.56...v1.6.57) (2020-02-11)
+
+
+### Features
+
+* adds promises to ack, nack, reject ([8c5ce1a](https://github.com/fabrix-app/spool-broadcast/commit/8c5ce1a))
+
 ### [1.6.56](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.55...v1.6.56) (2020-02-11)
 
 
