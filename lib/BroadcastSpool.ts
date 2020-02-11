@@ -271,9 +271,8 @@ export class BroadcastSpool extends ExtensionSpool {
    * clear subscriptions
    */
   async unload() {
-    return Promise.all([
-      broadcaster.shutdownBroadcaster(this.app)
-    ])
+     return broadcaster.shutdownBroadcaster(this.app)
+
       .catch(err => {
         return Promise.reject(err)
       })

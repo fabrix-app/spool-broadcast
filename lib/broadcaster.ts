@@ -25,9 +25,9 @@ export const broadcaster = {
     // )
 
     // automatically nack exceptions in handlers
-    // rabbit.nackOnError()
+    rabbit.nackOnError()
 
-    //
+    // automatically reject exceptions in handlers
     // rabbit.rejectUnhandled()
 
     broadcaster.registerOnUnhandled(app, rabbit)
@@ -405,6 +405,22 @@ export const broadcaster = {
       return Promise.resolve()
     }
 
-    return Promise.resolve(rabbit.shutdown())
+    app.log.debug(
+      'still active, need to move to interrupt',
+      app.broadcaster.active_broadcasts
+    )
+
+    // Interupt active broadcasts
+    const active: Promise<any>[] = []
+    app.broadcaster.active_broadcasts.forEach((value, key, map) => {
+      value.forEach((m) => {
+        active.push(m.interupt())
+      })
+    })
+
+    return Promise.all(active)
+      .then(res => {
+        return rabbit.shutdown()
+      })
   },
 }
