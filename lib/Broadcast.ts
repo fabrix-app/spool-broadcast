@@ -13,6 +13,7 @@ import { BroadcastProcessor } from './BroadcastProcesser'
 import { BroadcastEvent } from './api/models'
 import { BroadcastCommand } from './BroadcastCommand'
 import { GenericError } from '@fabrix/spool-errors/dist/errors'
+import { utils } from './utils'
 
 // import { each, broadcastSeries } from 'Bluebird'
 
@@ -972,10 +973,10 @@ export class Broadcast extends FabrixGeneric {
             // }
 
             // Publish the eventual events
-            return this.projectEventual(eventual, eventualManagers, _event, _options)
+            return this.publishEventual(eventual, eventualManagers, _event, _options)
               .then(results => [_event, _options])
               .catch(err => {
-                this.app.log.error(`Unhandled: ${event.event_type} Broadcast.project.projectEventual after commit`, err)
+                this.app.log.error(`Unhandled: ${event.event_type} Broadcast.project.publishEventual after commit`, err)
                 throw new Error(err)
               })
           })
@@ -989,11 +990,11 @@ export class Broadcast extends FabrixGeneric {
             `: ${elog.map(k => k).join(' -> ')}`
           )
           // Publish the eventual events
-          return this.projectEventual(eventual, eventualManagers, _event, _options)
+          return this.publishEventual(eventual, eventualManagers, _event, _options)
             .then(results => [_event, _options])
             .catch(err => {
               // TODO better define this error
-              this.app.log.error('Broadcast.project.projectEventual independent transaction', err)
+              this.app.log.error('Broadcast.project.publishEventual independent transaction', err)
               throw new this.app.errors.GenericError(err)
             })
         }
@@ -1085,10 +1086,7 @@ export class Broadcast extends FabrixGeneric {
         return [event, options]
       }
 
-      // Get the time for the start of the hook
-      const projectstart = process.hrtime()
-
-      return this.run(event, options, p, m, manager, projectstart, breakException)
+      return this.run(event, options, p, m, manager, breakException)
     })
       .then(results => {
         return [event, options]
@@ -1103,19 +1101,26 @@ export class Broadcast extends FabrixGeneric {
    * @param p
    * @param m
    * @param manager
-   * @param projectstart
    * @param breakException
    */
-  run(event, options, p, m, manager, projectstart, breakException) {
+  run(event, options, p, m, manager, breakException) {
+
+    // console.log('BRK M', m, p)
+
+    // Get the time for the start of the hook
+    const projectstart = process.hrtime()
+
     return p({
       event,
       options,
-      consistency: 'strong',
+      consistency: manager.consistency || 'strong',
       message: null,
       manager: manager
     })
       .run()
       .then(([_event, _options]) => {
+        p.isAcknowledged = true
+
         if (!_event) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
@@ -1196,6 +1201,13 @@ export class Broadcast extends FabrixGeneric {
 
         return [event, options]
       })
+      // .then(([_event, _options]) => {
+      //   return p.finalize()
+      //     .then(() => {
+      //       // utils.clearHandler(client.active_broadcasts.get(this.name), p)
+      //       return [event, options]
+      //     })
+      // })
       .catch(err => {
         breakException = err
         // TODO perhaps retry up to a limit?
@@ -1211,7 +1223,7 @@ export class Broadcast extends FabrixGeneric {
    * @param event
    * @param options
    */
-  projectEventual(eventualEvents, eventualManagers, event, options) {
+  publishEventual(eventualEvents, eventualManagers, event, options) {
 
     // eventualEvents.forEach(e => {
     //   if (e) {
@@ -1259,6 +1271,211 @@ export class Broadcast extends FabrixGeneric {
         this.app.log.silly(`Broadcast ${this.name} Published Results`, res)
         // TODO retry regression
         return [event, options]
+      })
+  }
+
+  runEventual(client, eventualEvents, eventualManagers, message) {
+    // Get the time for the start of the hook
+    const eventualstart = process.hrtime()
+
+    // Setup eventual Events in priority order
+    const eventualEventsAsc = new Map([...eventualEvents.entries()].sort((a, b) => {
+      return eventualManagers.get(a[0]).priority - eventualManagers.get(b[0]).priority
+    }))
+    // Log the order
+    const slog = []
+
+    // List the promises to execute
+    const events = Array.from(eventualEventsAsc.entries())
+
+    let breakException
+
+    eventualEventsAsc.forEach((v, k) => slog.push(k))
+
+    this.app.log.debug(
+      `Broadcaster ${this.name} running`,
+      `${eventualEventsAsc.size} eventual for event ${message.type}`,
+      `: ${slog.map(k => k).join(' -> ')}`
+    )
+
+    // This keeps namespace clean for eventual events and they can use their own transaction
+    return this.app.models.BroadcastEvent.sequelize.transaction({
+      isolationLevel: this.app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
+      deferrable: this.app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
+    }, t => {
+
+      return this.process(eventualManagers, events, ([key, projector]) => {
+
+        if (breakException) {
+          return Promise.reject(breakException)
+        }
+
+        const manager = eventualManagers.get(key)
+
+        if (manager.is_processor) {
+          return this.runEventualProcessor(client, projector, key, manager, message, { transaction: t }, breakException)
+        }
+        else {
+          return this.runEventualProjector(client, projector, key, manager, message, { transaction: t }, breakException)
+        }
+      })
+
+    })
+      .then(res => {
+        message.ack()
+
+        const eventualend = process.hrtime(eventualstart)
+
+        this.app.log.debug(
+          `${message.type} Eventual Execution time (hr): ${eventualend[0]}s ${eventualend[1] / 1000000}ms`
+        )
+
+        return res
+      })
+      .catch(err => {
+        this.app.log.error(`Utils.registerEventualListeners ${message.type} err - fatal`, err)
+        // Try and nack the message TODO, should be rejected?
+        message.nack()
+        return Promise.reject(err)
+      })
+  }
+
+  /**
+   * Run an Eventual Processor
+   * @param client
+   * @param project
+   * @param key
+   * @param manager
+   * @param message
+   * @param options
+   * @param breakException
+   */
+  runEventualProcessor (client, project, key, manager, message, options, breakException) {
+    if (message.fields.redelivered) {
+      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+    }
+
+    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+
+
+    // // so we know who should handle an interrupt call
+    // client.active_broadcasts
+    //   .get(this.name)
+    //   .push(p)
+
+    return this.run(event, options, project, key, manager, breakException)
+      .then(([_event, _options]) => {
+        project.isAcknowledged = true
+        return [_event, _options]
+      })
+  }
+  /**
+   * Run an Eventual Projector
+   * @param client
+   * @param project
+   * @param key
+   * @param manager
+   * @param message
+   * @param options
+   * @param breakException
+   */
+  runEventualProjector (client, project, key, manager, message, options, breakException) {
+
+    let p
+
+    if (message.fields.redelivered) {
+      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+    }
+
+    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+
+    return Promise.resolve()
+      .then(() => {
+
+          try {
+
+            p = project({
+              event,
+              options,
+              consistency: 'eventual',
+              message: message,
+              manager: manager
+            })
+
+            this.app.log.debug(event.event_type, 'broadcasted from', this.name, '->', project.name, '->', p.name)
+          }
+          catch (err) {
+            this.app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          if (!client.active_broadcasts.has(this.name)) {
+            const err = new Error(
+              `Broadcaster Utils.runProjector err Client should have active_broadcast of ${this.name} - fatal`
+            )
+            this.app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          if (typeof p.run !== 'function') {
+            const err = new Error(
+              `${this.name} ${p.name} should have a run function!`
+            )
+            this.app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          // if (typeof p.ack !== 'function') {
+          //   const err = new this.app.errors.GenericError(
+          //     'E_BAD_REQUEST',
+          //     `${this.name} ${p.name} should have an ack function!`
+          //   )
+          //   this.app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+          //   return Promise.reject(err)
+          // }
+
+          // so we know who should handle an interrupt call
+          client.active_broadcasts
+            .get(this.name)
+            .push(p)
+
+          return Promise.resolve()
+            .then(() => {
+              return p.run()
+              .then(([_event, _options]) => {
+                p.isAcknowledged = true
+                return [_event, _options]
+              })
+              .catch(err => {
+                this.app.log.error(`${this.name} Error in projector ${p.name}.run() - fatal`, err)
+                return Promise.reject(err)
+              })
+            })
+            .then(([_event, _options]) => {
+              // This will get cleared no matter what
+              return p.finalize()
+                .then(() => {
+                  utils.clearHandler(client.active_broadcasts.get(this.name), p)
+                  return [_event, _options]
+                })
+                .catch(() => {
+                  utils.clearHandler(client.active_broadcasts.get(this.name), p)
+                  return [_event, _options]
+                })
+            })
+            .catch((err) => {
+              this.app.log.error(`Unhandled Error for project ${p.name} - fatal`, err)
+              utils.clearHandler(client.active_broadcasts.get(this.name), p)
+              return Promise.reject(err)
+            })
+        })
+      .catch((err) => {
+        breakException = err
+        // TODO perhaps retry up to a limit?
+        this.app.log.error(`${this.name} ${p.name} threw an error - fatal`, err)
+        // TODO
+        return err
+        // return Promise.reject(err)
       })
   }
 
@@ -1760,7 +1977,10 @@ export class Broadcast extends FabrixGeneric {
     // Add default configs
     config = {
       priority: 255,
-      retry_limit: 0,
+      retry_on_fail: false,
+      retry_on_timeout: null,
+      retry_max: 0,
+      retry_wait: null,
       params: keys,
       pattern: pattern,
       pattern_raw: command_type,
@@ -2110,7 +2330,10 @@ export class Broadcast extends FabrixGeneric {
     // These values will get replaced by the config if set
     config = {
       priority: 255,
-      retry_limit: 0,
+      retry_on_fail: false,
+      retry_on_timeout: null,
+      retry_max: 0,
+      retry_wait: null,
       // By Default, processors or strong projectors should be serial because of transactions
       processing: is_processor || consistency === 'strong' ? 'serial' : 'parallel',
       is_processor: is_processor,

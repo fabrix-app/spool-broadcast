@@ -87,10 +87,14 @@ export const utils = {
     return broadcasterConfig
   },
 
-  registerBroadcasts: (app: FabrixApp, rabbit, profile) => {
-    app.log.info('Configured Broadcasts', profile)
+  registerBroadcasts: (app: FabrixApp, rabbit, profile, broadcasterConfig) => {
+    app.log.info('Configured Broadcasts', profile, broadcasterConfig)
     profile.forEach(broadcastName => {
       app.broadcaster.active_broadcasts.set(broadcastName, [])
+      // utils.registerBroadcasters(app, rabbit, broadcastName, exchangeName, workQueueName)
+      // utils.registerInterrupt(app, rabbit, broadcastName, exchangeName, interruptQueueName)
+      // utils.registerPoison(app, rabbit, broadcastName, exchangeName, posionQueueName)
+      //
       utils.registerBroadcasters(app, rabbit, broadcastName)
       utils.registerInterrupt(app, rabbit, broadcastName)
       utils.registerPoison(app, rabbit, broadcastName)
@@ -110,8 +114,10 @@ export const utils = {
 
   registerInterrupt: (app: FabrixApp, rabbit, broadcastName: string) => {
     rabbit.handle(`${broadcastName}.interrupt`, message => {
+
       const broadcastId = message.body.event_uuid
       const activeBroadcasts = app.broadcaster.active_broadcasts.get(broadcastName) || []
+
       const broadcast = find(activeBroadcasts, activeBroadcast => {
         return activeBroadcast.event.event_uuid = broadcastId
       })
@@ -144,7 +150,7 @@ export const utils = {
     })
   },
 
-  registerBroadcasters: (app: FabrixApp, rabbit, broadcastName: string) => {
+  registerBroadcasters: (app: FabrixApp, rabbit, broadcastName: string, exchangeName?: string, workQueueName?: string) => {
     const broadcaster = app.broadcasts[broadcastName]
 
     if (!broadcaster) {
@@ -235,7 +241,7 @@ export const utils = {
         return
       }
 
-      app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type}`)
+      app.log.debug(`Routing broadcaster ${ broadcaster.name } eventual projectors for event ${event_type} queue ${ broadcaster.queue }`)
 
       // Create the Handler and subscribe it only to this que
       const handler = rabbit.handle(`${safe_event_type}`, req => {
@@ -244,47 +250,25 @@ export const utils = {
         //     `${JSON.stringify(event.body)}`)
         //   return event.reject()
         // }
-        // add the current broadcast type into the list of active broadcasts,
-        const promises = []
 
-        if (types.eventual) {
-          types.eventual.forEach((pro, k) => {
-            const manager = managers.get(k)
-            if (!manager) {
-              throw new app.errors.GenericError(
-                'E_UNMET_DEPENDENCY',
-                `Event ${event_type} Manager ${pro.name} was undefined and would have caused a queue backup!`
-              )
-            }
-
-            const type = manager.is_processor ? utils.runProcessor : utils.runProjector
-
-            promises.push(type(
-              app,
-              broadcasterClient,
-              broadcaster,
-              pro,
-              manager,
-              req
-            ))
-          })
-        }
-        if (promises.length === 0) {
-          const err = new Error(`No available handlers for ${safe_event_type}`)
+        // If there are no eventual types on the broadcaster, then nack right away
+        if (!types.eventual) {
+          const err = new Error(`No available eventual handlers for ${safe_event_type}`)
           app.log.error(`Utils.registerEventualListeners ${safe_event_type} err - fatal`, err)
           // Try and nack the message TODO, should be rejected?
           req.nack()
           return Promise.reject(err)
         }
-        //
-        return Promise.all(promises)
-          .catch(err => {
-            app.log.error(`Utils.registerEventualListeners ${safe_event_type} err - fatal`, err)
-            // Try and nack the message TODO, should be rejected?
-            req.nack()
-            return Promise.reject(err)
-          })
-      })
+        else if (types.eventual.size === 0) {
+          const err = new Error(`No available eventual handlers for ${safe_event_type}`)
+          app.log.error(`Utils.registerEventualListeners ${safe_event_type} err - fatal`, err)
+          // Try and nack the message TODO, should be rejected?
+          req.nack()
+          return Promise.reject(err)
+        }
+
+        return broadcaster.runEventual(broadcasterClient, types.eventual, managers, req)
+      }) // , broadcaster.queue || 'broadcasts-work-q')
 
       // broadcaster.name
       // TODO: Is this going to cause an infinite loop? Perhaps we should make a poison queue?
@@ -333,8 +317,9 @@ export const utils = {
    * @param project
    * @param manager
    * @param message
+   * @params options
    */
-  runProjector: (app: FabrixApp, client, broadcaster, project, manager, message) => {
+  runProjector: (app: FabrixApp, client, broadcaster, project, manager, message, options?) => {
     let p
 
     if (message.fields.redelivered) {
@@ -342,7 +327,6 @@ export const utils = {
     }
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
-    let options
 
     return Promise.resolve()
       .then(() => {
@@ -402,33 +386,36 @@ export const utils = {
         return Promise.resolve()
           .then(() => {
             return p.run()
-              .then(([_event, _options]) => {
-                return p.ack()
-              })
-              .catch(err => {
-                app.log.error(`Error in project.run() for project ${p.name} - fatal`, err)
-                return p.reject()
-              })
+            // .then(([_event, _options]) => {
+            //   return p.ack()
+            // })
+            // .catch(err => {
+            //   app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
+            //   return p.reject()
+            // })
           })
-          .then(() => {
+          .then(([_event, _options]) => {
             // This will get cleared no matter what
             return p.finalize()
               .then(() => {
-                return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                return [_event, _options]
               })
               .catch(() => {
-                return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                return [_event, _options]
               })
           })
           .catch((err) => {
-            app.log.error(`Unhandled Error for project ${p.name} - fatal`, err)
-            return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+            app.log.error(`Unhandled Error for process ${p.name} - fatal`, err)
+            utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+            return Promise.reject(err)
           })
       })
     })
       .catch((err) => {
         app.log.error('Broadcaster Utils.runProjector err - fatal', err)
-        message.nack()
+        // message.nack()
         return err
       })
   },
@@ -454,7 +441,7 @@ export const utils = {
 
     return Promise.resolve()
       .then(() => {
-        app.models.BroadcastEvent.sequelize.transaction({
+        return app.models.BroadcastEvent.sequelize.transaction({
           isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
           deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
         }, t => {
@@ -505,34 +492,36 @@ export const utils = {
           return Promise.resolve()
             .then(() => {
               return p.run()
-                .then(([_event, _options]) => {
-                  return p.ack()
-                })
-                .catch(err => {
-                  app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
-                  return p.reject()
-                })
+                // .then(([_event, _options]) => {
+                //   return p.ack()
+                // })
+                // .catch(err => {
+                //   app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
+                //   return p.reject()
+                // })
             })
-            .then(() => {
+            .then(([_event, _options]) => {
               // This will get cleared no matter what
               return p.finalize()
                 .then(() => {
-                  return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                  utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                  return [_event, _options]
                 })
                 .catch(() => {
-                  return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                  utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                  return [_event, _options]
                 })
             })
             .catch((err) => {
               app.log.error(`Unhandled Error for process ${p.name} - fatal`, err)
-              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+              utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+              return Promise.reject(err)
             })
         })
       })
       .catch(err => {
         app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
-        message.nack()
-        return err
+        return Promise.reject(err)
       })
   },
 

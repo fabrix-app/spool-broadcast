@@ -40,8 +40,8 @@ export class Client extends FabrixGeneric {
 
     const routingKey = broadcaster.name
     const correlationId = event.correlation_uuid
-    const connectionName = null
-    const sequenceNo = null
+    const connectionName = manager.connection_name ? manager.connection_name : null
+    const sequenceNo = manager.squence_number ? manager.squence_number : null
     const expiresAfter = manager ? manager.expires_after : null
     const persistent = manager ? manager.persistent : null
     const mandatory = manager ? manager.mandatory : null
@@ -88,16 +88,31 @@ export class Client extends FabrixGeneric {
     if (timeout !== null) {
       send.timeout = timeout
     }
+    // Set the Manager's sequenceNo
+    if (sequenceNo !== null) {
+      send.sequenceNo = sequenceNo
+    }
 
+    console.log('BRK publish to', event_type, routingKey)
     // Publish this on Rabbit MQ
     return this.messenger.publish(
       this.exchange_name,
       send,
       connectionName
     )
-      .then(() => {
+      .then((res) => {
         return [event, options]
       })
+      // .then(
+      //   (res) => {
+      //     console.log('brk res', res)
+      //     return [event, options]
+      //   }, // a list of the messages of that succeeded,
+      //   failed => {
+      //     console.log('brk res fail', failed)
+      //     return [event, options]
+      //   } // a list of failed messages and the errors `{ err, message }`
+      // )
   }
 
   /**

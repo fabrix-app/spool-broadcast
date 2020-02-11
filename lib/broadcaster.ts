@@ -3,9 +3,10 @@ import { clone } from 'lodash'
 import { utils } from './utils/index'
 import { regexdot } from '@fabrix/regexdot'
 import { Client } from './Client'
-import {BroadcastObjectModel} from './BroadcastObjectModel'
+import { BroadcastObjectModel } from './BroadcastObjectModel'
 
 // RabbitMQ TODO make this a generic instead of hardcode
+// Many different spools have rabbot, we don't want those getting crossed
 import rabbit from 'rabbot'
 
 export const broadcaster = {
@@ -114,7 +115,7 @@ export const broadcaster = {
     app.spools.broadcast.broadcaster = new Client(app, rabbit, broadcasterConfig.exchangeName)
 
     // Register the profile broadcasters
-    return utils.registerBroadcasts(app, rabbit, profile)
+    return utils.registerBroadcasts(app, rabbit, profile, broadcasterConfig)
   },
 
   /**
@@ -215,6 +216,7 @@ export const broadcaster = {
     return Promise.resolve()
   },
 
+  // Build a small non-functional map of all the channels
   makeChannelMap: (app: FabrixApp) => {
     Object.keys((app.broadcasts || {})).forEach(bk => {
       app.spools.broadcast.channelMap.set(
@@ -229,6 +231,7 @@ export const broadcaster = {
     return app.spools.broadcast.channelMap
   },
 
+  // Build a small non-functional map of all the pipelines
   makePipelineMap: (app: FabrixApp) => {
     Object.keys((app.broadcasts || {})).forEach(bk => {
       app.spools.broadcast.pipelineMap.set(
@@ -264,6 +267,8 @@ export const broadcaster = {
     })
     return app.spools.broadcast.projectorMap
   },
+
+  // Build a small non-functional map of all the processors
   makeProcessorMap: (app: FabrixApp) => {
     // Object.keys((app.broadcasts || {})).forEach(bk => {
     //   app.spools.broadcast.processorMap.set(
@@ -286,6 +291,7 @@ export const broadcaster = {
     return app.spools.broadcast.processorMap
   },
 
+  // Build a small non-functional map of all the hooks
   makeHookMap: (app: FabrixApp) => {
     // Object.keys((app.broadcasts || {})).forEach(bk => {
     //   app.spools.broadcast.hookMap.set(
@@ -308,6 +314,10 @@ export const broadcaster = {
     return app.spools.broadcast.hookMap
   },
 
+  /**
+   * Gather all the Channels attached to the Broadcaster and add Primus to them
+   * @param app
+   */
   makeBroadcastChannelResources: (app: FabrixApp) => {
     Object.keys(app.channels).forEach((value, key) => {
       const channel = app.channels[value]
@@ -410,14 +420,19 @@ export const broadcaster = {
       app.broadcaster.active_broadcasts
     )
 
-    // Interupt active broadcasts
+    // interrupt active broadcasts
     const active: Promise<any>[] = []
+
     app.broadcaster.active_broadcasts.forEach((value, key, map) => {
-      value.forEach((m) => {
-        active.push(m.interupt())
+      value.forEach((projector) => {
+        if (projector && projector.message && projector.message.interrupt) {
+          active.push(projector.message.interupt())
+        }
       })
     })
 
+    // Await the resolution of each of the interrupt calls
+    // Each of these is in a transaction, so we don't have to be super polite
     return Promise.all(active)
       .then(res => {
         return rabbit.shutdown()

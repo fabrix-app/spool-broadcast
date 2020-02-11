@@ -73,6 +73,10 @@ export class BroadcastProcess extends FabrixGeneric {
           .then(() => {
             return [this.event, this.options]
           })
+          .catch((err) => {
+            this.app.log.error(`Processor ${this.name} failed on ack`, err)
+            return [this.event, this.options]
+          })
           // .catch(err => {
           //   this.app.log.warn(`Processor ${this.name} attempting to ack a message, but failed!`, err)
           //   return [this.event, this.options]
@@ -99,6 +103,10 @@ export class BroadcastProcess extends FabrixGeneric {
           return resolve(this.message.nack())
         })
           .then(() => {
+            return [this.event, this.options]
+          })
+          .catch((err) => {
+            this.app.log.error(`${this.name} failed on nack`, err)
             return [this.event, this.options]
           })
           // .catch(err => {
@@ -129,6 +137,10 @@ export class BroadcastProcess extends FabrixGeneric {
           .then(() => {
             return [this.event, this.options]
           })
+          .catch((err) => {
+            this.app.log.error(`${this.name} failed on reject`, err)
+            return [this.event, this.options]
+          })
       }
       else {
         return Promise.resolve([this.event, this.options])
@@ -145,6 +157,13 @@ export class BroadcastProcess extends FabrixGeneric {
    */
   async interrupt (msg): Promise<any> {
     this.app.log.debug(`${this.name} Interrupt:`, msg)
+  }
+
+  /**
+   * Reply to the event
+   */
+  async reply (msg): Promise<any> {
+    this.app.log.debug(`${this.name} Reply:`, msg)
   }
 
   /**
