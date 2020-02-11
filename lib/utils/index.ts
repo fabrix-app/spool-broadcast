@@ -276,9 +276,9 @@ export const utils = {
       // TODO: Is this going to cause an infinite loop? Perhaps we should make a poison queue?
       handler.catch( function( err, msg ) {
         // do something with the error & message
-        app.log.error('Broadcaster Rabbit Handler Error!', msg.type, err)
-        app.log.error('Broadcaster Rabbit Handler Error Msg!', msg.type, msg)
-        app.log.info('Broadcaster Rabbit Handler Nacking by default', msg.type)
+        app.log.error('Broadcaster Rabbit Handler Error - fatal!', msg.type, err)
+        app.log.error('Broadcaster Rabbit Handler Error Msg! - fatal', msg.type, msg)
+        app.log.info('Broadcaster Rabbit Handler Nacking by default - fatal', msg.type)
         msg.nack()
         return err
       })
@@ -330,86 +330,93 @@ export const utils = {
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
     let options
 
-    app.models.BroadcastEvent.sequelize.transaction({
-      isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
-      deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
-    }, t => {
-      try {
-        options = { transaction: t }
-        p = project({
-          event: event,
-          options: options, // This keeps namespace clean for eventual events and they can use their own transaction
-          consistency: 'eventual',
-          message: message,
-          manager: manager
-        })
-        app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
-      }
-      catch (err) {
-        app.log.error('Broadcaster Utils.runProjector err', err)
-        message.nack()
-        return Promise.reject(err)
-      }
+    return Promise.resolve()
+      .then(() => {
+      return app.models.BroadcastEvent.sequelize.transaction({
+        isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
+        deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
+      }, t => {
 
-      if (!client.active_broadcasts.has(broadcaster.name)) {
-        const err = new Error(
-          `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name} - fatal`
-        )
-        app.log.error('Broadcaster Utils.runProjector err', err)
-        message.nack()
-        return Promise.reject(err)
-      }
+        try {
+          options = {transaction: t}
 
-      if (typeof p.run !== 'function') {
-        const err = new Error(
-          `${broadcaster.name} ${p.name} should have a run function!`
-        )
-        app.log.error('Broadcaster Utils.runProjector err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
+          p = project({
+            event: event,
+            options: options, // This keeps namespace clean for eventual events and they can use their own transaction
+            consistency: 'eventual',
+            message: message,
+            manager: manager
+          })
 
-      if (typeof p.ack !== 'function') {
-        const err = new app.errors.GenericError(
-          'E_BAD_REQUEST',
-          `${broadcaster.name} ${p.name} should have an ack function!`
-        )
-        app.log.error('Broadcaster Utils.runProjector err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
+          app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
+        }
+        catch (err) {
+          app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+          return Promise.reject(err)
+        }
 
-      // so we know who should handle an interrupt call
-      client.active_broadcasts
-        .get(broadcaster.name)
-        .push(p)
+        if (!client.active_broadcasts.has(broadcaster.name)) {
+          const err = new Error(
+            `Broadcaster Utils.runProjector err Client should have active_broadcast of ${broadcaster.name} - fatal`
+          )
+          app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+          return Promise.reject(err)
+        }
 
-      return Promise.resolve()
-        .then(() => {
-          return p.run()
-            .then(([_event, _options]) => {
-              return p.ack()
-            })
-            .catch(err => {
-              app.log.error(`Error in project.run() for project ${p.name} - fatal`, err)
-              return p.reject()
-            })
-        })
-        .then(() => {
-          // This will get cleared no matter what
-          return p.finalize()
-            .then(() => {
-              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
-            })
-            .catch(() => {
-              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
-            })
-        })
-        .catch((err) => {
-          app.log.error(`Unhandled Error for project ${p.name} - fatal`, err)
-          return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
-        })
+        if (typeof p.run !== 'function') {
+          const err = new Error(
+            `${broadcaster.name} ${p.name} should have a run function!`
+          )
+          app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+          return Promise.reject(err)
+        }
+
+        if (typeof p.ack !== 'function') {
+          const err = new app.errors.GenericError(
+            'E_BAD_REQUEST',
+            `${broadcaster.name} ${p.name} should have an ack function!`
+          )
+          app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+          return Promise.reject(err)
+        }
+
+        // so we know who should handle an interrupt call
+        client.active_broadcasts
+          .get(broadcaster.name)
+          .push(p)
+
+        return Promise.resolve()
+          .then(() => {
+            return p.run()
+              .then(([_event, _options]) => {
+                return p.ack()
+              })
+              .catch(err => {
+                app.log.error(`Error in project.run() for project ${p.name} - fatal`, err)
+                return p.reject()
+              })
+          })
+          .then(() => {
+            // This will get cleared no matter what
+            return p.finalize()
+              .then(() => {
+                return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+              })
+              .catch(() => {
+                return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+              })
+          })
+          .catch((err) => {
+            app.log.error(`Unhandled Error for project ${p.name} - fatal`, err)
+            return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+          })
+      })
     })
+      .catch((err) => {
+        app.log.error('Broadcaster Utils.runProjector err - fatal', err)
+        message.nack()
+        return err
+      })
   },
 
 
@@ -431,85 +438,88 @@ export const utils = {
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
 
-    app.models.BroadcastEvent.sequelize.transaction({
-      isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
-      deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
-    }, t => {
-      try {
-        p = project({
-          event: event,
-          options: { transaction: t }, // This keeps namespace clean for eventual events and they can use their own transaction
-          consistency: 'eventual',
-          message: message,
-          manager: manager
-        })
-        // Log that this is happening
-        app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
-      }
-      catch (err) {
-        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
-
-      if (!client.active_broadcasts.has(broadcaster.name)) {
-        const err = new Error(
-          `Broadcaster Utils.runProcessor err Client should have active_broadcast of ${broadcaster.name}`
-        )
-        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
-
-      if (typeof p.run !== 'function') {
-        const err = new Error(
-          `${broadcaster.name} ${p.name} should have a run function!`
-        )
-        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
-      if (typeof p.ack !== 'function') {
-        const err = new app.errors.GenericError(
-          'E_BAD_REQUEST',
-          `${broadcaster.name} ${p.name} should have an ack function!`
-        )
-        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
-        message.nack()
-        return Promise.reject(err)
-      }
-
-      // so we know who should handle an interrupt call
-      client.active_broadcasts
-        .get(broadcaster.name)
-        .push(p)
-
-      return Promise.resolve()
-        .then(() => {
-          return p.run()
-            .then(([_event, _options]) => {
-              return p.ack()
+    return Promise.resolve()
+      .then(() => {
+        app.models.BroadcastEvent.sequelize.transaction({
+          isolationLevel: app.spools.sequelize._datastore.Transaction.ISOLATION_LEVELS.READ_UNCOMMITTED,
+          deferrable: app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
+        }, t => {
+          try {
+            p = project({
+              event: event,
+              options: {transaction: t}, // This keeps namespace clean for eventual events and they can use their own transaction
+              consistency: 'eventual',
+              message: message,
+              manager: manager
             })
-            .catch(err => {
-              app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
-              return p.reject()
-            })
-        })
-        .then(() => {
-          // This will get cleared no matter what
-          return p.finalize()
+            // Log that this is happening
+            app.log.debug(event.event_type, 'broadcasted from', broadcaster.name, '->', project.name, '->', p.name)
+          } catch (err) {
+            app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          if (!client.active_broadcasts.has(broadcaster.name)) {
+            const err = new Error(
+              `Broadcaster Utils.runProcessor err Client should have active_broadcast of ${broadcaster.name}`
+            )
+            app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          if (typeof p.run !== 'function') {
+            const err = new Error(
+              `${broadcaster.name} ${p.name} should have a run function!`
+            )
+            app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
+            return Promise.reject(err)
+          }
+          if (typeof p.ack !== 'function') {
+            const err = new app.errors.GenericError(
+              'E_BAD_REQUEST',
+              `${broadcaster.name} ${p.name} should have an ack function!`
+            )
+            app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
+            return Promise.reject(err)
+          }
+
+          // so we know who should handle an interrupt call
+          client.active_broadcasts
+            .get(broadcaster.name)
+            .push(p)
+
+          return Promise.resolve()
             .then(() => {
-              return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+              return p.run()
+                .then(([_event, _options]) => {
+                  return p.ack()
+                })
+                .catch(err => {
+                  app.log.error(`Error in processor.run() for processor ${p.name} - fatal`, err)
+                  return p.reject()
+                })
             })
-            .catch(() => {
+            .then(() => {
+              // This will get cleared no matter what
+              return p.finalize()
+                .then(() => {
+                  return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                })
+                .catch(() => {
+                  return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
+                })
+            })
+            .catch((err) => {
+              app.log.error(`Unhandled Error for process ${p.name} - fatal`, err)
               return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
             })
         })
-        .catch((err) => {
-          app.log.error(`Unhandled Error for process ${p.name} - fatal`, err)
-          return utils.clearHandler(client.active_broadcasts.get(broadcaster.name), p)
-        })
-    })
+      })
+      .catch(err => {
+        app.log.error('Broadcaster Utils.runProcessor err - fatal', err)
+        message.nack()
+        return err
+      })
   },
 
 
