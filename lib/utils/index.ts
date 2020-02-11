@@ -246,6 +246,7 @@ export const utils = {
         // }
         // add the current broadcast type into the list of active broadcasts,
         const promises = []
+
         if (types.eventual) {
           types.eventual.forEach((pro, k) => {
             const manager = managers.get(k)
@@ -268,8 +269,21 @@ export const utils = {
             ))
           })
         }
+        if (promises.length === 0) {
+          const err = new Error(`No available handlers for ${safe_event_type}`)
+          app.log.error(`Utils.registerEventualListeners ${safe_event_type} err - fatal`, err)
+          // Try and nack the message TODO, should be rejected?
+          req.nack()
+          return Promise.reject(err)
+        }
         //
         return Promise.all(promises)
+          .catch(err => {
+            app.log.error(`Utils.registerEventualListeners ${safe_event_type} err - fatal`, err)
+            // Try and nack the message TODO, should be rejected?
+            req.nack()
+            return Promise.reject(err)
+          })
       })
 
       // broadcaster.name
