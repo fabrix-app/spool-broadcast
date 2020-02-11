@@ -67,10 +67,12 @@ export class BroadcastProcess extends FabrixGeneric {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
       if (this.message) {
-        return this.message.ack()
-          // .then(() => {
-          //   return [this.event, this.options]
-          // })
+        return new Promise((resolve, reject) => {
+          return resolve(this.message.ack())
+        })
+          .then(() => {
+            return [this.event, this.options]
+          })
           // .catch(err => {
           //   this.app.log.warn(`Processor ${this.name} attempting to ack a message, but failed!`, err)
           //   return [this.event, this.options]
@@ -93,10 +95,12 @@ export class BroadcastProcess extends FabrixGeneric {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
       if (this.message) {
-        return this.message.nack()
-          // .then(() => {
-          //   return Promise.reject([this.event, this.options])
-          // })
+        return new Promise((resolve, reject) => {
+          return resolve(this.message.nack())
+        })
+          .then(() => {
+            return [this.event, this.options]
+          })
           // .catch(err => {
           //   this.app.log.warn(`Processor ${this.name} attempting to nack a message, but failed!`, err)
           //   return [this.event, this.options]
@@ -119,10 +123,12 @@ export class BroadcastProcess extends FabrixGeneric {
     if (!this.isAcknowledged) {
       this.isAcknowledged = true
       if (this.message) {
-        return this.message.reject()
-          // .then(() => {
-          //   return Promise.reject([this.event, this.options])
-          // })
+        return new Promise((resolve, reject) => {
+          return resolve(this.message.reject())
+        })
+          .then(() => {
+            return [this.event, this.options]
+          })
       }
       else {
         return Promise.resolve([this.event, this.options])

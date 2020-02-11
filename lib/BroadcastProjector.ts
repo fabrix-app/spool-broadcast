@@ -67,10 +67,12 @@ export class BroadcastProject extends FabrixGeneric {
   async ack(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {
     if (!this.isAcknowledged && this.message) {
       this.isAcknowledged = true
-      return this.message.ack()
-        // .then(() => {
-        //   return Promise.resolve([this.event, this.options])
-        // })
+      return new Promise((resolve, reject) => {
+        return resolve(this.message.ack())
+      })
+        .then(() => {
+          return [this.event, this.options]
+        })
     }
     else if (!this.isAcknowledged && !this.message) {
       this.isAcknowledged = true
@@ -93,10 +95,13 @@ export class BroadcastProject extends FabrixGeneric {
     if (!this.isAcknowledged && this.message) {
       this.app.log.debug(`Nacking ${this.name}`)
       this.isAcknowledged = true
-      return this.message.nack()
-        // .then(() => {
-        //   return Promise.reject([this.event, this.options])
-        // })
+
+      return new Promise((resolve, reject) => {
+        return resolve(this.message.nack())
+      })
+        .then(() => {
+          return [this.event, this.options]
+        })
     }
     else if (!this.isAcknowledged && !this.message) {
       this.app.log.debug(`Can not nack empty message for Projector ${this.name}`)

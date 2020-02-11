@@ -25,7 +25,7 @@ export const broadcaster = {
     // )
 
     // automatically nack exceptions in handlers
-    rabbit.nackOnError()
+    // rabbit.nackOnError()
 
     // automatically reject exceptions in handlers
     // rabbit.rejectUnhandled()
