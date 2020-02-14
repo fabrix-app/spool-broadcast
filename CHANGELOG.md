@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.62](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.61...v1.6.62) (2020-02-14)
+
+
+### Features
+
+* upgrades to @hapi/joi ([983764a](https://github.com/fabrix-app/spool-broadcast/commit/983764a))
+
 ### [1.6.61](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.60...v1.6.61) (2020-02-14)
 
 
