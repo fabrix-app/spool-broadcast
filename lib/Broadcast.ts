@@ -275,7 +275,7 @@ export class Broadcast extends FabrixGeneric {
         ? obj.toJSON()
         : obj
 
-    return cleanObj
+    return JSON.parse(JSON.stringify(cleanObj))
   }
 
   /**
@@ -292,6 +292,7 @@ export class Broadcast extends FabrixGeneric {
       const validator: any = Object.values(v)[0]
       const name: string = Object.keys(v)[0]
       this.app.log.debug(`validating ${command.command_type} with ${name} schema`)
+
       return validator(_value)
     }))
       .then((data) => {
@@ -299,6 +300,7 @@ export class Broadcast extends FabrixGeneric {
         return [command, options]
       })
       .catch(error => {
+        this.app.log.debug(`validating error ${command.command_type}`)
         const err = this.app.transformJoiError({ value: _value, error })
         return Promise.reject(err)
       })
