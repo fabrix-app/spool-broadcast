@@ -1,4 +1,4 @@
-import joi from 'joi'
+import Joi from '@hapi/joi'
 import {
   broadcastConfig,
   realtimeConfig,
@@ -10,27 +10,23 @@ import {
 
 export const Validator = {
 
-  joiPromise: (data: any, schema: joi.ObjectSchema) => {
-    return new Promise((resolve, reject) => {
-      joi.validate(data, schema, (err, value) => {
-        if (err) {
-          return reject(err)
-        }
-        return resolve(value)
-      })
-    })
+  /**
+   * Validate an object given a schema
+   * @param data
+   * @param schema
+   */
+  joiPromise: (data: any, schema: Joi.ObjectSchema): Promise<any> => {
+    return schema.validateAsync(data)
   },
 
-  joiPromiseMap: (list: any, schema: joi.ObjectSchema) => {
+  /**
+   * Given an array, and a Schema, validate each item in the array with the same schema
+   * @param list
+   * @param schema
+   */
+  joiPromiseMap: (list: any[], schema: Joi.ObjectSchema): Promise<any> => {
     return Promise.all(list.map(data => {
-      return new Promise((resolve, reject) => {
-        joi.validate(data, schema, (err, value) => {
-          if (err) {
-            return reject(new TypeError(err))
-          }
-          return resolve(value)
-        })
-      })
+      return Validator.joiPromise(data, schema)
     }))
   },
 
@@ -38,19 +34,24 @@ export const Validator = {
   validateBroadcastConfig (config) {
     return Validator.joiPromise(config, broadcastConfig)
   },
+
   // Validate Broadcast Config
   validateRealtimeConfig (config) {
     return Validator.joiPromise(config, realtimeConfig)
   },
+
   validateProjectorConfig (config) {
     return Validator.joiPromise(config, projectorConfig)
   },
+
   validateProcessorConfig (config) {
     return Validator.joiPromise(config, processorConfig)
   },
+
   validateHookConfig (config) {
     return Validator.joiPromise(config, hookConfig)
   },
+
   validatePipeConfig (config) {
     return Validator.joiPromise(config, pipeConfig)
   }

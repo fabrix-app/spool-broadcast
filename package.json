@@ -43,7 +43,7 @@
   "dependencies": {
     "@fabrix/regexdot": "^1.0.1",
     "@fabrix/spool-errors": "^1.6.2",
-    "joi": "^14.3.1",
+    "@hapi/joi": "^17.1.0",
     "lodash": "^4.17.15",
     "primus-emitter": "^3.1.1",
     "primus-multiplex": "^3.2.1",

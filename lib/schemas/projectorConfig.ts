@@ -1,4 +1,4 @@
-import joi from 'joi'
+import joi from '@hapi/joi'
 
 export const projectorConfig = joi.object().keys({
   include: joi.alternatives().try(

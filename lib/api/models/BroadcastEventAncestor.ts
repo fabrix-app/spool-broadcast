@@ -3,7 +3,7 @@ import uuid from 'uuid/v4'
 import { Type } from '../../binary'
 import { BroadcastModelResolver } from '../../BroadcastModel'
 
-import joi from 'joi'
+import joi from '@hapi/joi'
 
 
 export class BroadcastEventAncestorResolver extends BroadcastModelResolver {

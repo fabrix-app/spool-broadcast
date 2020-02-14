@@ -1,7 +1,7 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { get, isArray, uniq, uniqBy } from 'lodash'
-import joi from 'joi'
+import joi from '@hapi/joi'
 import { regexdot } from '@fabrix/regexdot'
 import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
 
@@ -1533,7 +1533,8 @@ export class Broadcast extends FabrixGeneric {
             `Neither app.channels.${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`)
         }
 
-        const { error } = joi.validate(subscribers[m].config, subscriberConfig)
+        // const { error } = joi.validate(subscribers[m].config, subscriberConfig)
+        const { error } = subscriberConfig.validate(subscribers[m].config)
 
         if (error) {
           throw new Error(`${channel.name} config is invalid`)
@@ -1835,7 +1836,8 @@ export class Broadcast extends FabrixGeneric {
             `Neither ${pipeline.name}.${m} or app.entries.${m} are a function, check config/broadcast pipelines`)
         }
 
-        const { error } = joi.validate(pipes[m].config, pipeConfig)
+        // const { error } = joi.validate(pipes[m].config, pipeConfig)
+        const { error } = pipeConfig.validate(pipes[m].config)
 
         if (error) {
           throw new Error(`${pipeline.name} config is invalid`)
@@ -1942,7 +1944,8 @@ export class Broadcast extends FabrixGeneric {
           throw new Error(`${hookIn.name} method is undefined`)
         }
 
-        const {error} = joi.validate(commands[m].config, hookConfig)
+        // const {error} = joi.validate(commands[m].config, hookConfig)
+        const {error} = hookConfig.validate(commands[m].config)
 
         if (error) {
           throw new Error(`${hookIn.name} config is invalid`)
@@ -2227,7 +2230,7 @@ export class Broadcast extends FabrixGeneric {
           throw new Error(`${projector.name} method is undefined`)
         }
 
-        const { error } = joi.validate(events[m].config, projectorConfig)
+        const { error } = projectorConfig.validate(events[m].config)
 
         if (error) {
           throw new this.app.errors.GenericError(
@@ -2288,7 +2291,8 @@ export class Broadcast extends FabrixGeneric {
           )
         }
 
-        const {error} = joi.validate(events[m].config, processorConfig)
+        // const {error} = joi.validate(events[m].config, processorConfig)
+        const {error} = processorConfig.validate(events[m].config)
 
         if (error) {
           throw new this.app.errors.GenericError('E_BAD_CONFIG',

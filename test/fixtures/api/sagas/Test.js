@@ -1,4 +1,4 @@
-const joi = require('joi')
+const joi = require('@hapi/joi')
 const Saga = require('../../../../dist').Saga
 const Validator = require('../../../../dist').Validator
 
