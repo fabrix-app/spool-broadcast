@@ -1,4 +1,5 @@
-import Joi from '@hapi/joi'
+import joi from '@hapi/joi'
+
 import {
   broadcastConfig,
   realtimeConfig,
@@ -10,21 +11,29 @@ import {
 
 export const Validator = {
 
-  /**
-   * Validate an object given a schema
-   * @param data
-   * @param schema
-   */
-  joiPromise: (data: any, schema: Joi.ObjectSchema): Promise<any> => {
-    return schema.validateAsync(data)
+  // This handles multiple versions of joi
+  joiPromise: (data: any, schema: joi.ObjectSchema) => {
+    return new Promise((resolve, reject) => {
+      if (schema.validate) {
+
+        const { value, error } = schema.validate(data)
+        if (error) {
+          return reject(error)
+        }
+        return resolve(value)
+      }
+      else {
+        joi.validate(data, schema, (err, value) => {
+          if (err) {
+            return reject(err)
+          }
+          return resolve(value)
+        })
+      }
+    })
   },
 
-  /**
-   * Given an array, and a Schema, validate each item in the array with the same schema
-   * @param list
-   * @param schema
-   */
-  joiPromiseMap: (list: any[], schema: Joi.ObjectSchema): Promise<any> => {
+  joiPromiseMap: (list: any, schema: joi.ObjectSchema) => {
     return Promise.all(list.map(data => {
       return Validator.joiPromise(data, schema)
     }))
