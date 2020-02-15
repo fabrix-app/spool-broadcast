@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.63](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.62...v1.6.63) (2020-02-15)
+
+
+### Features
+
+* adds multi version joi validator ([2bb26a2](https://github.com/fabrix-app/spool-broadcast/commit/2bb26a2))
+
 ### [1.6.62](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.61...v1.6.62) (2020-02-14)
 
 
