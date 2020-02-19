@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.64](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.63...v1.6.64) (2020-02-19)
+
+
+### Features
+
+* adds reloads to resolvers, and starts moving data, metadata handlers ([bfd0068](https://github.com/fabrix-app/spool-broadcast/commit/bfd0068))
+
 ### [1.6.63](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.62...v1.6.63) (2020-02-15)
 
 
