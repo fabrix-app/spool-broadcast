@@ -491,6 +491,13 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug(`${this.name}: Before Handler ${m} included data on ${handler.include}`)
           }
 
+          if (handler.data) {
+            command.handleData(m, handler, _command)
+          }
+          if (handler.metadata) {
+            command.handleMetadata(m, handler, _command)
+          }
+
           command.complete = true
 
           const hookend = process.hrtime(hookstart)
@@ -616,6 +623,13 @@ export class Broadcast extends FabrixGeneric {
           if (handler && handler.include && handler.include !== false) {
             command.includeOn(m, handler, _command)
             this.app.log.debug(`${this.name}: After Handler ${m} included data on ${handler.include}`)
+          }
+
+          if (handler.data) {
+            command.handleData(m, handler, _command)
+          }
+          if (handler.metadata) {
+            command.handleMetadata(m, handler, _command)
           }
 
           command.complete = true
@@ -1182,6 +1196,7 @@ export class Broadcast extends FabrixGeneric {
 
         this.app.log.silly(this.name, m, 'current chain_events', event.chain_events)
 
+        // TODO deprecate
         if (manager && manager.merge && manager.merge !== false) {
           event.mergeData(m, manager, _event)
         }
@@ -1193,6 +1208,13 @@ export class Broadcast extends FabrixGeneric {
         }
         if (manager && manager.include && manager.include !== false) {
           event.includeOn(m, manager, _event)
+        }
+
+        if (manager.data) {
+          event.handleData(m, manager, _event)
+        }
+        if (manager.metadata) {
+          event.handleMetadata(m, manager, _event)
         }
 
         const projectend = process.hrtime(projectstart)
@@ -1989,6 +2011,7 @@ export class Broadcast extends FabrixGeneric {
       params: keys,
       pattern: pattern,
       pattern_raw: command_type,
+      metadata: { merge: false },
       ...config
     }
 
@@ -2347,6 +2370,7 @@ export class Broadcast extends FabrixGeneric {
       pattern: pattern,
       pattern_raw: event_type,
       consistency: consistency,
+      metadata: { merge: false },
       ...config
     }
 

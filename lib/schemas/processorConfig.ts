@@ -9,6 +9,8 @@ export const processorConfig = joi.object().keys({
   ),
   is_processor: joi.boolean(),
 
+
+  // TODO, deprecate these into data and metadata
   include: joi.alternatives().try(
     joi.boolean(),
     joi.object()

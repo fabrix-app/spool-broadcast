@@ -533,7 +533,13 @@ const App = {
                     expects_input: 'Test',
                     dispatches_command: 'destroy.test.:test_uuid',
                     expects_response: 'Test',
-                    merge: true
+                    merge: true,
+                    data: {
+                      merge: true
+                    },
+                    // metadata: {
+                    //   merge: true
+                    // }
                   }
                 },
               },

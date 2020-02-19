@@ -15,6 +15,7 @@ export interface IBroadcastModelResolve {
   req?: any,
   reject?: boolean,
   reload?: boolean,
+  reloads?: string[],
   transaction?: any,
   useMaster?: any,
   includes?: string[]

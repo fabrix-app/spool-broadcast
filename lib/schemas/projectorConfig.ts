@@ -1,6 +1,8 @@
 import joi from '@hapi/joi'
 
 export const projectorConfig = joi.object().keys({
+
+  // TODO, deprecate these into data and metadata
   include: joi.alternatives().try(
     joi.boolean(),
     joi.object()

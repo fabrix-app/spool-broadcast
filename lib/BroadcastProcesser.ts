@@ -61,6 +61,41 @@ export class BroadcastProcess extends FabrixGeneric {
   }
 
   /**
+   * Make a Processor Request and validate the response based off the manager provided
+   * @param req
+   */
+  async request (req): Promise<any> {
+    return req
+      .then(([event, options]) => {
+        // If a manager was passed
+        if (this.manager && this.manager.expects_response) {
+          // If this is strict
+          if (
+            typeof this.manager.expects_response === 'string'
+            && event.getDataValue('object') !== this.manager.expects_response
+            && this.manager.expects_response !== '*'
+          ) {
+            throw new Error(
+`${this.name} expected ${this.manager.expects_response}
+but got ${event.getDataValue('object')} for ${event.event_type}`
+            )
+          }
+          // if this is one of accepted response objects
+          else if (
+            Array.isArray(this.manager.expects_response)
+            && this.manager.expects_response.indexOf(event.getDataValue('object')) === -1
+          ) {
+            throw new Error(
+`${this.name} expected ${this.manager.expects_response.join(', ')}
+but got ${event.getDataValue('object')} for ${event.event_type}`
+            )
+          }
+        }
+        return [event, options]
+      })
+  }
+
+  /**
    * Acknowledge the event
    */
   async ack(): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {

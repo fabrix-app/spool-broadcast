@@ -5,6 +5,7 @@ import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
 import { regexdot } from '@fabrix/regexdot'
+import { helpers } from './utils/helpers'
 
 export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
@@ -521,6 +522,15 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
 
     return this
   }
+}
+
+BroadcastCommand.prototype.handleData = function(method, handler, command) {
+  helpers.handle(this.data, command.data, handler.data)
+  return this
+}
+BroadcastCommand.prototype.handleMetadata = function(method, handler, command) {
+  helpers.handle(this.metadata, command.metadata, handler.metadata)
+  return this
 }
 
 BroadcastCommand.prototype.mergeAs = function(method, handler, command) {

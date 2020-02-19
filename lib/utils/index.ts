@@ -1,5 +1,7 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { remove, find } from 'lodash'
+
+import { helpers } from './helpers'
 import { zip } from './zip'
 import { merge } from './merge'
 import { push } from './push'
@@ -7,6 +9,7 @@ import { push } from './push'
 import { pattern } from './pattern'
 
 export const utils = {
+  ...helpers,
   ...merge,
   ...push,
   ...zip,

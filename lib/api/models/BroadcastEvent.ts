@@ -2,6 +2,7 @@
 import { isArray, isObject } from 'lodash'
 import { BroadcastModel } from '../../BroadcastModel'
 import { regexdot } from '@fabrix/regexdot'
+import { helpers } from '../../utils/helpers'
 
 /**
  * @module BroadcastEvent
@@ -522,6 +523,10 @@ export class BroadcastEvent extends BroadcastModel {
 export interface BroadcastEvent extends BroadcastModel {
   toJSON(): any
   generateUUID(config?, options?): any
+
+  handleData(method, manager, event): any
+  handleMetadata(method, manager, event): any
+
   mergeData(method, manager, event): any
   mergeAs(method, manager, event): any
   mergeEachAs(method, manager, event): any
@@ -532,6 +537,16 @@ export interface BroadcastEvent extends BroadcastModel {
   includeAs(method, manager, event): any
   zip(method, manager, event): any
   zipEachOn(method, manager, event): any
+}
+
+BroadcastEvent.prototype.handleData = function(method, manager, event) {
+  helpers.handle(this.data, event.data, manager.data)
+  return this
+}
+
+BroadcastEvent.prototype.handleMetadata = function(method, manager, event) {
+  helpers.handle(this.metadata, event.metadata, manager.metadata)
+  return this
 }
 
 BroadcastEvent.prototype.mergeData = function(method, manager, event) {

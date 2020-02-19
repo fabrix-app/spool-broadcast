@@ -12,18 +12,18 @@ import {
 export const Validator = {
 
   // This handles multiple versions of joi
-  joiPromise: (data: any, schema: joi.ObjectSchema) => {
+  joiPromise: (data: any, schema: joi.ObjectSchema, options = {}) => {
     return new Promise((resolve, reject) => {
       if (schema.validate) {
 
-        const { value, error } = schema.validate(data)
+        const { value, error } = schema.validate(data, options)
         if (error) {
           return reject(error)
         }
         return resolve(value)
       }
       else {
-        joi.validate(data, schema, (err, value) => {
+        joi.validate(data, schema, options, (err, value) => {
           if (err) {
             return reject(err)
           }
@@ -33,9 +33,9 @@ export const Validator = {
     })
   },
 
-  joiPromiseMap: (list: any, schema: joi.ObjectSchema) => {
+  joiPromiseMap: (list: any, schema: joi.ObjectSchema, options?) => {
     return Promise.all(list.map(data => {
-      return Validator.joiPromise(data, schema)
+      return Validator.joiPromise(data, schema, options)
     }))
   },
 

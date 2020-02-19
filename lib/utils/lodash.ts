@@ -77,7 +77,7 @@ export const lodash = {
   fill: (left, right, ...rest) => {
     return fill([...left, ...right], rest)
   },
-  flatten: (left, right, ...rest) => {
+  flatten: (left, right) => {
     return flatten([...left, ...right])
   },
   flattenDeep: (left, right) => {
@@ -151,5 +151,11 @@ export const lodash = {
   },
   some: (left, right, key) => {
     return some(left, right, key)
+  },
+  merge: (left, right) => {
+    return merge(left, right)
+  },
+  mergeWith: (left, right, key) => {
+    return mergeWith(left, right, key)
   }
 }
