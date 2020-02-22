@@ -430,11 +430,19 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: true,
         binaryType: 'json'
       },
+
       version: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
         binaryOptional: true,
         binaryType: 'int'
+      },
+
+      version_app: {
+        type: Sequelize.STRING,
+        defaultValue: app.pkg.version,
+        binaryOptional: true,
+        binaryType: 'string'
       },
 
       // The current tree being run
