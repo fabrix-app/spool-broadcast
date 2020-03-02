@@ -1,9 +1,5 @@
-import { FabrixGeneric, FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
-import { get, isArray } from 'lodash'
-import { Broadcast } from './Broadcast'
-import { BroadcastCommand } from './BroadcastCommand'
+import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
 import { FabrixApp } from '@fabrix/fabrix'
-import { mapSeries } from 'bluebird'
 import { BroadcastEntity } from './BroadcastEntity'
 
 /**
@@ -50,10 +46,11 @@ export class BroadcastHook extends FabrixGeneric {
   }
 
   async run (): Promise<any> {
-    throw new Error('Subclasses must override Hook.run')
+    throw new Error(`${this.name}.run must override Hook.run`)
   }
   async cancel (): Promise<any> {
-    throw new Error('Subclasses must override Hook.cancel')
+    // throw new Error(`${this.name}.cancel must override Hook.cancel`)
+    return Promise.resolve([this.command, this.options])
   }
 
   /**

@@ -77,10 +77,11 @@ export class PipelineEmitter extends EventEmitter {
       // The runner for the pipe
       const run = runners[i]
       // The runners config
-      const { before, after, merge, zip, failOnError } = run[1]
+      const { before, after, merge, zip, fail_on_error } = run[1]
 
-      this.app.log.silly(`Pipeline ${this.command}: ${name} config`, before, after, merge, zip, failOnError)
+      this.app.log.silly(`Pipeline ${this.command}: ${name} config`, before, after, merge, zip, fail_on_error)
 
+      // Copy the current req, body, options
       let _req = req,
         _body = body,
         _options = options
@@ -93,7 +94,7 @@ export class PipelineEmitter extends EventEmitter {
         catch (e) {
           this.app.log.error(`before ${this.command}.error`, e)
           this.emit(`${this.command}.error`, e)
-          if (failOnError) {
+          if (fail_on_error) {
             breakException = e
             return Promise.reject(e)
           }
@@ -111,7 +112,7 @@ export class PipelineEmitter extends EventEmitter {
             catch (e) {
               this.app.log.error(`after ${this.command}.error`, e)
               this.emit(`${this.command}.error`, e)
-              if (failOnError) {
+              if (fail_on_error) {
                 breakException = e
                 return Promise.reject(e)
               }
@@ -152,7 +153,7 @@ export class PipelineEmitter extends EventEmitter {
           this.emit(`${this.command}.error`, err)
 
           // If the runner says to fail completely on error
-          if (failOnError) {
+          if (fail_on_error) {
             breakException = err
             return Promise.reject(err)
           }

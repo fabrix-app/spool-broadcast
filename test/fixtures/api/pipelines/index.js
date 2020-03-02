@@ -1,1 +1,1 @@
-exports.Test = require('./Test')
+exports.TestPipeline = require('./TestPipeline')

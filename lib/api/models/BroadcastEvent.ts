@@ -646,7 +646,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
         method,
         this.event_type,
         'folding values',
-        Object.keys(this.data.toJSON()), '->', Object.keys(event.data.toJSON())
+        Object.keys(this.data.toJSON()), '<-', Object.keys(event.data.toJSON())
       )
 
       Object.keys(event.data.toJSON()).forEach(k => {
@@ -654,7 +654,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
       })
     }
     this.app.log.debug(
-      `Manager ${method} folded ${this.event_type} -> ${event.event_type}`
+      `Manager ${method} folded ${this.event_type} <- ${event.event_type}`
     )
 
     return this

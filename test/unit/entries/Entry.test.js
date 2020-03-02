@@ -18,6 +18,8 @@ describe('Entry', () => {
         .then(([_event, _options]) => {
           test_uuid = _event.data.test_uuid
 
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+
           done()
         })
         .catch(err => {
@@ -28,6 +30,8 @@ describe('Entry', () => {
     it('should bulk create', (done) => {
       global.app.entries.Test.bulkCreate({}, [{name: 'test'}], {})
         .then(([_event, _options]) => {
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
           done()
         })
         .catch(err => {
@@ -41,6 +45,9 @@ describe('Entry', () => {
         name: 'test 2'
       }, {})
         .then(([_event, _options]) => {
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+
           done()
         })
         .catch(err => {
@@ -54,6 +61,9 @@ describe('Entry', () => {
         name: 'test'
       }, {})
         .then(([_event, _options]) => {
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+
           done()
         })
         .catch(err => {
@@ -67,6 +77,9 @@ describe('Entry', () => {
         name: 'test'
       }, {})
         .then(([_event, _options]) => {
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+
           done()
         })
         .catch(err => {

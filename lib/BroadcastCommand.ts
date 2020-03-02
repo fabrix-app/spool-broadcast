@@ -10,7 +10,7 @@ import { helpers } from './utils/helpers'
 export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
   req: {[key: string]: any}
-  command_type: string
+  _command_type: string
   command_uuid: string
   causation_uuid: string
   object: FabrixModel
@@ -21,6 +21,7 @@ export class BroadcastCommand extends FabrixGeneric {
   metadata: {[key: string]: any}
   created_at: string // Date
   version: number
+  version_app: string
   action
   chain_before = []
   chain_saga = []
@@ -32,6 +33,7 @@ export class BroadcastCommand extends FabrixGeneric {
   pattern_raw: string
   pointer: any
   cancel_methods: any
+  options: {[key: string]: any}
   // event_type?: string = null
   // _changes: string[]
 
@@ -41,15 +43,19 @@ export class BroadcastCommand extends FabrixGeneric {
     {
       req,
       command_type,
+      event_type,
       object,
       correlation_uuid,
       causation_uuid,
       data,
       metadata = {},
       version = 0,
+      version_app,
       chain_events = [],
+
       // event_type = null
-    }
+    },
+    options = {}
   ) {
     super(app)
 
@@ -65,28 +71,59 @@ export class BroadcastCommand extends FabrixGeneric {
     if (!app.models[object.constructor.name]) {
       throw new Error('object is not a valid model')
     }
-
-    const { pattern, keys } = regexdot(command_type)
-    const pattern_raw = command_type
+    if (!command_type) {
+      throw new Error('command_type is required')
+    }
+    //
+    // const { pattern, keys } = regexdot(command_type)
+    // const pattern_raw = command_type
 
     // this.app = app
     this.broadcaster = broadcaster
     this.req = req
     this.command_uuid = this.generateUUID(correlation_uuid)
+
     this.object = object
-    this.pattern = pattern
-    this.pattern_raw = pattern_raw
-    this.command_type = this.replaceParams(command_type, keys, data)
-    this.causation_uuid = causation_uuid
     this.data = data
     this.data_previous = isArray(data) ? [] : {}
     this.data_applied = isArray(data) ? [] : {}
     this.metadata = metadata
+
+    // this.pattern = pattern
+    // this.pattern_raw = pattern_raw
+
+    this.causation_uuid = causation_uuid
     this.version = version
+    this.version_app = version_app || this.app.pkg.version
     this.created_at = new Date(Date.now()).toISOString()
     this.chain_events = chain_events
     // the initial (root) event this command expects_response to dispatch as a result of the command
     // this.event_type = event_type
+
+    this.command_type = command_type
+    // this.command_type = this.replaceParams(command_type, keys, data)
+
+    this.options = options
+  }
+
+  /**
+   * Get the current command_type
+   */
+  get command_type() {
+    return this._command_type
+  }
+
+  /**
+   * Set the command_type, the pattern, and replace the params in the pattern
+   */
+  set command_type(command_type) {
+    const { pattern, keys } = regexdot(command_type)
+    const pattern_raw = command_type
+
+    this.pattern = pattern
+    this.pattern_raw = pattern_raw
+
+    this._command_type = this.replaceParams(command_type, keys, this.data)
   }
 
   get chain() {
@@ -434,6 +471,7 @@ BroadcastCommand.prototype.toJSON = function(str) {
     metadata: this.metadata,
     causation_uuid: this.causation_uuid,
     version: this.version,
+    version_app: this.version_app,
     created_at: this.created_at
   }
 

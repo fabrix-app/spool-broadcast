@@ -20,17 +20,15 @@ import { utils } from './utils'
 
 export class Broadcast extends FabrixGeneric {
 
+  // Types of Hooks
   public lifecycles = ['before', 'after']
+  // Types of Subscribers
   public lifespans = ['ephemeral', 'eternal']
+  // Types of Events
   public consistencies = ['strong', 'eventual']
+  // Types of Event Processing
   public processing = ['serial', 'parallel']
 
-  /**
-   * Broadcast Channels
-   */
-  private _channels: Map<string, BroadcastChannel> = new Map()
-  private _subscribers: Map<any, { [key: string]: Map<string, any> }> = new Map()
-  private _brokers: Map<any, { [key: string]: Map<string, any> }> = new Map()
 
   /**
    * Pipelines
@@ -53,6 +51,13 @@ export class Broadcast extends FabrixGeneric {
   private _projectors: Map<string, BroadcastProjector> = new Map()
   private _events: Map<any, { [key: string]: Map<string, any> }> = new Map()
   private _managers: Map<any, { [key: string]: Map<string, any> }> = new Map()
+
+  /**
+   * Broadcast Channels
+   */
+  private _channels: Map<string, BroadcastChannel> = new Map()
+  private _subscribers: Map<any, { [key: string]: Map<string, any> }> = new Map()
+  private _brokers: Map<any, { [key: string]: Map<string, any> }> = new Map()
 
 
   /**
@@ -125,19 +130,21 @@ export class Broadcast extends FabrixGeneric {
 
   /**
    * Create a command
-   * @param data
+   * @param command
+   * @param options
    */
-  createCommand(data) {
-    return new BroadcastCommand(this.app, this, data)
+  createCommand(command, options) {
+    return new BroadcastCommand(this.app, this, command, options)
   }
 
   /**
    * Update a command
    * Sets a correlation ID and returns a new command
-   * @param data
+   * @param command
+   * @param options
    */
-  updateCommand(data) {
-    return new BroadcastCommand(this.app, this, {correlation_uuid: data.command_uuid, ...data})
+  updateCommand(command, options) {
+    return new BroadcastCommand(this.app, this, {correlation_uuid: command.command_uuid, ...command}, options)
   }
 
   /**
@@ -414,11 +421,17 @@ export class Broadcast extends FabrixGeneric {
 
     const promises = Array.from(beforeCommandsAsc.entries())
 
+    // confirm the tracer
+    options.trace = options.trace ? options.trace : new Map()
+
     return this.process(beforeHandlers, promises, ([m, p]) => {
       if (breakException) {
         return Promise.reject(breakException)
       }
       const handler = beforeHandlers.get(m)
+
+      const trace = options.trace.set(`${handler.pattern_raw}::${m}`, handler)
+      // options.trace.set(m, handler)
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -548,11 +561,17 @@ export class Broadcast extends FabrixGeneric {
     // Build an array of promises
     const promises = Array.from(afterCommandsAsc.entries())
 
+    // confirm the tracer
+    options.trace = options.trace ? options.trace : new Map()
+
     return this.process(afterHandlers, promises, ([m, p]) => {
       if (breakException) {
         return Promise.reject(breakException)
       }
       const handler = afterHandlers.get(m)
+
+      const trace = options.trace.set(`${handler.pattern_raw}::${m}`, handler)
+      // options.trace.set(m, handler)
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -935,6 +954,37 @@ export class Broadcast extends FabrixGeneric {
       return null
     }
   }
+
+  /**
+   * Given an options argument with a trace tree, find the top most level trace
+   * @param options
+   */
+  unnestTrace(options) {
+    let trace = new Map([...(options && options.trace ? options.trace : new Map())])
+
+    if (options && options.parent && options.parent.trace) {
+      trace = new Map([...this.unnestTrace(options.parent), ...trace])
+    }
+
+    // if (options && options.children) {
+    //   options.children.forEach((c, i) => {
+    //     if (c && c.trace) {
+    //       const par = c.trace.keys().next().value
+    //       const parent = options.trace.get(par)
+    //       if (parent) {
+    //         const children = parent.children ? new Map([...parent.children, ...c.trace]) : new Map([...c.trace])
+    //         parent.children = children
+    //         options.trace.set(par, parent)
+    //       }
+    //       else {
+    //         this.app.log.warn('BRK could not unnest trace for', par, parent, c.trace)
+    //       }
+    //     }
+    //   })
+    // }
+
+    return trace
+  }
   /**
    * BroadcastProject the event that was persisted
    * @param event
@@ -959,6 +1009,9 @@ export class Broadcast extends FabrixGeneric {
     if (!options.transaction) {
       this.app.log.warn(`${this.name} broadcasting ${event.event_type} without a transaction!` )
     }
+
+    // options.parent = options.parent ? options.parent : { trace: new Map() }
+    options.trace = options.trace ? options.trace : new Map()
 
     // Publish the strong events
     return this.projectStrong(strong, strongManagers, event, options)
@@ -1067,6 +1120,8 @@ export class Broadcast extends FabrixGeneric {
 
       const manager = strongManagers.get(m)
 
+      const trace = options.trace.set(`${manager.pattern_raw}::${m}`, manager)
+
       // Receiver Test
       if (manager && manager.expects_input) {
         if (
@@ -1076,7 +1131,7 @@ export class Broadcast extends FabrixGeneric {
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} expects_input ${manager.expects_input}
+            `${m} ${manager.type} expects_input ${manager.expects_input}
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
@@ -1086,13 +1141,13 @@ export class Broadcast extends FabrixGeneric {
         ) {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
-            `${m} ${manager.is_processor ? 'processor' : 'projector'} expects one of ${manager.expects_input.join(', ')} as input,
+            `${m} ${manager.type} expects one of ${manager.expects_input.join(', ')} as input,
             but got ${event.getDataValue('object')} for ${event.event_type}`
           )
         }
       }
       else {
-        this.app.log.debug(`${event.event_type} manager ${m} ${manager.is_processor ? 'processor' : 'projector'}
+        this.app.log.debug(`${event.event_type} manager ${m} ${manager.type}
         assuming it expects_input ${event.getDataValue('object')}`)
       }
 
@@ -1102,7 +1157,7 @@ export class Broadcast extends FabrixGeneric {
         return [event, options]
       }
 
-      return this.run(event, options, p, m, manager, breakException)
+      return this.run(event, options, p, m, manager, breakException, trace)
     })
       .then(results => {
         return [event, options]
@@ -1118,14 +1173,17 @@ export class Broadcast extends FabrixGeneric {
    * @param m
    * @param manager
    * @param breakException
+   * @param trace
    */
-  run(event, options, p, m, manager, breakException) {
-
-    // console.log('BRK M', m, p)
+  run(event, options, p, m, manager, breakException, trace) {
 
     // Get the time for the start of the hook
     const projectstart = process.hrtime()
 
+    let projectend = process.hrtime(projectstart)
+    let t = `${manager ? manager.type : 'unknown'}`
+
+    // Run the processor/projector
     return p({
       event,
       options,
@@ -1135,8 +1193,11 @@ export class Broadcast extends FabrixGeneric {
     })
       .run()
       .then(([_event, _options]) => {
+        // Marks the acknowledged state of the message
         p.isAcknowledged = true
 
+        // This Block makes sure that the response is manageable
+        // make sure that an event was returned
         if (!_event) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
@@ -1144,12 +1205,14 @@ export class Broadcast extends FabrixGeneric {
           )
         }
         else if (!isArray(_event)) {
+          // Make sure an event was returned
           if (!_event) {
             throw new this.app.errors.GenericError(
               'E_NOT_ACCEPTABLE',
               `${p.name} Projection returned invalid response for ${m}! - fatal`
             )
           }
+          // Make sure that it was not a command returned
           if (_event instanceof BroadcastCommand) {
             throw new this.app.errors.GenericError(
               'E_NOT_ACCEPTABLE',
@@ -1157,15 +1220,26 @@ export class Broadcast extends FabrixGeneric {
             )
           }
 
+          // See if the
           if (_event.action && _event.action === 'retry') {
             this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
+            projectend = process.hrtime(projectstart)
+            this.app.log.debug(
+              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+            )
             return [event, options]
           }
+
           if (_event.action === false) {
             this.app.log.debug(`${this.name} ${m} to continue without data`)
+            projectend = process.hrtime(projectstart)
+            this.app.log.debug(
+              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+            )
             return [event, options]
           }
         }
+        //
         else {
           _event.forEach(_e => {
             if (!_e) {
@@ -1180,16 +1254,36 @@ export class Broadcast extends FabrixGeneric {
                 `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`)
             }
           })
+          // Check that all the returned events were successful
           if (_event.every(_e => _e[0].action && _e[0].action === 'retry')) {
+
             this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
+            projectend = process.hrtime(projectstart)
+            this.app.log.debug(
+              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+            )
+
             return [event, options]
           }
+          else {
+            // TODO handle some of the events that failed in the array of events returned
+          }
+
+          // Check that all the returned events require no action
           if (_event.every(_e => _e[0].action && _e[0].action === false)) {
             this.app.log.debug(`${m} to continue without data in list of events`)
+            projectend = process.hrtime(projectstart)
+            this.app.log.debug(
+              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+            )
             return [event, options]
+          }
+          else {
+            // TODO handle some of the events that failed in the array of events returned
           }
         }
 
+        // Adds this to the chain if it makes it to here
         if (m) {
           event.chain_events.push(m)
         }
@@ -1210,6 +1304,7 @@ export class Broadcast extends FabrixGeneric {
           event.includeOn(m, manager, _event)
         }
 
+        // TODO make default
         if (manager.data) {
           event.handleData(m, manager, _event)
         }
@@ -1217,8 +1312,28 @@ export class Broadcast extends FabrixGeneric {
           event.handleMetadata(m, manager, _event)
         }
 
-        const projectend = process.hrtime(projectstart)
-        const t = `${manager.is_processor ? 'BroadcastProcessor' : 'BroadcastProjector'}`
+        options.trace = options.trace || new Map()
+        options.children = options.children || []
+
+        // Processors have children
+        if (t === 'processor') {
+
+          // Update the trace
+          // TODO figure out which one of these methods to use
+          const parent = options.trace.get(`${manager.pattern_raw}::${m}`, manager)
+          parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
+          options.trace.set(`${manager.pattern_raw}::${m}`, parent)
+
+          // trace.children = new Map([...(trace.children || new Map()), ...(_options.trace || new Map())])
+
+          options.children.push({
+            transaction: _options.transaction,
+            useMaster: _options.useMaster,
+            trace: _options.trace ? _options.trace : new Map()
+          })
+        }
+
+        projectend = process.hrtime(projectstart)
         this.app.log.debug(
           `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
         )
@@ -1255,20 +1370,27 @@ export class Broadcast extends FabrixGeneric {
     //   }
     // })
 
+    // Set the tracer for eventual
+    Array.from(eventualManagers.keys()).forEach(e => {
+      // console.log('BRK publishing pattern 0', e)
+      const manager = eventualManagers.get(e)
+      const trace = options.trace.set(`${manager.pattern_raw}::${e}`, manager)
+    })
+
     const patterns = uniqBy(
       Array.from(eventualManagers.values())
         .map((v: {[key: string]: any}) => {
           return v
         })
-        .filter(n => n.pattern_raw)
-    , 'patter_raw')
+        .filter(v => v.pattern_raw)
+    , 'pattern_raw')
 
     patterns.forEach(manager => {
       this.app.log.debug('Broadcaster', this.name, 'publishing pattern', manager.pattern_raw)
     })
 
     return this.app.broadcastSeries(patterns, (manager) => {
-      if (manager.is_processor) {
+      if (manager.type === 'processor') {
         this.app.log.warn(
           `${event.event_type} is publishing an "eventual" processor!`,
           `Unless this processor has a projector listenting to the same event, and a later priority it will lock the que!`,
@@ -1276,6 +1398,7 @@ export class Broadcast extends FabrixGeneric {
           manager
         )
       }
+
       // Publish the eventual events
       return this.app.broadcaster.publish({
         broadcaster: this,
@@ -1291,8 +1414,12 @@ export class Broadcast extends FabrixGeneric {
           return [event, options]
         })
     })
-      .then((res) => {
-        this.app.log.silly(`Broadcast ${this.name} Published Results`, res)
+      .then((res = []) => {
+        this.app.log.silly(`Broadcast ${this.name} Published Results:`)
+        res.forEach(([e, o]) => {
+          this.app.log.silly(e)
+          this.app.log.silly(o)
+        })
         // TODO retry regression
         return [event, options]
       })
@@ -1328,6 +1455,11 @@ export class Broadcast extends FabrixGeneric {
       deferrable: this.app.spools.sequelize._datastore.Deferrable.SET_DEFERRED
     }, t => {
 
+      const options = {
+        transaction: t,
+        trace: new Map()
+      }
+
       return this.process(eventualManagers, events, ([key, projector]) => {
 
         if (breakException) {
@@ -1336,11 +1468,11 @@ export class Broadcast extends FabrixGeneric {
 
         const manager = eventualManagers.get(key)
 
-        if (manager.is_processor) {
-          return this.runEventualProcessor(client, projector, key, manager, message, { transaction: t }, breakException)
+        if (manager.type === 'processor') {
+          return this.runEventualProcessor(client, projector, key, manager, message, options, breakException)
         }
         else {
-          return this.runEventualProjector(client, projector, key, manager, message, { transaction: t }, breakException)
+          return this.runEventualProjector(client, projector, key, manager, message, options, breakException)
         }
       })
 
@@ -1387,7 +1519,10 @@ export class Broadcast extends FabrixGeneric {
     //   .get(this.name)
     //   .push(p)
 
-    return this.run(event, options, project, key, manager, breakException)
+    // Set the trace
+    const trace = options.trace.set(`${manager.pattern_raw}::${key}`, manager)
+
+    return this.run(event, options, project, key, manager, breakException, trace)
       .then(([_event, _options]) => {
         project.isAcknowledged = true
         return [_event, _options]
@@ -1412,6 +1547,9 @@ export class Broadcast extends FabrixGeneric {
     }
 
     const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+
+    // Set the trace
+    const trace = options.trace.set(`${manager.pattern_raw}::${key}`, manager)
 
     return Promise.resolve()
       .then(() => {
@@ -1568,6 +1706,7 @@ export class Broadcast extends FabrixGeneric {
 
         this.addSubscriber({
           event_type: subscriberType,
+          type: 'channel',
           name: `${m}`,
           method: typeof channel[m] === 'function' ? channel[m] : get(this.app.entries, m),
           config: subscribers[m].config
@@ -1582,11 +1721,12 @@ export class Broadcast extends FabrixGeneric {
   /**
    * Add Subscriber Subscriber
    * @param event_type
+   * @param type
    * @param name
    * @param method
    * @param config
    */
-  addSubscriber({event_type, name, method, config = {}}): Broadcast {
+  addSubscriber({event_type, type, name, method, config = {}}): Broadcast {
 
     const lifespan = 'eternal'
     const { keys, pattern } = regexdot(event_type)
@@ -1594,7 +1734,14 @@ export class Broadcast extends FabrixGeneric {
 
     // Add default configs
     config = {
+      type: type,
       lifespan: lifespan,
+      priority: 255,
+      retry_on_fail: false,
+      retry_on_timeout: null,
+      retry_max: 0,
+      retry_wait: null,
+      retry_attempts: 0,
       params: keys,
       pattern: pattern,
       pattern_raw: event_type,
@@ -1882,17 +2029,24 @@ export class Broadcast extends FabrixGeneric {
   /**
    * Add BroadcastPipe Subscriber
    * @param pipe_type
+   * @param type,
    * @param name
    * @param method
    * @param config
    */
-  addPipe({pipe_type, name, method, config = {}}): Broadcast {
+  addPipe({pipe_type, type = 'pipeline', name, method, config = {}}): Broadcast {
 
     const lifecycle = 'always'
 
     // // Add default configs
     config = {
-      failOnError: true,
+      type: type,
+      retry_on_fail: false,
+      retry_on_timeout: null,
+      retry_max: 0,
+      retry_wait: null,
+      retry_attempts: 0,
+      fail_on_error: true,
       ...config
     }
 
@@ -1978,6 +2132,7 @@ export class Broadcast extends FabrixGeneric {
         this.app.log.silly(`Adding hookIn ${hookIn.name}.${m} to broadcaster ${this.name} for command ${commandType}`)
         this.addCommand({
           command_type: commandType,
+          type: 'hook',
           lifecycle: commands[m].lifecycle,
           name: `${hookIn.name}.${m}`,
           method: hookIn[m],
@@ -1991,23 +2146,26 @@ export class Broadcast extends FabrixGeneric {
   /**
    * Add Command Subscriber
    * @param command_type
+   * @param type
    * @param lifecycle
    * @param name
    * @param method
    * @param config
    */
-  addCommand({command_type, lifecycle = 'before', name, method, config = {}}): Broadcast {
+  addCommand({command_type, type = 'hook', lifecycle = 'before', name, method, config = {}}): Broadcast {
 
     const { keys, pattern } = regexdot(command_type)
     const key = command_type // pattern // .toString()
 
     // Add default configs
     config = {
+      type: type,
       priority: 255,
       retry_on_fail: false,
       retry_on_timeout: null,
       retry_max: 0,
       retry_wait: null,
+      retry_attempts: 0,
       params: keys,
       pattern: pattern,
       pattern_raw: command_type,
@@ -2270,6 +2428,7 @@ export class Broadcast extends FabrixGeneric {
 
         this.addEvent({
           event_type: eventType,
+          type: 'projector',
           consistency: events[m].consistency,
           name: `${projector.name}.${m}`,
           method: projector[m],
@@ -2328,11 +2487,11 @@ export class Broadcast extends FabrixGeneric {
         this.app.log.silly(`Adding processor ${processor.name}.${m} to broadcaster ${this.name} for event ${eventType}`)
         this.addEvent({
           event_type: eventType,
+          type: 'processor',
           consistency: events[m].consistency,
           name: `${processor.name}.${m}`,
           method: processor[m],
           config: events[m].config,
-          is_processor: true,
         })
       })
     })
@@ -2347,9 +2506,9 @@ export class Broadcast extends FabrixGeneric {
    * @param name
    * @param method
    * @param config
-   * @param is_processor
+   * @param type
    */
-  addEvent({event_type, consistency = 'strong', name, method, config = {}, is_processor = false}): Broadcast {
+  addEvent({event_type, consistency = 'strong', name, method, config = {}, type = 'projector'}): Broadcast {
 
 
     const { keys, pattern } = regexdot(event_type)
@@ -2358,14 +2517,15 @@ export class Broadcast extends FabrixGeneric {
     // Add default configs
     // These values will get replaced by the config if set
     config = {
+      type: type,
       priority: 255,
       retry_on_fail: false,
       retry_on_timeout: null,
       retry_max: 0,
       retry_wait: null,
+      retry_attempts: 0,
       // By Default, processors or strong projectors should be serial because of transactions
-      processing: is_processor || consistency === 'strong' ? 'serial' : 'parallel',
-      is_processor: is_processor,
+      processing: type === 'processor' || consistency === 'strong' ? 'serial' : 'parallel',
       params: keys,
       pattern: pattern,
       pattern_raw: event_type,

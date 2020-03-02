@@ -48,6 +48,7 @@ export class Saga extends Generic  {
   }
 
   metadata(req): {[key: string]: any} {
+    // TODO, this should default to an empty object
     return {
       req_user_uuid: req.user ? req.user.user_uuid : null,
       req_channel_uuid: req.channel ? req.channel.channel_uuid : null,
@@ -61,7 +62,8 @@ export class Saga extends Generic  {
   async prehookRunner(endpoint, command) {
     // This should be overriden by the subclass
     this.app.log.debug(
-      `${this.name}.prehookRunner is not running because it's not defined in the class`
+      `${this.name}.prehookRunner is not running because it's not defined in the class`,
+      `returning [endpoint, command] by default`
     )
     this.app.log.silly(endpoint)
     this.app.log.silly(command)
@@ -194,6 +196,7 @@ export class Saga extends Generic  {
           this.app.log.warn('BRK before hook err', _command.breakException)
           return Promise.reject(_command.breakException)
         }
+
         return ([_command, _options])
       })
       .catch(err => {
@@ -257,41 +260,32 @@ export class Saga extends Generic  {
       })
   }
 
-
-  // /**
-  //  * Validate the data value of a command/event
-  //  * @param validator
-  //  * @param obj
-  //  * @param options
-  //  */
-  // validate(validator, obj, options) {
-  //   return validator(
-  //     isArray(obj.data)
-  //       ? obj.data.map(d => d.toJSON ? d.toJSON() : d)
-  //       : obj.data.toJSON
-  //       ? obj.data.toJSON()
-  //       : obj.data
-  //   )
-  //     .then(data => {
-  //       return [obj, options]
-  //     })
-  // }
-
   /**
    * Process the Request and fold the response data into the command data
    * @param command
-   * @param endpoint
+   * @param prehook
    * @param validators
    * @param options
    */
-  async processRequest(command, endpoint, validators, options): Promise<any> {
-    return this.prehookRunner(endpoint, command.toJSON())
-      .then(([_endpoint, _command]) => {
+  async processRequest(command, prehook, validators, options): Promise<any> {
+
+    const manager = {
+      lifecycle: 'during',
+      pattern: command.pattern,
+      pattern_raw: command.pattern_raw,
+      object: command.object,
+    }
+
+    return this.prehookRunner(prehook, command.toJSON())
+      .then(([_prehook, _command]) => {
         return command.broadcaster.validate(validators, _command, options)
       })
       .then(([data, _options]) => {
-        command.mergeData(`${this.name} Saga`, {}, data)
-
+        command.mergeData(
+          `${this.name} Saga`,
+          manager,
+          data
+        )
         return [command, options]
       })
   }
@@ -299,16 +293,18 @@ export class Saga extends Generic  {
   /**
    * TODO
    * @param command
-   * @param endpoint
+   * @param prehook
    * @param validators
    * @param options
    */
-  async processCancelRequest(command, endpoint, validators, options): Promise<any> {
+  async processCancelRequest(command, prehook, validators, options): Promise<any> {
     // This should be overriden by the subclass
     this.app.log.warn(
-      `${this.name}.processCancelRequest is not running because it's not defined in the class`
+      `${this.name}.processCancelRequest is not running because it's not defined in the subclass`,
+      `returning 200 by default`
     )
-    this.app.log.silly(endpoint)
+
+    this.app.log.silly(prehook)
     this.app.log.silly(command.toJSON())
 
     return Promise.resolve([{status: 200}])
@@ -328,9 +324,9 @@ export class Saga extends Generic  {
 
     let breakException
 
-    return this.mapSeries(Array.from(saga), ([k, endpoint]) => {
+    return this.mapSeries(Array.from(saga), ([k, prehook]) => {
       if (!breakException) {
-        return this.processRequest(command, endpoint, validators, options)
+        return this.processRequest(command, prehook, validators, options)
           .then(([_command, _options]) => {
             // Record the result of each step ran
             ran.set(k, _command)
@@ -356,8 +352,8 @@ export class Saga extends Generic  {
       })
       // Send the cancel request to all that ran
       .catch(err => {
-        return this.mapSeries(Array.from(ran), ([k, endpoint]) => {
-          return this.processCancelRequest(command, endpoint, validators, options)
+        return this.mapSeries(Array.from(ran), ([k, prehook]) => {
+          return this.processCancelRequest(command, prehook, validators, options)
             .then(([_command, _options]) => {
               // Record the result of each step ran
               cancelled.set(k, _command)

@@ -9,6 +9,9 @@ describe('Test Projectors', () => {
     it('should create', (done) => {
       global.app.entries.Test.createEventual({}, {name: 'test'}, {})
         .then(([_event, _options]) => {
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+
           done()
         })
         .catch(err => {

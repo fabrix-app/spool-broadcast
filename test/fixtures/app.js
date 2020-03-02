@@ -116,11 +116,19 @@ const App = {
       },
 
       pipelines: {
-        Test: {
+        TestPipeline: {
           broadcasters: {
             Test: {
               'CreateAndFindTest': {
                 'Test.create': {
+                  before: function (req, body, options) {
+                    console.log('BRK pipeline before 1', body)
+                    return [req, body, {parent: options}]
+                  },
+                  after: function(req, body, options) {
+                    console.log('BRK pipeline after 2', body)
+                    return [req, body, options]
+                  },
                   zip: {
                     event_type: 'event_type',
                     object: 'object',
@@ -135,12 +143,13 @@ const App = {
                       },
                       query: {}
                     }
+                    console.log('BRK pipeline before 3', body)
                     return [req, body, {parent: options}]
                   },
-                  // after: function(req, body, options) {
-                  //   console.log('BRK trial after 2', body.data)
-                  //   return [req, body, options]
-                  // },
+                  after: function(req, body, options) {
+                    console.log('BRK pipeline after 4', body)
+                    return [req, body, options]
+                  },
                   zip: {
                     data: 'data'
                   }

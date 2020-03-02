@@ -1,5 +1,5 @@
 const Pipeline = require('../../../../dist').BroadcastPipeline
 
-module.exports = class Test extends Pipeline {
+module.exports = class TestPipeline extends Pipeline {
 
 }
