@@ -19,6 +19,7 @@ describe('Entry', () => {
           test_uuid = _event.data.test_uuid
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
 
           done()
         })
@@ -32,6 +33,8 @@ describe('Entry', () => {
         .then(([_event, _options]) => {
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
+
           done()
         })
         .catch(err => {
@@ -47,6 +50,7 @@ describe('Entry', () => {
         .then(([_event, _options]) => {
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
 
           done()
         })
@@ -63,6 +67,7 @@ describe('Entry', () => {
         .then(([_event, _options]) => {
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
 
           done()
         })
@@ -79,6 +84,7 @@ describe('Entry', () => {
         .then(([_event, _options]) => {
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
 
           done()
         })

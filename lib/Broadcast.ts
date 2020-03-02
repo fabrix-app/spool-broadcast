@@ -430,7 +430,7 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = beforeHandlers.get(m)
 
-      const trace = options.trace.set(`${handler.pattern_raw}::${m}`, handler)
+      const trace = options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
       // options.trace.set(m, handler)
 
       // Check and promise commands
@@ -570,7 +570,7 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = afterHandlers.get(m)
 
-      const trace = options.trace.set(`${handler.pattern_raw}::${m}`, handler)
+      const trace = options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
       // options.trace.set(m, handler)
 
       // Check and promise commands
@@ -985,6 +985,23 @@ export class Broadcast extends FabrixGeneric {
 
     return trace
   }
+
+  flattenTrace(options) {
+    const start = this.unnestTrace(options)
+    let trace = new Set()
+
+    start.forEach((value: {[key: string]: any}, key: string, map) => {
+
+      trace.add(key)
+
+      if (value && value.children) {
+        const childStart = this.flattenTrace({ trace: value.children })
+        trace = new Set([...trace, ...childStart])
+      }
+    })
+
+    return trace
+  }
   /**
    * BroadcastProject the event that was persisted
    * @param event
@@ -1020,6 +1037,15 @@ export class Broadcast extends FabrixGeneric {
         const elog = []
         eventual.forEach((v, k) => elog.push(k))
 
+        // Set the tracer for eventual
+        Array.from(eventualManagers.keys()).forEach(e => {
+          // console.log('BRK publishing pattern 0', e)
+          const manager = eventualManagers.get(e)
+          const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+
+          event.chain_events.push(e)
+        })
+
         // Check that there is a transaction chain, and that we are listening to the root one
         const topLevelTransaction = this.unnestTransaction(options)
         // If there is a root transaction, add the eventual events to when it's committed
@@ -1050,8 +1076,10 @@ export class Broadcast extends FabrixGeneric {
               })
           })
 
+          // Return the event
           return [_event, _options]
         }
+        // Otherwise, if there isn't a transaction, just run it now
         else if (eventual.size > 0) {
           this.app.log.debug(
             `Broadcaster ${this.name} broadcasting on independent transaction`,
@@ -1072,18 +1100,11 @@ export class Broadcast extends FabrixGeneric {
           return [_event, _options]
         }
       })
-      .then(([_event, _options]) => {
-
-        // Add the eventual events to the chain as running after this transaction completes
-        eventual.forEach(e => {
-          if (e) {
-            event.chain_events.push(e)
-          }
-        })
-
-        // Return the original event
-        return [_event, _options]
-      })
+      // .then(([_event, _options]) => {
+      //
+      //   // Return the original event
+      //   return [_event, _options]
+      // })
   }
 
   /**
@@ -1120,7 +1141,7 @@ export class Broadcast extends FabrixGeneric {
 
       const manager = strongManagers.get(m)
 
-      const trace = options.trace.set(`${manager.pattern_raw}::${m}`, manager)
+      const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
 
       // Receiver Test
       if (manager && manager.expects_input) {
@@ -1320,9 +1341,9 @@ export class Broadcast extends FabrixGeneric {
 
           // Update the trace
           // TODO figure out which one of these methods to use
-          const parent = options.trace.get(`${manager.pattern_raw}::${m}`, manager)
+          const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
           parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
-          options.trace.set(`${manager.pattern_raw}::${m}`, parent)
+          options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
 
           // trace.children = new Map([...(trace.children || new Map()), ...(_options.trace || new Map())])
 
@@ -1371,11 +1392,11 @@ export class Broadcast extends FabrixGeneric {
     // })
 
     // Set the tracer for eventual
-    Array.from(eventualManagers.keys()).forEach(e => {
-      // console.log('BRK publishing pattern 0', e)
-      const manager = eventualManagers.get(e)
-      const trace = options.trace.set(`${manager.pattern_raw}::${e}`, manager)
-    })
+    // Array.from(eventualManagers.keys()).forEach(e => {
+    //   // console.log('BRK publishing pattern 0', e)
+    //   const manager = eventualManagers.get(e)
+    //   const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+    // })
 
     const patterns = uniqBy(
       Array.from(eventualManagers.values())
@@ -1520,7 +1541,7 @@ export class Broadcast extends FabrixGeneric {
     //   .push(p)
 
     // Set the trace
-    const trace = options.trace.set(`${manager.pattern_raw}::${key}`, manager)
+    const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
 
     return this.run(event, options, project, key, manager, breakException, trace)
       .then(([_event, _options]) => {
@@ -1549,7 +1570,7 @@ export class Broadcast extends FabrixGeneric {
     const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
 
     // Set the trace
-    const trace = options.trace.set(`${manager.pattern_raw}::${key}`, manager)
+    const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
 
     return Promise.resolve()
       .then(() => {

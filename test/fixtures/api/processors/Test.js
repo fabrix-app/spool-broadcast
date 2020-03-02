@@ -27,7 +27,7 @@ class Destroy extends Process {
 
     return this.app.entries.Test.destroy({
       ...this.metadata
-    }, test, {parent: this.options})
+    }, test, { parent: this.options })
       .then(([_e, _o]) => [_e, _o])
       .catch((err) => {
         if (this.consistency === 'eventual') {

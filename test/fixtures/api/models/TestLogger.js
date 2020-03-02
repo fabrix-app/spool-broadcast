@@ -26,6 +26,12 @@ module.exports = class TestLogger extends BroadcastModel {
 
   static schema(app, Sequelize) {
     return Utils.mergeConfig(BroadcastEvent.schema(app, Sequelize), {
+      event_uuid: {
+        type: Sequelize.UUID,
+        primaryKey: false,
+        binaryOptional: true,
+        binaryType: 'string'
+      },
       name: {
         type: Sequelize.STRING,
         binaryOptional: true,

@@ -431,6 +431,18 @@ const App = {
                 },
               },
 
+              'test.destroyed': {
+                logger: {
+                  consistency: 'eventual',
+                  config: {
+                    priority: 2,
+                    expects_input: 'Test',
+                    merge: true,
+                    expects_output: 'TestLogger'
+                  }
+                },
+              },
+
               // TEST a wildcard eventual event
               'test.*': {
                 wild: {

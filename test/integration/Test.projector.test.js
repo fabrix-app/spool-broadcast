@@ -11,6 +11,7 @@ describe('Test Projectors', () => {
         .then(([_event, _options]) => {
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
 
           done()
         })
