@@ -9,15 +9,6 @@ class Update extends Process {
     return this.app.entries.Test.update({
       ...this.metadata
     }, test, { parent: this.options })
-      .then(([_e, _o]) => [_e, _o])
-      .catch((err) => {
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{ action: 'retry'}, this.options]
-        }
-      })
   }
 }
 
@@ -28,15 +19,6 @@ class Destroy extends Process {
     return this.app.entries.Test.destroy({
       ...this.metadata
     }, test, { parent: this.options })
-      .then(([_e, _o]) => [_e, _o])
-      .catch((err) => {
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{ action: 'retry'}, this.options]
-        }
-      })
   }
 }
 
@@ -49,15 +31,6 @@ class Eventual extends Process {
     return this.app.entries.Test.createEventualProcessor({
       ...this.metadata
     }, test, {parent: this.options})
-      .then(([_e, _o]) => [_e, _o])
-      .catch((err) => {
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{ action: 'retry'}, this.options]
-        }
-      })
   }
 }
 

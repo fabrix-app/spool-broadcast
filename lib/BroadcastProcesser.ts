@@ -12,6 +12,7 @@ export class BroadcastProcess extends FabrixGeneric {
   public isRedelivered = false
   public consistency = 'strong'
   public versions = [1]
+  public retries = 0
   private _id: string
 
   constructor(
@@ -33,8 +34,6 @@ export class BroadcastProcess extends FabrixGeneric {
 
     this.id = this.event.event_uuid
     this.isAcknowledged = false
-
-
 
     if (this.message && this.message.fields) {
       this.isRedelivered = this.message.fields.redelivered

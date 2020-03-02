@@ -955,6 +955,17 @@ export class Broadcast extends FabrixGeneric {
     }
   }
 
+  unnestTraceChildren(children, parent?) {
+    let trace = new Map()
+    children.forEach((v, k, map) => {
+      trace.set(`${parent ? parent + '->' : ''}${k}`, v)
+      if (v && v.children) {
+        const childStart = this.unnestTraceChildren(v.children, k)
+        trace = new Map([...trace, ...childStart])
+      }
+    })
+    return trace
+  }
   /**
    * Given an options argument with a trace tree, find the top most level trace
    * @param options
@@ -962,23 +973,37 @@ export class Broadcast extends FabrixGeneric {
   unnestTrace(options) {
     let trace = new Map([...(options && options.trace ? options.trace : new Map())])
 
+    trace = new Map([...this.unnestTraceChildren(trace)])
+
     if (options && options.parent && options.parent.trace) {
-      trace = new Map([...this.unnestTrace(options.parent), ...trace])
+      const parent = this.unnestTrace(options.parent)
+      trace = new Map([...parent, ...trace])
     }
+
+    // trace.forEach((v: {[key: string]: any}, k, map) => {
+    //   if (v.children) {
+    //     console.log('BRK trace children', v.children)
+    //     trace = new Map([...trace, ...this.unnestTrace({ trace: v.children })])
+    //     // v.children.forEach((c, i) => {
+    //     //
+    //     // })
+    //   }
+    // })
 
     // if (options && options.children) {
     //   options.children.forEach((c, i) => {
     //     if (c && c.trace) {
-    //       const par = c.trace.keys().next().value
-    //       const parent = options.trace.get(par)
-    //       if (parent) {
-    //         const children = parent.children ? new Map([...parent.children, ...c.trace]) : new Map([...c.trace])
-    //         parent.children = children
-    //         options.trace.set(par, parent)
-    //       }
-    //       else {
-    //         this.app.log.warn('BRK could not unnest trace for', par, parent, c.trace)
-    //       }
+    //       trace = new Map([...trace, ...this.unnestTrace({trace: c.trace})])
+    //       // const par = c.trace.keys().next().value
+    //       // const parent = options.trace.get(par)
+    //       // if (parent) {
+    //       //   const children = parent.children ? new Map([...parent.children, ...c.trace]) : new Map([...c.trace])
+    //       //   parent.children = children
+    //       //   options.trace.set(par, parent)
+    //       // }
+    //       // else {
+    //       //   this.app.log.warn('BRK could not unnest trace for', par, parent, c.trace)
+    //       // }
     //     }
     //   })
     // }
@@ -986,21 +1011,22 @@ export class Broadcast extends FabrixGeneric {
     return trace
   }
 
-  flattenTrace(options) {
-    const start = this.unnestTrace(options)
+  flattenTraceChildren(children) {
     let trace = new Set()
-
-    start.forEach((value: {[key: string]: any}, key: string, map) => {
-
-      trace.add(key)
-
-      if (value && value.children) {
-        const childStart = this.flattenTrace({ trace: value.children })
+    children.forEach((v, k, map) => {
+      trace.add(k)
+      if (v && v.children) {
+        const childStart = this.flattenTraceChildren(v.children)
         trace = new Set([...trace, ...childStart])
       }
     })
-
     return trace
+  }
+
+  flattenTrace(options) {
+    const start = this.unnestTrace(options)
+
+    return this.flattenTraceChildren(start)
   }
   /**
    * BroadcastProject the event that was persisted
@@ -1213,6 +1239,15 @@ export class Broadcast extends FabrixGeneric {
       manager: manager
     })
       .run()
+      .catch(err => {
+        this.app.log.error(`${p.name}`, err)
+        if (manager.consistency === 'eventual') {
+          return Promise.reject(err)
+        }
+        else {
+          return [{ action: 'retry' }, options]
+        }
+      })
       .then(([_event, _options]) => {
         // Marks the acknowledged state of the message
         p.isAcknowledged = true
@@ -1763,6 +1798,7 @@ export class Broadcast extends FabrixGeneric {
       retry_max: 0,
       retry_wait: null,
       retry_attempts: 0,
+      processing: 'parallel',
       params: keys,
       pattern: pattern,
       pattern_raw: event_type,
@@ -2068,6 +2104,7 @@ export class Broadcast extends FabrixGeneric {
       retry_wait: null,
       retry_attempts: 0,
       fail_on_error: true,
+      processing: 'serial',
       ...config
     }
 
@@ -2187,6 +2224,7 @@ export class Broadcast extends FabrixGeneric {
       retry_max: 0,
       retry_wait: null,
       retry_attempts: 0,
+      processing: 'serial',
       params: keys,
       pattern: pattern,
       pattern_raw: command_type,

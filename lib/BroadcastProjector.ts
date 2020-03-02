@@ -14,6 +14,7 @@ export class BroadcastProject extends FabrixGeneric {
   public isAcknowledged: boolean
   public isRedelivered = false
   public consistency = 'strong'
+  public retries = 0
   private _id: string
 
   constructor(
