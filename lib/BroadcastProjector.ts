@@ -1,6 +1,6 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { mapSeries } from 'bluebird'
+import { mapSeries, Promise } from 'bluebird'
 import { Broadcast } from './Broadcast'
 import { BroadcastEvent } from './api/models'
 import {Entry} from './Entry'

@@ -1,4 +1,5 @@
 import joi from '@hapi/joi'
+import { Promise } from 'bluebird'
 
 import {
   broadcastConfig,

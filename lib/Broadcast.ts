@@ -430,8 +430,7 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = beforeHandlers.get(m)
 
-      const trace = options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
-      // options.trace.set(m, handler)
+      options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -570,8 +569,7 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = afterHandlers.get(m)
 
-      const trace = options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
-      // options.trace.set(m, handler)
+      options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -1053,7 +1051,6 @@ export class Broadcast extends FabrixGeneric {
       this.app.log.warn(`${this.name} broadcasting ${event.event_type} without a transaction!` )
     }
 
-    // options.parent = options.parent ? options.parent : { trace: new Map() }
     options.trace = options.trace ? options.trace : new Map()
 
     // Publish the strong events
@@ -1067,7 +1064,7 @@ export class Broadcast extends FabrixGeneric {
         Array.from(eventualManagers.keys()).forEach(e => {
           // console.log('BRK publishing pattern 0', e)
           const manager = eventualManagers.get(e)
-          const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+          options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
 
           event.chain_events.push(e)
         })
@@ -1126,11 +1123,6 @@ export class Broadcast extends FabrixGeneric {
           return [_event, _options]
         }
       })
-      // .then(([_event, _options]) => {
-      //
-      //   // Return the original event
-      //   return [_event, _options]
-      // })
   }
 
   /**
@@ -1164,10 +1156,9 @@ export class Broadcast extends FabrixGeneric {
       if (breakException) {
         return Promise.reject(breakException)
       }
-
       const manager = strongManagers.get(m)
 
-      const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
 
       // Receiver Test
       if (manager && manager.expects_input) {
@@ -1204,7 +1195,7 @@ export class Broadcast extends FabrixGeneric {
         return [event, options]
       }
 
-      return this.run(event, options, p, m, manager, breakException, trace)
+      return this.run(event, options, p, m, manager, breakException)
     })
       .then(results => {
         return [event, options]
@@ -1220,9 +1211,8 @@ export class Broadcast extends FabrixGeneric {
    * @param m
    * @param manager
    * @param breakException
-   * @param trace
    */
-  run(event, options, p, m, manager, breakException, trace) {
+  run(event, options, p, m, manager, breakException) {
 
     // Get the time for the start of the hook
     const projectstart = process.hrtime()
@@ -1375,12 +1365,9 @@ export class Broadcast extends FabrixGeneric {
         if (t === 'processor') {
 
           // Update the trace
-          // TODO figure out which one of these methods to use
           const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
           parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
           options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
-
-          // trace.children = new Map([...(trace.children || new Map()), ...(_options.trace || new Map())])
 
           options.children.push({
             transaction: _options.transaction,
@@ -1576,9 +1563,9 @@ export class Broadcast extends FabrixGeneric {
     //   .push(p)
 
     // Set the trace
-    const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
 
-    return this.run(event, options, project, key, manager, breakException, trace)
+    return this.run(event, options, project, key, manager, breakException)
       .then(([_event, _options]) => {
         project.isAcknowledged = true
         return [_event, _options]
@@ -1605,7 +1592,7 @@ export class Broadcast extends FabrixGeneric {
     const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
 
     // Set the trace
-    const trace = options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
 
     return Promise.resolve()
       .then(() => {

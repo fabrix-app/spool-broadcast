@@ -1,10 +1,12 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
+import { Promise } from 'bluebird'
 
 import { BroadcastEvent } from './api/models'
 import { Entry } from './Entry'
 import { BroadcastAction, BroadcastOptions } from './Interface'
 import { BroadcastEntity } from './BroadcastEntity'
+
 
 export class BroadcastProcess extends FabrixGeneric {
   public message: any
