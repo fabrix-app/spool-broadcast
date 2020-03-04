@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.71](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.70...v1.6.71) (2020-03-04)
+
+
+### Bug Fixes
+
+* fixes children traces when disabled, adds multi broadcaster test starter ([3d96aea](https://github.com/fabrix-app/spool-broadcast/commit/3d96aea))
+
 ### [1.6.70](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.69...v1.6.70) (2020-03-04)
 
 
