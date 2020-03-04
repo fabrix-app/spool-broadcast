@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.72](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.71...v1.6.72) (2020-03-04)
+
+
+### Features
+
+* adds pipeline to options and emits steps as subprogress ([a6b2179](https://github.com/fabrix-app/spool-broadcast/commit/a6b2179))
+
 ### [1.6.71](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.70...v1.6.71) (2020-03-04)
 
 
