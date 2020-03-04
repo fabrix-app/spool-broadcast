@@ -18,8 +18,12 @@ describe('pipeline', () => {
       }
     )
 
-    sub.on('progress', (step, total) => {
-      global.app.log.debug('Test.CreateAndFindTest', step, total)
+    sub.on('progress', (name, step, total) => {
+      global.app.log.debug('Test.CreateAndFindTest progress', name, step, total)
+    })
+
+    sub.on('subprogress', (name, step, total) => {
+      global.app.log.debug('Test.CreateAndFindTest subprogress', name, step, total)
     })
 
     sub.once('complete', (_req, _body, _options) => {

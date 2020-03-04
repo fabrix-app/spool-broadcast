@@ -135,10 +135,10 @@ const App = {
             Test: {
               'CreateAndFindTest': {
                 'Test.create': {
-                  before: function (req, body, options) {
-                    console.log('BRK pipeline before 1', body)
-                    return [req, body, {parent: options}]
-                  },
+                  // before: function (req, body, options) {
+                  //   console.log('BRK pipeline before 1', body)
+                  //   return [req, body, {parent: options}]
+                  // },
                   after: function(req, body, options) {
                     console.log('BRK pipeline after 2', body)
                     return [req, body, options]

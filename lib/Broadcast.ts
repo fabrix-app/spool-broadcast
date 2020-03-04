@@ -438,7 +438,7 @@ export class Broadcast extends FabrixGeneric {
     // confirm the tracer
     options.trace = options.trace ? options.trace : new Map()
 
-    return this.process(beforeHandlers, promises, ([m, p]) => {
+    return this.process(beforeHandlers, promises, ([m, p], i) => {
       if (breakException) {
         return Promise.reject(breakException)
       }
@@ -526,12 +526,19 @@ export class Broadcast extends FabrixGeneric {
             command.handleMetadata(m, handler, _command)
           }
 
+          // Tell the hook this is complete ?
           command.complete = true
 
+          // Mark the time this took
           const hookend = process.hrtime(hookstart)
           this.app.log.debug(
             `${this.name}.${m}: ${_command.command_type} Before Hook Execution time (hr): ${hookend[0]}s ${hookend[1] / 1000000}ms`
           )
+
+          // If there is a pipeline running all this, then give it a subprogress
+          if (options && options.pipeline) {
+            options.pipeline.subprogress(`${_command.command_type}::before`, i + 1, beforeCommandsAsc.size)
+          }
 
           return [command, options]
         })
@@ -579,7 +586,7 @@ export class Broadcast extends FabrixGeneric {
     // confirm the tracer
     options.trace = options.trace ? options.trace : new Map()
 
-    return this.process(afterHandlers, promises, ([m, p]) => {
+    return this.process(afterHandlers, promises, ([m, p], i) => {
       if (breakException) {
         return Promise.reject(breakException)
       }
@@ -673,6 +680,11 @@ export class Broadcast extends FabrixGeneric {
           this.app.log.debug(
             `${this.name}.${m}: ${_command.command_type} After Hook Execution time (hr): ${hookend[0]}s ${hookend[1] / 1000000}ms`
           )
+
+          // If there is a pipeline running all this, then give it a subprogress
+          if (options && options.pipeline) {
+            options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size)
+          }
 
           return [command, options]
         })
@@ -1178,7 +1190,7 @@ export class Broadcast extends FabrixGeneric {
 
     const promises = Array.from(strongEventsAsc.entries())
 
-    return this.process(strongManagers, promises, ([m, p]) => {
+    return this.process(strongManagers, promises, ([m, p], i) => {
       // If this series is broken, no need to continue
       if (breakException) {
         return Promise.reject(breakException)
@@ -1225,6 +1237,14 @@ export class Broadcast extends FabrixGeneric {
       }
 
       return this.run(event, options, p, m, manager, breakException)
+        .then(([e, o]) => {
+          // If there is a pipeline running all this, then give it a subprogress
+          // console.log('BRK PIPELINE', options.pipeline)
+          if (options && options.pipeline) {
+            options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size)
+          }
+          return [e, o]
+        })
     })
       .then(results => {
         return [event, options]

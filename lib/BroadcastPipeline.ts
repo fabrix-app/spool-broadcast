@@ -35,7 +35,7 @@ export class PipelineEmitter extends EventEmitter {
   public pipeline: any
   public runner: any
 
-  constructor(public app: FabrixApp, command, pipeline, runner, req, body, options) {
+  constructor(public app: FabrixApp, command, pipeline, runner, req, body, options: {[key: string]: any} = {}) {
     super()
     this.app = app
     this.command = command
@@ -52,8 +52,11 @@ export class PipelineEmitter extends EventEmitter {
 
   run(pipeline, runner, req, body, options) {
 
+    // Get the Pipes
     const pipes = Array.from(pipeline.always)
+    // Get the Runners
     const runners = Array.from(runner.always)
+    // Declare a variable for a break exception
     let breakException
 
     // Build the progress meter
@@ -100,6 +103,9 @@ export class PipelineEmitter extends EventEmitter {
           }
         }
       }
+
+      // Attach this pipeline to options to it can be emitted from during the run
+      _options.pipeline = this
 
       // Run the function
       return func(_req, _body, _options)
@@ -180,6 +186,13 @@ export class PipelineEmitter extends EventEmitter {
    */
   progress(name: string, index: number, total: number): void {
     this.emit('progress', name, index, total)
+  }
+
+  /**
+   * Emit Progress
+   */
+  subprogress(name: string, index: number, total: number): void {
+    this.emit('subprogress', name, index, total)
   }
 
   /**
