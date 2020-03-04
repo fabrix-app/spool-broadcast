@@ -115,6 +115,16 @@ const App = {
         ],
       },
 
+      /**
+       * Tell the broadcaster to trace requests,
+       * this is a RAM heavy operation and should be false in production
+       */
+      broadcasters: {
+        Test: {
+          trace: true
+        }
+      },
+
       pipelines: {
         TestPipeline: {
           broadcasters: {

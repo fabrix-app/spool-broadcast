@@ -20,6 +20,8 @@ import { utils } from './utils'
 
 export class Broadcast extends FabrixGeneric {
 
+  private _trace = false
+
   // Types of Hooks
   public lifecycles = ['before', 'after']
   // Types of Subscribers
@@ -65,6 +67,18 @@ export class Broadcast extends FabrixGeneric {
    */
   get name() {
     return this.constructor.name
+  }
+
+  /**
+   * Only trace if this is set in the config
+   */
+  get trace() {
+    if (this.app) {
+      return this.app.config.get(`broadcast.broadcasters.${this.name}.trace`) || this._trace
+    }
+    else {
+      return this._trace
+    }
   }
 
   /**
@@ -430,7 +444,9 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = beforeHandlers.get(m)
 
-      options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+      if (this.trace) {
+        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+      }
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -569,7 +585,9 @@ export class Broadcast extends FabrixGeneric {
       }
       const handler = afterHandlers.get(m)
 
-      options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+      if (this.trace) {
+        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+      }
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -875,10 +893,10 @@ export class Broadcast extends FabrixGeneric {
             return [event, options]
           })
       })
-      // TODO listen to the commit
+      // Send to the Channels // TODO, this should probably not be called directly after save, but after the validation?
       .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
-        this.app.log.error(`Failure while running ${event.event_type}`, err)
+        this.app.log.error(`Unhandled failure while running ${event.event_type}`, err)
         // TODO reverse SAGA
         return [event, options]
       })
@@ -887,7 +905,7 @@ export class Broadcast extends FabrixGeneric {
     //     // Send to the projectors
     //     return this.project(event, options)
     //       .catch(err => {
-    //         this.app.log.error(`Failure while projecting ${event.event_type}`, err)
+    //         this.app.log.error(`Unhandeld failure while projecting ${event.event_type}`, err)
     //         // TODO reverse SAGA SBW
     //         return [event, options]
     //       })
@@ -1022,6 +1040,12 @@ export class Broadcast extends FabrixGeneric {
   }
 
   flattenTrace(options) {
+    if (!this.trace) {
+      this.app.log.warn(
+        `Trace is disabled for ${this.name}`,
+        `Set config: broadcast.broadcasters.${this.name}.trace to true to enable`
+      )
+    }
     const start = this.unnestTrace(options)
 
     return this.flattenTraceChildren(start)
@@ -1064,7 +1088,10 @@ export class Broadcast extends FabrixGeneric {
         Array.from(eventualManagers.keys()).forEach(e => {
           // console.log('BRK publishing pattern 0', e)
           const manager = eventualManagers.get(e)
-          options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+
+          if (this.trace) {
+            options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+          }
 
           event.chain_events.push(e)
         })
@@ -1158,7 +1185,9 @@ export class Broadcast extends FabrixGeneric {
       }
       const manager = strongManagers.get(m)
 
-      options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
+      if (this.trace) {
+        options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
+      }
 
       // Receiver Test
       if (manager && manager.expects_input) {
@@ -1367,7 +1396,10 @@ export class Broadcast extends FabrixGeneric {
           // Update the trace
           const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
           parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
-          options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
+
+          if (this.trace) {
+            options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
+          }
 
           options.children.push({
             transaction: _options.transaction,
@@ -1563,7 +1595,9 @@ export class Broadcast extends FabrixGeneric {
     //   .push(p)
 
     // Set the trace
-    options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    if (this.trace) {
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    }
 
     return this.run(event, options, project, key, manager, breakException)
       .then(([_event, _options]) => {
@@ -1592,7 +1626,9 @@ export class Broadcast extends FabrixGeneric {
     const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
 
     // Set the trace
-    options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    if (this.trace) {
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+    }
 
     return Promise.resolve()
       .then(() => {

@@ -28,6 +28,7 @@ export const broadcastConfig = joi.object().keys({
     failAfter: joi.number(),
     retryLimit: joi.number()
   }).unknown(),
+  broadcasters: joi.object(),
   projectors: joi.object(),
   processors: joi.object(),
   hooks: joi.object(),
