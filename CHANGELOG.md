@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.70](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.69...v1.6.70) (2020-03-04)
+
+
+### Features
+
+* disable tracers by default ([b6dfdaa](https://github.com/fabrix-app/spool-broadcast/commit/b6dfdaa))
+* uses bluebird from new Promises ([ae4fcae](https://github.com/fabrix-app/spool-broadcast/commit/ae4fcae))
+
 ### [1.6.69](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.68...v1.6.69) (2020-03-02)
 
 
