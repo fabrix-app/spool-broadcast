@@ -111,7 +111,8 @@ const App = {
        */
       profiles: {
         development: [
-          'Test'
+          'Test',
+          'TestBroadcast2'
         ],
       },
 
@@ -122,6 +123,9 @@ const App = {
       broadcasters: {
         Test: {
           trace: true
+        },
+        TestBroadcast2: {
+          trace: false
         }
       },
 
@@ -211,7 +215,7 @@ const App = {
                   }
                 },
               },
-            }
+            },
           }
         },
 
@@ -465,6 +469,22 @@ const App = {
                   }
                 },
               },
+            },
+            TestBroadcast2: {
+              /**
+               * Events subscribed to
+               */
+              'test.created': {
+                created: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    expects_input: 'Test',
+                    merge: true,
+                    expects_output: 'Test'
+                  }
+                },
+              },
             }
           }
         },
@@ -515,7 +535,7 @@ const App = {
              */
             Test: {
               /**
-               * Commands subscribed to
+               * Events subscribed to
                */
               'test.:test_uuid.created': {
                 update: {
@@ -584,6 +604,46 @@ const App = {
                     retry_limit: 1,
                     expects_response: 'Test',
                     expects_output: 'Test',
+                  }
+                },
+              }
+            },
+
+            // When Broadcast2 says something is updated, then destroy it through Broadcast 1
+            TestBroadcast2: {
+              'test.updated': {
+                destroy: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    expects_input: 'Test',
+                    dispatches_command: 'destroy.test.:test_uuid',
+                    expects_response: 'Test',
+                    merge: true
+                  }
+                },
+              },
+            }
+          }
+        },
+        TestProcessor2: {
+          broadcasters: {
+            /**
+             * Broadcasters that the TestProcessor2 Processors are responding to
+             */
+            TestBroadcast2: {
+              /**
+               * Events subscribed to
+               */
+              'test.created': {
+                update: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 2,
+                    expects_input: 'Test',
+                    dispatches_command: 'update.test',
+                    expects_response: 'Test',
+                    merge: true,
                   }
                 },
               }

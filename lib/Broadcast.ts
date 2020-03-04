@@ -1393,11 +1393,10 @@ export class Broadcast extends FabrixGeneric {
         // Processors have children
         if (t === 'processor') {
 
-          // Update the trace
-          const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
-          parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
-
           if (this.trace) {
+            // Update the trace
+            const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
+            parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
             options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
           }
 

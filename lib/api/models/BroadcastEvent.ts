@@ -503,7 +503,7 @@ export class BroadcastEvent extends BroadcastModel {
       // Live Mode
       live_mode: {
         type: Sequelize.BOOLEAN,
-        defaultValue: app.config.get('platform.live_mode'),
+        defaultValue: app.config.get('platform.live_mode') || false,
         binaryOptional: true,
         binaryType: 'boolean'
       },
