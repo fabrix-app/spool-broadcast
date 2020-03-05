@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.76](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.75...v1.6.76) (2020-03-05)
+
+
+### Features
+
+* makes zipping more rational ([8c37f59](https://github.com/fabrix-app/spool-broadcast/commit/8c37f59))
+
 ### [1.6.75](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.74...v1.6.75) (2020-03-05)
 
 
