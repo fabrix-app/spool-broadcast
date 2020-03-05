@@ -689,7 +689,7 @@ export class Broadcast extends FabrixGeneric {
             options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size, m)
           }
           if (options && options.parent && options.parent.pipeline) {
-            options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size, m)
+            options.parent.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size, m)
           }
 
           return [command, options]
@@ -1250,7 +1250,7 @@ export class Broadcast extends FabrixGeneric {
             options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size, m)
           }
           if (options && options.parent && options.parent.pipeline) {
-            options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size, m)
+            options.parent.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size, m)
           }
 
           return [e, o]
