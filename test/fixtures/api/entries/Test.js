@@ -38,6 +38,11 @@ module.exports = class Test extends Entry {
   update(req, body, options) {
     return this.transaction(this.app.sagas.Test.update, req, body, options)
   }
+  // @Point({})
+  // @Command({})
+  bulkUpdate(req, body, options) {
+    return this.transaction(this.app.sagas.Test.bulkUpdate, req, body, options)
+  }
 
   // @Point({})
   // @Command({})

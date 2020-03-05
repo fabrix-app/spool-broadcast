@@ -13,9 +13,11 @@ describe('Entry', () => {
   })
 
   describe('Test Entry', () => {
-    it('should create', (done) => {
+    it('should create and trigger creating children', (done) => {
       global.app.entries.Test.create({}, {name: 'test'}, {})
         .then(([_event, _options]) => {
+
+          console.log('BRK createMany', _event.data)
           test_uuid = _event.data.test_uuid
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
@@ -28,12 +30,21 @@ describe('Entry', () => {
         })
     })
 
-    it('should bulk create', (done) => {
-      global.app.entries.Test.bulkCreate({}, [{name: 'test'}], {})
+    it('should bulk create and test aside update', (done) => {
+      global.app.entries.Test.bulkCreate({}, [
+        {name: 'test'},
+        {name: '1test'}
+      ], {})
         .then(([_event, _options]) => {
+
+          console.log('brk updateAside', _event.data)
 
           console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
           console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
+
+
+          assert.equal(_event.data[0].name, 'test0')
+          assert.equal(_event.data[1].name, '1test1')
 
           done()
         })

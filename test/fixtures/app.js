@@ -548,6 +548,18 @@ const App = {
                     merge: true,
                   }
                 },
+                createMany: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 2,
+                    expects_input: 'Test',
+                    dispatches_command: 'create.:test_uuid.test',
+                    expects_response: 'Test',
+                    merge: {
+                      as: 'children'
+                    },
+                  }
+                },
               },
 
               'test.created': {
@@ -559,6 +571,31 @@ const App = {
                     dispatches_command: 'update.test.:test_uuid',
                     expects_response: 'Test',
                     merge: true,
+                  }
+                },
+              },
+
+              'test.created.list': {
+                bulkUpdate: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    expects_input: 'Test.list',
+                    dispatches_command: 'update.test.list',
+                    expects_response: 'Test.list',
+                    merge: true,
+                  }
+                },
+                bulkAside: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 1,
+                    expects_input: 'Test.list',
+                    dispatches_command: 'create.test.list',
+                    expects_response: 'Test', // Expects each response
+                    zip: {
+                      on: 'test_uuid'
+                    },
                   }
                 },
               },

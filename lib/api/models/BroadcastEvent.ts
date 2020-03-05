@@ -558,6 +558,7 @@ BroadcastEvent.prototype.handleMetadata = function(method, manager, event) {
 }
 
 BroadcastEvent.prototype.mergeData = function(method, manager, event) {
+  const object = isArray(event) ? event.map(e => e.getDataValue('object')) : event.getDataValue('object')
   // If merge: {as: <string>}
   if (
     isObject(manager.merge)
@@ -578,24 +579,24 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
 
     // If the manager expects_response certain data...
     if (manager.expects_response) {
-      if (typeof manager.expects_response === 'string' && event.getDataValue('object') !== manager.expects_response) {
-        throw new Error(`${method} merge expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${event.event_type}`)
+      if (typeof manager.expects_response === 'string' && object !== manager.expects_response) {
+        throw new Error(`${method} merge expected ${manager.expects_response} but got ${object} for ${event.event_type}`)
       }
-      else if (Array.isArray(manager.expects_response) && manager.expects_response.indexOf(event.getDataValue('object')) === -1) {
+      else if (Array.isArray(manager.expects_response) && manager.expects_response.indexOf(object) === -1) {
         throw new Error(
-          `${method} merge expected ${manager.expects_response.join(', ')} but got ${event.getDataValue('object')} for ${event.event_type}`
+          `${method} merge expected ${manager.expects_response.join(', ')} but got ${object} for ${event.event_type}`
         )
       }
     }
     // If the manager doesn't expect certain data, but the data is completely different...
     else if (
       !manager.expects_response
-      && this.getDataValue('object') !== event.getDataValue('object')
+      && this.getDataValue('object') !== object
     ) {
       this.app.log.warn(
         method, 'Merge Data',
         this.event_type, 'assuming it expects_response',
-        this.getDataValue('object'), 'and received', event.getDataValue('object')
+        this.getDataValue('object'), 'and received', object
       )
     }
 
@@ -669,34 +670,61 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
  * @param event
  */
 BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
-  let merge = event.data
+  const object = isArray(event) ? event.map(e => e.getDataValue('object')) : event.getDataValue('object')
+  const event_type = isArray(event) ? event.map(e => e.event_type) : event.event_type
+  let merge = isArray(event) ? event.map(e => e.data) : event.data
+
+  const expected = isArray(event)
+    ? manager.expects_response && event.every(e => e.getDataValue('object') === manager.expects_response)
+    : manager.expects_response && object !== manager.expects_response
 
   if (
     (!manager.merge.as)
     || !event
-    || !event.data
   ) {
-    this.app.log.debug(`${method} mergeAs was passed empty manager merge.as property or event.data for ${event.event_type}`)
+    this.app.log.debug(`${method} unhandled mergeAs was passed empty manager merge.as property or event.data for ${event_type}`)
     return this
   }
 
-  if (
-    manager.expects_response
-    && event.getDataValue('object') !== manager.expects_response
-  ) {
-    throw new Error(`${method} mergeAs expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+  if (!isArray(event)) {
+    if (
+      manager.expects_response
+      && object !== manager.expects_response
+    ) {
+      throw new Error(`${method} unhandled mergeAs expected ${manager.expects_response} but got ${object} for ${event_type}`)
+    } else if (
+      !manager.expects_response
+      && this.getDataValue('object') !== object
+    ) {
+      this.app.log.debug(
+        method,
+        this.event_type,
+        'assumes it expected',
+        this.getDataValue('object'),
+        'and received', object
+      )
+    }
   }
-  else if (
-    !manager.expects_response
-    && this.getDataValue('object') !== event.getDataValue('object')
-  ) {
-    this.app.log.debug(
-      method,
-      this.event_type,
-      'assumes it expected',
-      this.getDataValue('object'),
-      'and received', event.getDataValue('object')
-    )
+  else {
+    if (
+      manager.expects_response
+      && event.every(o => o.getDataValue('object') !== manager.expects_response)
+    ) {
+      throw new Error(
+        `${method} unhandled mergeAs expected ${manager.expects_response} but got ${object} for ${event.map(o => o.event_type)}`
+      )
+    } else if (
+      !manager.expects_response
+      && event.every(o => o.getDataValue('object') !== this.getDataValue('object'))
+    ) {
+      this.app.log.debug(
+        method,
+        this.event_type,
+        'assumes it expected a list of',
+        this.getDataValue('object'),
+        'and received', event.map(o => o.getDataValue('object'))
+      )
+    }
   }
 
   const as = manager.mergeAs || manager.merge.as
@@ -718,7 +746,7 @@ BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
   // }
 
   this.app.log.debug(
-    `Manager ${method} merged ${this.event_type} -> ${event.event_type} as ${as}`
+    `Manager ${method} merged ${this.event_type} <- ${event_type} as ${as}`
   )
 
   return this
@@ -799,7 +827,7 @@ BroadcastEvent.prototype.pushOn = function(method, manager, event) {
 BroadcastEvent.prototype.mergeEachAs = function(method, manager, events) {
   if ((!manager.merge.each && !manager.merge.each.as) || !events || !events) {
     this.app.log.debug(
-      `${method} BroadcastEvent.merge.each.as was passed empty manager merge.each.as property or events for ${events[0].event_type}`
+      `${method} BroadcastEvent.merge.each.as was passed empty manager merge.each.as property or events for ${events.map(o => o.event_type)}`
     )
     return this
   }
@@ -947,21 +975,31 @@ BroadcastEvent.prototype.includeAs = function(method, manager, event) {
 }
 
 BroadcastEvent.prototype.zip = function(method, manager, event) {
-  if ((!manager.zip) || !event || !event.data) {
+  if ((!manager.zip) || !event) {
     this.app.log.debug(`BroadcastEvent.zip was passed empty include.as property or event.data for ${event.event_type}`)
     return this
   }
 
-  if (manager.expects_response && event.getDataValue('object') !== manager.expects_response) {
-    throw new Error(`${method} zip expected ${manager.expects_response} but got ${event.getDataValue('object')} for ${ event.event_type}`)
+  const object = isArray(event) ? event.map(e => e.getDataValue('object')) : event.getDataValue('object')
+  const event_type = isArray(event) ? event.map(e => e.event_type) : event.event_type
+  const expected = isArray(event)
+    ? manager.expects_response && event.every(e => e.getDataValue('object') === manager.expects_response)
+    : manager.expects_response && object !== manager.expects_response
+
+  let zip = isArray(event) ? event.map(e => e.data) : event.data
+
+  if (manager.expects_response && !expected) {
+    throw new Error(
+      `${method} zip expected ${manager.expects_response} but got ${object} for ${ isArray(event) ? event.map(e => e.event_type) : event.event_type }`
+    )
   }
 
   // Scenario 1: Both the event and sub-event are arrays
-  if (isArray(this.data) && isArray(event.data)) {
+  if (isArray(this.data) && isArray(zip)) {
     if (manager.zip.on) {
       const on = manager.zip.on
 
-      event.data.forEach(d => {
+      zip.forEach(d => {
         const key = d[on]
         const prev = this.data.findIndex(_d => {
           if (isArray(on)) {
@@ -978,7 +1016,8 @@ BroadcastEvent.prototype.zip = function(method, manager, event) {
             method,
             this.event_type,
             'zipping values',
-            Object.keys(this.data[prev].toJSON()), '<-', Object.keys(d.toJSON())
+            Object.keys(this.data[prev].toJSON()), '<-', Object.keys(d.toJSON()),
+            `on ${on}`
           )
 
           keys.forEach(_key => {
@@ -988,14 +1027,15 @@ BroadcastEvent.prototype.zip = function(method, manager, event) {
         }
         else {
           this.app.log.debug(
-            `Unhandled Manager ${method} zip ${this.event_type} -> ${event.event_type } on ${manager.zip.on ? manager.zip.on : manager.zip } ${key} is not found in parent event data`
+            `Unhandled Manager ${method} zip ${this.event_type} -> ${ event_type } on ${manager.zip.on ? manager.zip.on : manager.zip } ${key} is not found in parent event data`
           )
         }
       })
     }
+    // Scenario 1.2 Acts like a Merge
     else {
       // This currently works like merge...
-      event.data.forEach((d, i) => {
+      zip.forEach((d, i) => {
         const keys = Object.keys(d.toJSON())
 
         keys.forEach(_key => {
@@ -1005,26 +1045,27 @@ BroadcastEvent.prototype.zip = function(method, manager, event) {
     }
   }
   // Scenario 2: The event is an object and sub-event is array
-  else if (!isArray(this.data) && isArray(event.data)) {
+  else if (!isArray(this.data) && isArray(zip)) {
     this.app.log.debug(
-      `Unhandled Manager ${method} zip ${this.event_type} object to array -> ${event.event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
+      `Unhandled Manager ${method} zip ${this.event_type} object to array -> ${ event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
     )
   }
   // Scenario 3: The event is an array and sub-event is an object
   else if (isArray(this.data) && !isArray(event.data)) {
     this.app.log.debug(
-      `Unhandled Manager ${method} zip ${this.event_type} array to object -> ${event.event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
+      `Unhandled Manager ${method} zip ${this.event_type} array to object -> ${ event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
     )
   }
   // Unknown Scenario
   else {
     this.app.log.debug(
-      `Unhandled Manager ${method} zip ${this.event_type} -> ${event.event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
+      `Unhandled Manager ${method} zip ${this.event_type} -> ${ event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`
     )
   }
 
   return this
 }
+
 BroadcastEvent.prototype.zipEachOn = function(method, manager, event) {
   this.app.log.debug(
     `Unhandled Manager ${method} zip each ${this.event_type} -> ${event.event_type } on ${manager.zip.on ? manager.zip.on : manager.zip }`

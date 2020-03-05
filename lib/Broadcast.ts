@@ -61,6 +61,10 @@ export class Broadcast extends FabrixGeneric {
   private _subscribers: Map<any, { [key: string]: Map<string, any> }> = new Map()
   private _brokers: Map<any, { [key: string]: Map<string, any> }> = new Map()
 
+  constructor(app) {
+    super(app)
+    this._trace = this.app.config.get(`broadcast.broadcasters.${this.constructor.name}.trace`) || false
+  }
 
   /**
    * Get's the name of the Broadcast class
@@ -73,12 +77,13 @@ export class Broadcast extends FabrixGeneric {
    * Only trace if this is set in the config
    */
   get trace() {
-    if (this.app) {
-      return this.app.config.get(`broadcast.broadcasters.${this.name}.trace`) || this._trace
-    }
-    else {
-      return this._trace
-    }
+    return this._trace
+    // if (this.app) {
+    //   return this.app.config.get(`broadcast.broadcasters.${this.name}.trace`) || this._trace
+    // }
+    // else {
+    //   return this._trace
+    // }
   }
 
   /**
@@ -477,11 +482,11 @@ export class Broadcast extends FabrixGeneric {
               `${this.name}: ${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
             )
           }
-          if (_command.action && _command.action === 'retry') {
+          if (typeof _command.action !== 'undefined' && _command.action === 'retry') {
             this.app.log.warn(`${this.name}: ${p.name} BRK currently unhandled retry action for ${m}`)
             return [command, options]
           }
-          if (_command.action === false) {
+          if (typeof _command.action !== 'undefined' && _command.action === false) {
             this.app.log.debug(`${m} to continue without data`)
             return [command, options]
           }
@@ -628,11 +633,11 @@ export class Broadcast extends FabrixGeneric {
               `${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
             )
           }
-          if (_command.action && _command.action === 'retry') {
+          if (typeof _command.action !== 'undefined' && _command.action === 'retry') {
             this.app.log.warn(`${p.name} BRK unhandled retry action for ${m}`)
             return [command, options]
           }
-          if (_command.action === false) {
+          if (typeof _command.action !== 'undefined' && _command.action === false) {
             this.app.log.debug(`${m} to continue without data`)
             return [command, options]
           }
@@ -989,13 +994,12 @@ export class Broadcast extends FabrixGeneric {
     }
   }
 
-  unnestTraceChildren(children, parent?) {
+  unnestTraceChildren(children: Map<any, any>, parent?) {
     let trace = new Map()
     children.forEach((v, k, map) => {
       trace.set(`${parent ? parent + '->' : ''}${k}`, v)
       if (v && v.children) {
-        const childStart = this.unnestTraceChildren(v.children, k)
-        trace = new Map([...trace, ...childStart])
+        trace = new Map([...trace, ...this.unnestTraceChildren(v.children, k)])
       }
     })
     return trace
@@ -1010,7 +1014,7 @@ export class Broadcast extends FabrixGeneric {
     trace = new Map([...this.unnestTraceChildren(trace)])
 
     if (options && options.parent && options.parent.trace) {
-      const parent = this.unnestTrace(options.parent)
+      const parent = this.unnestTraceChildren(options.parent.trace)
       trace = new Map([...parent, ...trace])
     }
 
@@ -1064,6 +1068,7 @@ export class Broadcast extends FabrixGeneric {
         `Set config: broadcast.broadcasters.${this.name}.trace to true to enable`
       )
     }
+
     const start = this.unnestTrace(options)
 
     return this.flattenTraceChildren(start)
@@ -1309,6 +1314,7 @@ export class Broadcast extends FabrixGeneric {
             `${p.name} Projection returned no event for ${m}! - fatal`
           )
         }
+        // If a single event was returned
         else if (!isArray(_event)) {
           // Make sure an event was returned
           if (!_event) {
@@ -1344,8 +1350,9 @@ export class Broadcast extends FabrixGeneric {
             return [event, options]
           }
         }
-        //
+        // If a list of events were returned
         else {
+          console.log('BRK MANY', _event, _options)
           _event.forEach(_e => {
             if (!_e) {
               throw new this.app.errors.GenericError(
@@ -1360,9 +1367,9 @@ export class Broadcast extends FabrixGeneric {
             }
           })
           // Check that all the returned events were successful
-          if (_event.every(_e => _e[0].action && _e[0].action === 'retry')) {
+          if (_event.every(_e => _e[0] && typeof _e[0].action !== 'undefined' && _e[0].action === 'retry')) {
 
-            this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
+            this.app.log.debug.error(`${this.name} ${p.name} unhandled retry action for ${m} in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
               `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
@@ -1375,8 +1382,8 @@ export class Broadcast extends FabrixGeneric {
           }
 
           // Check that all the returned events require no action
-          if (_event.every(_e => _e[0].action && _e[0].action === false)) {
-            this.app.log.debug(`${m} to continue without data in list of events`)
+          if (_event.every(_e => _e[0] && typeof _e[0].action !== 'undefined' && _e[0].action === false)) {
+            this.app.log.debug(`${m} to continue without data in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
               `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
@@ -1420,26 +1427,41 @@ export class Broadcast extends FabrixGeneric {
         options.trace = options.trace || new Map()
         options.children = options.children || []
 
-        // Processors have children
+        // Processors have children, projectors do not
         if (t === 'processor') {
 
           if (this.trace) {
             // Update the trace
             const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
-            parent.children = new Map([...(parent.children || new Map()), ...(_options.trace || new Map())])
+            const trace = isArray(_options) ? _options.map(_o => _o.trace) : _options.trace
+            parent.children = new Map([...(parent.children || new Map()), ...(trace || new Map())])
             options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
           }
 
-          options.children.push({
-            transaction: _options.transaction,
-            useMaster: _options.useMaster,
-            trace: _options.trace ? _options.trace : new Map()
-          })
+          if (isArray(_options)) {
+            _options.forEach(_o => {
+              options.children.push({
+                transaction: _o.transaction,
+                useMaster: _o.useMaster,
+                trace: _o.trace ? _o.trace : new Map()
+              })
+            })
+          }
+          else {
+            options.children.push({
+              transaction: _options.transaction,
+              useMaster: _options.useMaster,
+              trace: _options.trace ? _options.trace : new Map()
+            })
+          }
         }
 
         projectend = process.hrtime(projectstart)
         this.app.log.debug(
-          `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+          `${this.name}.${m}: ${isArray(_event)
+            ? _event.map(e => e.event_type)
+            : _event.event_type
+          } ${t}Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
         )
 
         return [event, options]
