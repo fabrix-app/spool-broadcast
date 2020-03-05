@@ -20,7 +20,7 @@ export function Story({
   docs = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental story', target, propertyKey)
+    // console.log('experimental story', target, propertyKey)
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {
     //   var context = this

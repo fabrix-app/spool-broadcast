@@ -11,9 +11,16 @@
 
 :package: Broadcast Spool
 
-A Spool that implements CQRS/Event Sourcing patterns, with extraordinary routing pattern matching.
+A Spool that implements CQRS/Event Sourcing patterns, with extraordinary route pattern matching.
 
 Spool-broadcast helps distribute your [Fabrix Applications](https://github.com/fabrix-app/fabrix) with a specialized broadcasting pattern over a PubSub and WebSockets.
+
+## Why?
+Event sourcing your functional workflow makes building complicated or distributed apps easier.  With Spool-broadcast, you can dispatch events over different broadcasters and domain lines and have the operations wrapped in a single ACID transaction that is easy to manage. This makes adding new operations to a sequence trivial and application development easier to distribute. It also measures the completion time for each operation so that you can find logical bottle necks while also validating the data transformations at every step.
+
+Additionally, Spool-broadcast also has a very powerful retry engine, so that it can try and keep operations alive while it's waiting on third parties to complete without having to dump the entire command/event.
+
+Spool-broadcast runs Commands, SAGAs, Events, Processors, and Socket Channels!
 
 ## Install
 You will need NPM or Yarn installed to install spool-broadcast (and fabrix)
@@ -24,13 +31,13 @@ $ npm install --save @fabrix/spool-broadcast
 
 Broadcast has a few dependency Spools:
 
-Joi, Errors, Sequelize, Realtime
+Joi, Errors, Sequelize, Realtime, Retry
 
 ```sh
-$ npm install --save @fabrix/spool-realtime @fabrix/spool-joi @fabrix/spool-errors @fabrix/spool-sequelize, @fabrix/spool-realtime
+$ npm install --save @fabrix/spool-realtime @fabrix/spool-joi @fabrix/spool-errors @fabrix/spool-sequelize, @fabrix/spool-realtime, @fabrix/spool-retry
 ```
 
-Additionally, If you install the plugin `sequelize-hierarchy`, then it will turn the BroadcastEvent into a CTE, which is useful for debugging and create a help table, broadcasteventancetors.
+Additionally, If you install the plugin `sequelize-hierarchy`, then it will turn the BroadcastEvent into a CTE, which is useful for debugging and creates a help table, `broadcasteventancetors`.
 
 ## Configure
 
@@ -50,6 +57,8 @@ export const main = {
     RealtimeSpool,
     SequelizeSpool,
     BroadcastSpool
+    // ... other spools
+  ]
 }
 ```
 ## Definitions
@@ -129,6 +138,12 @@ export const broadcast = {
     ],
   },
   /**
+   * Add Special Configurations to the broadcaster such as tracing
+   */
+  broadcasters: {
+    CartBroadcast: { trace: true }
+  },
+  /**
    * Pipeline subscriptions to Broadcasters
    * e.g.
    * <Pipeline>: {
@@ -188,16 +203,279 @@ export const broadcast = {
 
 
   channels: {
-      
+    TestChannel: {
+      broadcasters: {
+        /**
+         * Broadcaster that the Test BroadcastChannel is listening to
+         */
+        TestBroadcaster: {
+          /**
+           * Events subscribed to
+           */
+          'test.created': {
+           /**
+            * Channel methods to run when event committed
+            */
+            created: {
+              lifespan: 'eternal',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel'
+              }
+            },
+          },
+          'test.:crud': {
+           /**
+            * Channel methods to run when event committed
+            */
+            crud: {
+              lifespan: 'eternal',
+              config: {
+                priority: 2,
+                expects_input: 'TestModel'
+              }
+            },
+            created2: {
+              lifespan: 'ephemeral',
+              config: {
+                priority: 3,
+                expects_input: ['TestModel', 'TestModel.list']
+              }
+            },
+          },
+        },
+      }
+    },
   },
   hooks: {
-      
+    /**
+     * HookIns
+     */
+    TestHook: {
+      broadcasters: {
+        /**
+         * Broadcaster that the Test BroadcastHookIn is hooked into
+         */
+        TestBroadcaster: {
+          /**
+           * Commands subscribed to
+           */
+          'create.test': {
+           /**
+            * Hook methods to run when command pattern is matched and dispatched
+            */
+            create: {
+              lifecycle: 'before',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                merge: true,
+                expects_response: 'TestModel'
+              }
+            },
+          },
+          'create.:test_uuid.test': {
+           /**
+            * Hook methods to run when command pattern is matched and dispatched
+            */
+            create: {
+              lifecycle: 'before',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                merge: true,
+                expects_response: 'TestModel'
+              }
+            },
+            satisfy: {
+              lifecycle: 'after',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                merge: true,
+                expects_response: 'TestModel'
+              }
+            },
+          },
+          '*.test': {
+           /**
+            * Hook methods to run when command pattern is matched and dispatched
+            */
+            shouldBeProper: {
+              lifecycle: 'before',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                merge: true,
+                expects_response: 'TestModel'
+              }
+            },
+          }
+        }
+      }
+    }
   },
   processors: {
-        
+    /**
+     * Processors
+     */
+    TestProcessor: {
+      /**
+       * ... some processor configuration if required
+       */
+      broadcasters: {
+        /**
+         * Broadcasters that the Test Processors are responding to
+         */
+        TestBroadcaster: {
+          /**
+           * Events subscribed to
+           */
+          'test.:test_uuid.created': {
+            /**
+             * Processor methods to run when event pattern is matched and dispatched
+             */
+            update: {
+              consistency: 'strong',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                dispatches_command: 'update.test.:test_uuid',
+                expects_response: 'TestModel',
+                expects_output: 'TestModel',
+                data: {
+                  merge: true,
+                }
+              }
+            },
+          },
+
+          'test.created': {
+            /**
+             * Processor methods to run when event pattern is matched and dispatched
+             */
+            update: {
+              consistency: 'strong',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                dispatches_command: 'update.test.:test_uuid',
+                expects_response: 'TestModel',
+                expects_output: 'TestModel',
+                data: {
+                  merge: true,
+                }
+              }
+            },
+          },
+        },
+      }
+    }
   },
   projectors: {
-        
+    /**
+     * Projectors
+     */
+    TestProjector: {
+      broadcasters: {
+        /**
+         * Broadcaster that the Test Projectors are responding to
+         */
+        TestBroadcaster: {
+          'test.:crud': {
+            /**
+             * Projector methods to run when event pattern is matched and dispatched
+             */
+            myMethod: {
+              consistency: 'strong',
+              config: {
+                priority: 3,
+                expects_input: 'TestModel',
+                data: {
+                  merge: true,
+                },
+                expects_output: 'TestModel'
+              }
+            },
+            myLoggerMethod: {
+              consistency: 'eventual',
+              config: {
+                priority: 3,
+                expects_input: 'TestModel',
+                data: {
+                  merge: true,
+                },
+                expects_output: 'TestLoggerModel'
+              }
+            },
+          },
+          'test.:test_uuid.created': {
+            /**
+             * Projector methods to run when event pattern is matched and dispatched
+             */
+            created: {
+              consistency: 'strong',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                data: {
+                  merge: true,
+                },
+                expects_output: 'TestModel'
+              }
+            },
+            logger: {
+              consistency: 'eventual',
+              config: {
+                priority: 3,
+                expects_input: 'TestModel',
+                expects_output: 'TestLoggerModel'
+              }
+            },
+          },
+
+          'test.:test_uuid.test.:test_uuid.created': {
+            /**
+             * Projector methods to run when event pattern is matched and dispatched
+             */
+            created: {
+              consistency: 'strong',
+              config: {
+                priority: 1,
+                expects_input: 'TestModel',
+                data: {
+                  merge: true,
+                },
+                expects_output: 'TestModel'
+              }
+            },
+            logger: {
+              consistency: 'eventual',
+              config: {
+                priority: 3,
+                expects_input: 'TestModel',
+                expects_output: 'TestLoggerModel'
+              }
+            },
+          },
+
+          'test.*': {
+           /**
+            * Projector methods to run when event pattern is matched and dispatched
+            */
+            wild: {
+              consistency: 'eventual',
+              config: {
+                priority: 255,
+                expects_input: '*',
+                expects_response: '*',
+                expects_output: '*'
+              }
+            },
+          },
+        },
+      }
+    }
   }
 }
 ```
@@ -205,16 +483,19 @@ export const broadcast = {
 
 ## Usage
 ### BroadcastChannel
+Channels are useful for letting other applications listen to your application over sockets. This is a useful pattern in micro services, but also doing things like realtime applications.
 
 ### BroadcastPipeline
+Pipelines are useful for separating out your logic into transactional blocks.  Complicated command/event cycles in a single transaction can quickly add load to your database, so having clear lines to separate the transactions is paramount for weighty commands.  Pipelines are also useful for gathering a projected view after running a series of command/events.
 
 ### BroadcastHook
+Hooks are useful when you want to run operations on a command before, during, and after the SAGA before a command is dispatched as event.
 
 ### BroadcastProcessor
+Processors are useful when you want to dispatch a subsequent command when an event happens. Each processor makes a child transaction for the command/event sequence it dispatches so that it can also rollback if something later in the sequence fails.
 
 ### BroadcastProjector
-
-
+Projectors are useful for saving event data in a useable way.  For example, a "User Created" event was dispatched, so now it might be nice to save their PII encrypted in one table, and their other details in a different table.  You can easily do this with multiple projectors on the same event.
 
 
 ## Contributing
@@ -234,6 +515,12 @@ You can also test the release by running
 npm run release -- --dry-run --release-as patch
 ``` 
 
+## License
+Usage is currently under the [MIT License](https://github.com/fabrix-app/spool-broadcast/blob/master/LICENSE.md)
+
+TLDR; In plain language, do what ever you want with library as long as you keep the license in your code, give credit to the authors, and you accept all the responsibility!
+
+If you are making money using this library, consider sharing some of that sweet cheddar with the authors, they work really hard and would seriously appreciate it :smile:
 
 [npm-image]: https://img.shields.io/npm/v/@fabrix/spool-broadcast.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/@fabrix/spool-broadcast

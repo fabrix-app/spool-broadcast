@@ -11,7 +11,7 @@ export function Pipeline({
   docs = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point', target, propertyKey)
+    // console.log('experimental point', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {
@@ -184,15 +184,15 @@ export class PipelineEmitter extends EventEmitter {
   /**
    * Emit Progress
    */
-  progress(name: string, index: number, total: number): void {
-    this.emit('progress', name, index, total)
+  progress(name: string, index: number, total: number, message?: any): void {
+    this.emit('progress', name, index, total, message)
   }
 
   /**
    * Emit Progress
    */
-  subprogress(name: string, index: number, total: number): void {
-    this.emit('subprogress', name, index, total)
+  subprogress(name: string, index: number, total: number, message?: any): void {
+    this.emit('subprogress', name, index, total, message)
   }
 
   /**

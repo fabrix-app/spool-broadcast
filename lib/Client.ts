@@ -60,7 +60,7 @@ export class Client extends FabrixGeneric {
     // Attempt to convert this event from BroadcastEvent to JSON
     // If it fails, then it can not be published to the client
     try {
-      // Omit the build info
+      // Omit the build info to keep the size of the message down
       send.body = omit(event.toJSON(), [
         '_data',
         '_metadata',
@@ -93,7 +93,6 @@ export class Client extends FabrixGeneric {
       send.sequenceNo = sequenceNo
     }
 
-    console.log('BRK publish to', event_type, routingKey)
     // Publish this on Rabbit MQ
     return this.messenger.publish(
       this.exchange_name,

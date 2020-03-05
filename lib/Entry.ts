@@ -12,7 +12,7 @@ export function Point({
   docs = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point', target, propertyKey)
+    // console.log('experimental point', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {
@@ -41,7 +41,7 @@ export function Command({
   story = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point command', target, propertyKey)
+    // console.log('experimental point command', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {
@@ -69,7 +69,7 @@ export function Action({
   docs = null
 }) {
   return function(target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-    console.log('experimental point action', target, propertyKey)
+    // console.log('experimental point action', target, propertyKey)
     // var timeout:any;
     // var originalMethod = descriptor.value;
     // descriptor.value = function() {

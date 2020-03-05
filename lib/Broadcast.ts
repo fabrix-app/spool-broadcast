@@ -537,7 +537,10 @@ export class Broadcast extends FabrixGeneric {
 
           // If there is a pipeline running all this, then give it a subprogress
           if (options && options.pipeline) {
-            options.pipeline.subprogress(`${_command.command_type}::before`, i + 1, beforeCommandsAsc.size)
+            options.pipeline.subprogress(`${_command.command_type}::before`, i + 1, beforeCommandsAsc.size, m)
+          }
+          if (options && options.parent && options.parent.pipeline) {
+            options.parent.pipeline.subprogress(`${_command.command_type}::before`, i + 1, beforeCommandsAsc.size, m)
           }
 
           return [command, options]
@@ -683,7 +686,10 @@ export class Broadcast extends FabrixGeneric {
 
           // If there is a pipeline running all this, then give it a subprogress
           if (options && options.pipeline) {
-            options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size)
+            options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size, m)
+          }
+          if (options && options.parent && options.parent.pipeline) {
+            options.pipeline.subprogress(`${_command.command_type}::after`, i + 1, afterCommandsAsc.size, m)
           }
 
           return [command, options]
@@ -1241,8 +1247,12 @@ export class Broadcast extends FabrixGeneric {
           // If there is a pipeline running all this, then give it a subprogress
           // console.log('BRK PIPELINE', options.pipeline)
           if (options && options.pipeline) {
-            options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size)
+            options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size, m)
           }
+          if (options && options.parent && options.parent.pipeline) {
+            options.pipeline.subprogress(`${event.event_type}::strong`, i + 1, strongEventsAsc.size, m)
+          }
+
           return [e, o]
         })
     })
@@ -1355,7 +1365,7 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug.error(`${this.name} ${p.name} BRK unhandled retry action for ${m} in list of events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
 
             return [event, options]
@@ -1369,7 +1379,7 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug(`${m} to continue without data in list of events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
             return [event, options]
           }
