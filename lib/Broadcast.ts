@@ -1331,7 +1331,7 @@ export class Broadcast extends FabrixGeneric {
             )
           }
 
-          // See if the
+          // See if the event replied with a retry action
           if (_event.action && _event.action === 'retry') {
             this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
             projectend = process.hrtime(projectstart)
@@ -1352,7 +1352,6 @@ export class Broadcast extends FabrixGeneric {
         }
         // If a list of events were returned
         else {
-          console.log('BRK MANY', _event, _options)
           _event.forEach(_e => {
             if (!_e) {
               throw new this.app.errors.GenericError(
@@ -1372,7 +1371,10 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug.error(`${this.name} ${p.name} unhandled retry action for ${m} in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${isArray(_event)
+                ? _event.map(e => e.event_type)
+                : _event.event_type
+              } ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
 
             return [event, options]
@@ -1386,7 +1388,10 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug(`${m} to continue without data in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${isArray(_event)
+                ? _event.map(e => e.event_type)
+                : _event.event_type
+              } ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
             return [event, options]
           }

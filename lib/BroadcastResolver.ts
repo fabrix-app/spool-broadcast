@@ -251,6 +251,8 @@ export class BroadcastResolver extends SequelizeResolver {
     }
     // 5: This is a plain object or plain object array and need to become a DOA.
     // The desired state and we can now run the actual staging event with configuration
+    // All the previous steps should result in reaching here unless the data is null
+    // Even arrays will be broken down to get here as singletons
     else {
 
       // If an array of pre configuration functions were supplied
@@ -285,6 +287,9 @@ export class BroadcastResolver extends SequelizeResolver {
 
       // Clone the data as raw
       let raw = Object.assign({}, data)
+
+      // Mark options as "staged", that way we can always recreate what we are doing
+      options =  { isStaged: true, ...options }
 
       // Build the Instance
       data = this.build(data, options)
@@ -335,19 +340,6 @@ export class BroadcastResolver extends SequelizeResolver {
             throw new Error(err)
           }
         })
-      }
-
-      // If this is considered reloaded, then mark it
-      if (options.isReloaded) {
-        data.isReloaded = options.isReloaded
-      }
-      // If the options identified this as a new record, then mark it
-      if (options.isNewRecord) {
-        data.isNewRecord = options.isNewRecord
-      }
-      // If this is considered "synced", aka cross domain resolve, then mark it
-      if (options.isSynced) {
-        data.isSynced = options.isSynced
       }
 
       // If before supplied, run before functions before staging includes
@@ -439,6 +431,23 @@ export class BroadcastResolver extends SequelizeResolver {
           }
         })
       }
+
+      // Mark this data as previously staged
+      data.isStaged = true
+
+      // If this is considered reloaded, then mark it
+      if (options.isReloaded) {
+        data.isReloaded = options.isReloaded
+      }
+      // If the options identified this as a new record, then mark it
+      if (options.isNewRecord) {
+        data.isNewRecord = options.isNewRecord
+      }
+      // If this is considered "synced", aka cross domain resolve, then mark it
+      if (options.isSynced) {
+        data.isSynced = options.isSynced
+      }
+
       return data
     }
   }

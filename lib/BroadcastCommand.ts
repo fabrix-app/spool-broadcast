@@ -7,32 +7,73 @@ import { Broadcast } from './Broadcast'
 import { regexdot } from '@fabrix/regexdot'
 import { helpers } from './utils/helpers'
 
+
+const replaceParams = function(type = '', keys: boolean | string[] = [], object: any = {}) {
+  if (
+    keys !== false
+    && typeof keys !== 'boolean'
+    && isArray(keys)
+  ) {
+    if (!isArray(object)) {
+      keys.forEach(k => {
+        if (k && object && object[k]) {
+          type = type.replace(`:${k}`, `${object[k]}`)
+        }
+      })
+    }
+    else if (isArray(object)) {
+      // TODO
+      const o = object[0]
+      keys.forEach(k => {
+        if (k && o && o[k]) {
+          type = type.replace(`:${k}`, `${o[k]}`)
+        }
+      })
+    }
+  }
+
+  return type
+}
+
 export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
   req: {[key: string]: any}
+
   _command_type: string
   command_uuid: string
   causation_uuid: string
+
   object: FabrixModel
+
+  _list: boolean
   data: {[key: string]: any} //  | {[key: string]: any}[]
   data_updates: {[key: string]: any} // | {[key: string]: any}[]
   data_applied: {[key: string]: any}
   data_previous: {[key: string]: any}
+
   metadata: {[key: string]: any}
+
   created_at: string // Date
+
   version: number
   version_app: string
+
+  // TODO? What is this?
   action
+
   chain_before = []
   chain_saga = []
   chain_after = []
   chain_events?: string[]
+
   complete = false
   breakException = null
   pattern: RegExp
   pattern_raw: string
   pointer: any
   cancel_methods: any
+
+  // TODO, this may be removed?
   options: {[key: string]: any}
   // event_type?: string = null
   // _changes: string[]
@@ -59,49 +100,81 @@ export class BroadcastCommand extends FabrixGeneric {
   ) {
     super(app)
 
+    // Make a string into an object if possible, will return undefined if not in app.models
+    if (typeof object === 'string') {
+      object = app.models[object]
+    }
+    // Make sure the object is a fabrix model
     if (!(object instanceof FabrixModel)) {
-      throw new Error(`Command ${command_type} object is not an instance of a Model`)
+      throw new Error(`Fatal: Command ${command_type} object is not an instance of a Model`)
     }
+    // Make sure that the object has binaryData
     if (typeof object.toBinaryData === 'undefined') {
-      throw new Error(`Command ${command_type} object ${object.constructor.name} does not have a toBinaryData function`)
+      throw new Error(`Fatal: Command ${command_type} object ${object.constructor.name} does not have a toBinaryData function`)
     }
+    // Make sure that the object has binaryMetadata
     if (typeof object.toBinaryMetadata === 'undefined') {
-      throw new Error(`Command ${command_type} object ${object.constructor.name} does not have a toBinaryMetadata function`)
+      throw new Error(`Fatal: Command ${command_type} object ${object.constructor.name} does not have a toBinaryMetadata function`)
     }
+    // Make sure that this command has access to the object
     if (!app.models[object.constructor.name]) {
-      throw new Error('object is not a valid model')
+      throw new Error(`Fatal: Object is not a valid app model, make sure that it is an app model eg: app.models.${object.constructor.name}`)
     }
-    if (!command_type) {
-      throw new Error('command_type is required')
+    // Make sure that the command parameters are valid
+    if (!command_type || typeof command_type !== 'string') {
+      throw new Error('Fatal: command_type string is required')
     }
-    //
-    // const { pattern, keys } = regexdot(command_type)
-    // const pattern_raw = command_type
 
-    // this.app = app
+    // Keep a record of the data so we only have to call isArray once
+    this._list = isArray(data)
+
+    // Check that these are staged objects
+    if (this._list) {
+      // console.log('BRK COMMAND DATA OPTS "list"', data.map(d => d._options))
+      if (!data.every(d => d._options.isStaged)) {
+        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false})`)
+      }
+    }
+    else {
+      // console.log('BRK COMMAND DATA OPTS', data._options)
+      if (!data._options.isStaged) {
+        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false})`)
+      }
+    }
+
+    // Set the broadcaster this command will use
     this.broadcaster = broadcaster
+    // Set the request as provided
     this.req = req
+    // Create a command uuid, or use the correlation_uuid if it is set
     this.command_uuid = this.generateUUID(correlation_uuid)
 
+    // Set the object of the command
     this.object = object
+    // Set the data for the command
     this.data = data
-    this.data_previous = isArray(data) ? [] : {}
-    this.data_applied = isArray(data) ? [] : {}
+    // Make a blank object for previous values of the model instance(s)
+    this.data_previous = this._list ? [] : {}
+    // Make a blank object for values of the model instance(s) that will change the generated event
+    this.data_applied = this._list ? [] : {}
+    // Set the metadata provided
     this.metadata = metadata
 
-    // this.pattern = pattern
-    // this.pattern_raw = pattern_raw
-
+    // Set the causation uuid, the event that spawned this command
     this.causation_uuid = causation_uuid
+    // Set the Version of this command eg. 1, 2, 3 (it can be a re-issued event that's creating another command)
     this.version = version
+    // Mark the Version of the Fabrix App that created this command Originally, or set to current app version
     this.version_app = version_app || this.app.pkg.version
+    // Add a Created_at timestamp to command, so that the corresponding event has a timestamp
     this.created_at = new Date(Date.now()).toISOString()
+    // Set the previous chain of events that led this this command being created
     this.chain_events = chain_events
     // the initial (root) event this command expects_response to dispatch as a result of the command
     // this.event_type = event_type
 
+    // Use the Setter to set the command_type and also the pattern used
     this.command_type = command_type
-    // this.command_type = this.replaceParams(command_type, keys, data)
 
     this.options = options
   }
@@ -120,12 +193,17 @@ export class BroadcastCommand extends FabrixGeneric {
     const { pattern, keys } = regexdot(command_type)
     const pattern_raw = command_type
 
+    // Set the patterns
     this.pattern = pattern
     this.pattern_raw = pattern_raw
 
-    this._command_type = this.replaceParams(command_type, keys, this.data)
+    // Set the command type, and replace the pattern params with data.
+    this._command_type = replaceParams(command_type, keys, this.data)
   }
 
+  /**
+   * Return a list of all the chained events
+   */
   get chain() {
     return [...this.chain_before, ...this.chain_saga, ...this.chain_after]
   }
@@ -137,34 +215,17 @@ export class BroadcastCommand extends FabrixGeneric {
     return uuid()
   }
 
-  replaceParams(type = '', keys: boolean | string[] = [], object: any = {}) {
-
-    if (
-      keys !== false
-      && typeof keys !== 'boolean'
-      && isArray(keys)
-    ) {
-      if (!isArray(object)) {
-        keys.forEach(k => {
-          if (k && object && object[k]) {
-            type = type.replace(`:${k}`, `${object[k]}`)
-          }
-        })
-      }
-      else if (isArray(object)) {
-        // TODO
-        const o = object[0]
-        keys.forEach(k => {
-          if (k && o && o[k]) {
-            type = type.replace(`:${k}`, `${o[k]}`)
-          }
-        })
-      }
+  // Re-stage the data
+  restage() {
+    if (this._list) {
+      this.data = this.data.map(d => {
+        return this.object.stage(d, d._options)
+      })
     }
-
-    return type
+    else {
+      this.data = this.object.stage(this.data, this.data._options)
+    }
   }
-
   /**
    * Run Serial or in Parallel TODO
    * @param managers
@@ -182,6 +243,10 @@ export class BroadcastCommand extends FabrixGeneric {
     }
   }
 
+  /**
+   * Uitlity to broadcast a series (mapSeries)
+   * @param args
+   */
   broadcastSeries(...args) {
     return this.app.broadcastSeries(...args)
   }
@@ -226,7 +291,7 @@ export class BroadcastCommand extends FabrixGeneric {
    * @param options
    */
   async reload(options) {
-    if (isArray(this.data)) {
+    if (this._list) {
       this.data_updates = []
       return this.process(new Map(), this.data, d => {
         return this._reload(d, options)
@@ -278,7 +343,7 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('command.approveUpdates was called before command.reload')
     }
 
-    if (isArray(this.data)) {
+    if (this._list) {
       this.data.forEach((d, i) => {
         const [ previous, applied ] = this._approvedUpdates(this.data[i], this.data_updates[i], approved)
         this.data_applied[i] = applied
@@ -324,7 +389,7 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('command.combine was called with empty data')
     }
 
-    if (isArray(this.data)) {
+    if (this._list) {
       this.data.forEach((d, i) => {
         this._combine(this.data[i], data[i])
       })
@@ -340,7 +405,7 @@ export class BroadcastCommand extends FabrixGeneric {
    * Add a created_at value to the data
    */
   createdAt() {
-    if (isArray(this.data)) {
+    if (this._list) {
       this.data.forEach((d, i) => {
         if (d) {
           d.created_at = new Date(Date.now()).toISOString()
@@ -357,7 +422,7 @@ export class BroadcastCommand extends FabrixGeneric {
    * Add an updated_at value to the data
    */
   updatedAt() {
-    if (isArray(this.data)) { // && this.changes().length > 0) {
+    if (this._list) { // && this.changes().length > 0) {
       // TODO this doesn't look right, since there will be an array of data and an array of changes
       this.data.forEach((d, i) => {
         if (d) {
@@ -375,7 +440,7 @@ export class BroadcastCommand extends FabrixGeneric {
    * Add an updated_at value to the data
    */
   deletedAt() {
-    if (isArray(this.data)) { // && this.changes().length > 0) {
+    if (this._list) { // && this.changes().length > 0) {
       // TODO this doesn't look right, since there will be an array of data and an array of changes
       this.data.forEach((d, i) => {
         if (d) {
@@ -395,7 +460,7 @@ export class BroadcastCommand extends FabrixGeneric {
   changes() {
     let changes = []
 
-    if (isArray(this.data)) {
+    if (this._list) {
       this.data.forEach((d, i) => {
         if (d.isNewRecord) {
           changes[i] = [...(changes[i] || []), ...d.attributes]
@@ -412,7 +477,7 @@ export class BroadcastCommand extends FabrixGeneric {
         // }
       })
     }
-    else if (!isArray(this.data)) {
+    else if (!this._list) {
       if (this.data.isNewRecord) {
         changes = [...changes, ...this.data.attributes]
       }
@@ -465,7 +530,7 @@ BroadcastCommand.prototype.toJSON = function(str) {
     command_type: `${this.command_type}`,
     pattern: `${this.pattern}`,
     pattern_raw: `${this.pattern_raw}`,
-    object: `${this.object.constructor.name}${isArray(this.data) ? '.list' : '' }`,
+    object: `${this.object.constructor.name}${this._list ? '.list' : '' }`,
     data: this.data.toJSON ? this.data.toJSON() : this.data,
     data_updates: this.data_updates,
     metadata: this.metadata,
@@ -480,7 +545,7 @@ BroadcastCommand.prototype.toJSON = function(str) {
 
 BroadcastCommand.prototype.getDataValue = function(str) {
   if (str === 'object') {
-    return `${this.object.constructor.name}${isArray(this.data) ? '.list' : '' }`
+    return `${this.object.constructor.name}${this._list ? '.list' : '' }`
   }
   return this[str]
 }
