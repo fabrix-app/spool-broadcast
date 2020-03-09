@@ -908,16 +908,28 @@ export class Broadcast extends FabrixGeneric {
       )
     }
 
-    // Send to the projectors
+    // Send to the projectors/processors
     return this.project(event, options)
       .then(([_event, _options]) => {
-        return event.save(options)
-          .then(() => {
-            return [event, options]
-          })
+        // Unless there is a specific option of save false set, then save the event
+        if (options.save !== false) {
+          return event.save(options)
+            .then(() => {
+              return [event, options]
+            })
+        }
+        // If this is an unsaved event but there is a transaction, then commit it
+        else if (options.transaction) {
+          // return options.transaction.commit()
+          //   .then((t) => {
+              return [event, options]
+            // })
+        }
+        // Otherwise, just relay the event
+        else {
+          return [event, options]
+        }
       })
-      // Send to the Channels // TODO, this should probably not be called directly after save, but after the validation?
-      .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
         this.app.log.error(`Unhandled failure while running ${event.event_type}`, err)
         // TODO reverse SAGA
@@ -928,7 +940,7 @@ export class Broadcast extends FabrixGeneric {
     //     // Send to the projectors
     //     return this.project(event, options)
     //       .catch(err => {
-    //         this.app.log.error(`Unhandeld failure while projecting ${event.event_type}`, err)
+    //         this.app.log.error(`Unhandled failure while projecting ${event.event_type}`, err)
     //         // TODO reverse SAGA SBW
     //         return [event, options]
     //       })
@@ -936,13 +948,19 @@ export class Broadcast extends FabrixGeneric {
       .then(([_e, _o]) => {
         // The processors/projectors should have returned the event
         if (!(_e instanceof this.app.models.BroadcastEvent.instance)) {
-          throw new Error(`${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`
+          )
         }
         if (_e.event_uuid !== event.event_uuid) {
-          throw new Error(`${event.event_type} Projection returned a different event uuid than origin - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned a different event uuid than origin - fatal`
+          )
         }
         if (_e.event_type !== event.event_type) {
-          throw new Error(`${event.event_type} Projection returned a different event type than origin - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned a different event type than origin - fatal`
+          )
         }
         // if (_e.changed()) {
         //   console.log('BRK changes!', _e.changed())
@@ -954,12 +972,14 @@ export class Broadcast extends FabrixGeneric {
         // return the event tuple
         return [event, options]
       })
+      // Send to the Channels // TODO, this should probably not be called directly after save, but after the validation?
+      .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
         this.app.log.error(err)
         // return Promise.reject(err)
         return Promise.reject(new this.app.errors.GenericError(
           'E_UNPROCESSABLE_ENTITY',
-          `BroadcastEvent: ${event.event_type} was unable to save - fatal`
+          `BroadcastEvent: ${event.event_type} failed during broadcast - fatal`
         ))
       })
   }

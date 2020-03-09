@@ -104,6 +104,79 @@ describe('Entry', () => {
         })
     })
 
+    it('should create without a transaction', (done) => {
+      global.app.entries.Test.createNoTransaction({}, {name: 'no-transaction'}, {
+        transaction: false
+      })
+        .then(([_event, _options]) => {
+
+          console.log('BRK no transaction', _event.data)
+          test_uuid = _event.data.test_uuid
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
+
+
+          return global.app.models.BroadcastEvent.findByPk(_event.event_uuid)
+            .then((_e) => {
+              assert.equal(_event.event_uuid, _e.event_uuid)
+              done()
+            })
+        })
+        .catch(err => {
+          done(err)
+        })
+    })
+
+    it('should create without saving event', (done) => {
+      global.app.entries.Test.createNoSave({}, {name: 'no-save'}, {
+        save: false
+      })
+        .then(([_event, _options]) => {
+
+          console.log('BRK no transaction', _event.data)
+          test_uuid = _event.data.test_uuid
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
+
+
+          return global.app.models.BroadcastEvent.findByPk(_event.event_uuid)
+            .then((_) => {
+              assert.equal(_, null)
+              done()
+            })
+        })
+        .catch(err => {
+          done(err)
+        })
+    })
+
+    it('should create without transaction and without saving event', (done) => {
+      global.app.entries.Test.createNoSave({}, {name: 'no-save-no-transaction'}, {
+        transaction: false,
+        save: false
+      })
+        .then(([_event, _options]) => {
+
+          console.log('BRK no transaction', _event.data)
+          test_uuid = _event.data.test_uuid
+
+          console.log('brk trace', global.app.broadcasts.Test.unnestTrace(_options))
+          console.log('brk trace flat', global.app.broadcasts.Test.flattenTrace(_options))
+
+
+          return global.app.models.BroadcastEvent.findByPk(_event.event_uuid)
+            .then((_) => {
+              assert.equal(_, null)
+              done()
+            })
+        })
+        .catch(err => {
+          done(err)
+        })
+    })
+
     describe('Root Broadcast Entry', () => {
       let event_uuid
       it('should find all created events', (done) => {

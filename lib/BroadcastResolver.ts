@@ -205,8 +205,9 @@ export class BroadcastResolver extends SequelizeResolver {
     if (!data) {
       return
     }
-    // 1: This is already a DAO instance of this
-    else if (data instanceof this.instance) {
+    // 1: This is already a staged DAO instance of this
+    // TODO, validate keeping the isStaged check
+    else if (data instanceof this.instance && data._options.isStaged === true) {
       return data
     }
     // 2: This is a DOA model instance and is being converted to an instance of this (Recursive)

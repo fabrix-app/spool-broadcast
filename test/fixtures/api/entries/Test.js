@@ -7,6 +7,14 @@ module.exports = class Test extends Entry {
     return this.transaction(this.app.sagas.Test.create, req, body, options)
   }
 
+  createNoTransaction(req, body, options) {
+    return this.transaction(this.app.sagas.Test.createNoTransaction, req, body, options)
+  }
+
+  createNoSave(req, body, options) {
+    return this.transaction(this.app.sagas.Test.createNoSave, req, body, options)
+  }
+
   createEventual(req, body, options) {
     return this.transaction(this.app.sagas.Test.createEventual, req, body, options)
   }

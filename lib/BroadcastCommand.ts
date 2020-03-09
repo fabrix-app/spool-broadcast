@@ -1,13 +1,20 @@
-import {FabrixApp} from '@fabrix/fabrix'
+import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { set, get, isArray, isObject } from 'lodash'
+import { set, get, isArray, isString, isObject } from 'lodash'
+import { regexdot } from '@fabrix/regexdot'
 import uuid from 'uuid/v4'
 
 import { Broadcast } from './Broadcast'
-import { regexdot } from '@fabrix/regexdot'
 import { helpers } from './utils/helpers'
+import { Saga } from './Saga'
 
 
+/**
+ * Helper function that replaces the parameters of a command_type with the the data
+ * @param type
+ * @param keys
+ * @param object
+ */
 const replaceParams = function(type = '', keys: boolean | string[] = [], object: any = {}) {
   if (
     keys !== false
@@ -39,21 +46,30 @@ export class BroadcastCommand extends FabrixGeneric {
   broadcaster: Broadcast
   req: {[key: string]: any}
 
-  _command_type: string
+  private _command_type: string
+
+  beforeHooks: any
+
   command_uuid: string
   causation_uuid: string
 
-  object: FabrixModel
+  readonly object: FabrixModel
+  readonly _list: boolean
 
-  _list: boolean
+  // The data
   data: {[key: string]: any} //  | {[key: string]: any}[]
+  //
   data_updates: {[key: string]: any} // | {[key: string]: any}[]
+  // The data that was moved from updates to data
   data_applied: {[key: string]: any}
+  // If reloaded, the values
   data_previous: {[key: string]: any}
 
+  // The metadata that will be sent to hooks as well events
   metadata: {[key: string]: any}
 
-  created_at: string // Date
+  // Timestamp for when this command was created, will become the event's timestamp as well
+  created_at: string
 
   version: number
   version_app: string
@@ -96,7 +112,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
       // event_type = null
     },
-    options = {}
+    options: {[key: string]: any} = {}
   ) {
     super(app)
 
@@ -131,14 +147,14 @@ export class BroadcastCommand extends FabrixGeneric {
     // Check that these are staged objects
     if (this._list) {
       // console.log('BRK COMMAND DATA OPTS "list"', data.map(d => d._options))
-      if (!data.every(d => d._options.isStaged)) {
-        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false})`)
+      if (!data.every(d => d._options && d._options.isStaged)) {
+        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false })`)
       }
     }
     else {
       // console.log('BRK COMMAND DATA OPTS', data._options)
-      if (!data._options.isStaged) {
-        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false})`)
+      if (!data._options && !data._options.isStaged) {
+        throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false })`)
       }
     }
 
@@ -175,6 +191,34 @@ export class BroadcastCommand extends FabrixGeneric {
 
     // Use the Setter to set the command_type and also the pattern used
     this.command_type = command_type
+
+    // If an event_type was passed as well
+    if (event_type) {
+      // the initial (root) event this command expects_response to dispatch as a result of the command
+      this.event_type = event_type
+    }
+
+    // Set the SAGA before function for the command
+    if (options.beforeHooks) {
+      if (typeof options.beforeHooks === 'string') {
+        const saga = this.getSagaFromHandler(options.beforeHooks)
+        const method = this.getSagaMethodFromHandler(options.beforeHooks)
+        const _saga = this.getSagaFromString(saga)
+
+        if (_saga && _saga[method]) {
+          this.beforeHooks = _saga[method]
+        }
+        else if (_saga) {
+          this.beforeHooks = _saga.before
+        }
+        else {
+          this.beforeHooks = this.app.sagas.BroadcastSaga.before
+        }
+      }
+    }
+    else {
+      this.beforeHooks = this.app.sagas.BroadcastSaga.before
+    }
 
     this.options = options
   }
@@ -226,6 +270,32 @@ export class BroadcastCommand extends FabrixGeneric {
       this.data = this.object.stage(this.data, this.data._options)
     }
   }
+
+  /**
+   * UTILITY
+   * @description get app.sagas.<MySaga> returns MySaga
+   */
+  getSagaFromString(handler: string ): Saga  {
+    return get(this.app.sagas, handler)
+  }
+
+  /**
+   * UTILITY
+   * @description Eg MySaga.myMethod returns "MySaga"
+   */
+  getSagaFromHandler(handler: string): string {
+    return isString(handler) ? handler.split('.')[0] : handler
+  }
+
+  /**
+   * UTILITY
+   * @description Eg MySaga.myMethod returns "myMethod"
+   * @returns string
+   */
+  getSagaMethodFromHandler(handler: string): string {
+    return isString(handler) ? handler.split('.')[1] : handler
+  }
+
   /**
    * Run Serial or in Parallel TODO
    * @param managers
@@ -239,7 +309,7 @@ export class BroadcastCommand extends FabrixGeneric {
       return this.broadcastSeries(...args)
     }
     else {
-      return Promise.all([...args])
+      return this.broadcastParallel(...args)
     }
   }
 
@@ -251,6 +321,38 @@ export class BroadcastCommand extends FabrixGeneric {
     return this.app.broadcastSeries(...args)
   }
 
+
+  broadcastParallel(...args) {
+    return Promise.all([...args])
+  }
+  /**
+   * Broadcast the event
+   * @param validator
+   * @param options
+   */
+  broadcast(validator, options) {
+    if (!this.beforeHooks) {
+      throw new this.app.errors.GenericError(
+        'E_BAD_REQUEST',
+        'command.broadcast can not be used if not constructed with options.beforeHooks'
+      )
+    }
+    if (!this.event_type) {
+      throw new this.app.errors.GenericError(
+        'E_BAD_REQUEST',
+        'command.broadcast can not be used if not constructed with an event_type'
+      )
+    }
+    return this.beforeHooks(this, validator, options)
+      .then(([_command, _options]) => {
+        const event = this.broadcaster.buildEvent({
+          event_type: this.event_type,
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+        return this.broadcaster.broadcast(event, _options)
+      })
+  }
   /**
    * Reload the data object from the database
    * @param _data
@@ -263,6 +365,7 @@ export class BroadcastCommand extends FabrixGeneric {
     if (_data && typeof _data.toJSON !== 'function') {
       throw new Error('Data does not have toJSON function')
     }
+
     if (_data && typeof _data.reload !== 'function') {
       throw new Error('Data does not have reload function')
     }
@@ -276,7 +379,10 @@ export class BroadcastCommand extends FabrixGeneric {
       // Call sequelize's reload function
       return _data.reload(options)
         .then(() => {
+          // TODO, deprecate one of these
           _data.isReloaded = true
+          _data._options.isReloaded = true
+
           return [_data, updates]
         })
         .catch(err => {
@@ -287,7 +393,7 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   /**
-   * Reload the data object|array with it's previous values
+   * Reload the data object|array with it's previous values from the database
    * @param options
    */
   async reload(options) {
@@ -365,41 +471,44 @@ export class BroadcastCommand extends FabrixGeneric {
    * @param value
    */
   apply(path, value) {
+    // Get the value that was at the path and set it to the data_previous
     set(this.data_previous, path, get(this.data, path))
     // set(this.data_updates, path, get(this.data, path))
+    // Set the data_applied value
     set(this.data_applied, path, value)
+    // Set the data value with the applied value
     set(this.data, path, value)
   }
-
-  private _combine (_data, _updates) {
-    _updates = _updates.toJSON ? _updates.toJSON() : _updates
-
-    Object.keys(_updates).forEach((k, i) => {
-      // Ugly sequelize hack
-      _data[k] = _updates[k]
-      _data.setDataValue(k, _updates[k])
-      _data.set(k, _updates[k])
-    })
-    return _data
-  }
-
-  combine(data) {
-
-    if (!data) {
-      throw new Error('command.combine was called with empty data')
-    }
-
-    if (this._list) {
-      this.data.forEach((d, i) => {
-        this._combine(this.data[i], data[i])
-      })
-    }
-    else {
-      this._combine(this.data, data)
-    }
-
-    return this.data
-  }
+  //
+  // private _combine (_data, _updates) {
+  //   _updates = _updates.toJSON ? _updates.toJSON() : _updates
+  //
+  //   Object.keys(_updates).forEach((k, i) => {
+  //     // Ugly sequelize hack
+  //     _data[k] = _updates[k]
+  //     _data.setDataValue(k, _updates[k])
+  //     _data.set(k, _updates[k])
+  //   })
+  //   return _data
+  // }
+  //
+  // combine(data) {
+  //
+  //   if (!data) {
+  //     throw new Error('command.combine was called with empty data')
+  //   }
+  //
+  //   if (this._list) {
+  //     this.data.forEach((d, i) => {
+  //       this._combine(this.data[i], data[i])
+  //     })
+  //   }
+  //   else {
+  //     this._combine(this.data, data)
+  //   }
+  //
+  //   return this.data
+  // }
 
   /**
    * Add a created_at value to the data

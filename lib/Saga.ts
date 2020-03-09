@@ -47,6 +47,10 @@ export class Saga extends Generic  {
     return this.constructor.name
   }
 
+  /**
+   * Extracts medata from a request
+   * @param req
+   */
   metadata(req): {[key: string]: any} {
     // TODO, this should default to an empty object
     return {
