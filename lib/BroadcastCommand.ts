@@ -730,7 +730,7 @@ export class BroadcastCommand extends FabrixGeneric {
       })
     }
     else if (this.data) { //  && this.changes().length > 0) {
-      this.data.updated_at = new Date(Date.now()).toISOString()
+      // this.data.updated_at = new Date(Date.now()).toISOString()
       this.apply(`updated_at`, new Date(Date.now()).toISOString())
     }
     return this
@@ -803,7 +803,7 @@ export class BroadcastCommand extends FabrixGeneric {
     return changes
   }
 
-  get metadata () {
+  get metadata (): {[key: string]: any} {
     return {
       ...this._metadata,
       changes: this.changes()
