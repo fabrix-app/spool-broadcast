@@ -66,11 +66,6 @@ export class BroadcastCommand extends FabrixGeneric {
   data_changed: {[key: string]: any}
   // If reloaded, the values
   data_previous: {[key: string]: any}
-  //
-  // _data: {[key: string]: any} //  | {[key: string]: any}[]
-  // _data_previous: {[key: string]: any} //  | {[key: string]: any}[]
-  // _data_updates: {[key: string]: any} //  | {[key: string]: any}[]
-  // _data_applied: {[key: string]: any} //  | {[key: string]: any}[]
 
   // The metadata that will be sent to hooks as well events
   _metadata: {[key: string]: any}
@@ -364,49 +359,6 @@ export class BroadcastCommand extends FabrixGeneric {
         return this.broadcaster.broadcast(event, _options)
       })
   }
-  /**
-   * Reload the data object from the database
-   * @param _data
-   * @param options
-   * @private
-   */
-  // private async _reload(_data, options) {
-  //   let updates = {}
-  //
-  //   if (_data && typeof _data.toJSON !== 'function') {
-  //     throw new Error('Data does not have toJSON function')
-  //   }
-  //
-  //   if (_data && typeof _data.reload !== 'function') {
-  //     throw new Error('Data does not have reload function')
-  //   }
-  //
-  //   if (
-  //     _data.isNewRecord
-  //     || _data.isReloaded
-  //     || _data._options.isNewRecord
-  //     || _data._options.isReloaded
-  //   ) {
-  //     updates = Object.assign({}, _data.toJSON())
-  //     return Promise.resolve([_data, updates])
-  //   }
-  //   else {
-  //     updates = Object.assign({}, _data.toJSON())
-  //     // Call sequelize's reload function
-  //     return _data.reload(options)
-  //       .then((vals) => {
-  //         // TODO, deprecate one of these
-  //         _data.isReloaded = true
-  //         _data._options.isReloaded = true
-  //
-  //         return [_data, updates]
-  //       })
-  //       .catch(err => {
-  //         this.app.log.error(`Command ${this.command_uuid} reload`, err)
-  //         return Promise.reject(err)
-  //       })
-  //   }
-  // }
 
   private async _reload(_data, options) {
     if (_data && typeof _data.reload !== 'function') {
@@ -438,33 +390,6 @@ export class BroadcastCommand extends FabrixGeneric {
     }
   }
 
-  /**
-   * Reload the data object|array with it's previous values from the database
-   * @param options
-   */
-  // async reload(options) {
-  //   if (this._list) {
-  //     this.data_updates = []
-  //     return this.process(new Map(), this.data, d => {
-  //       return this._reload(d, options)
-  //         .then(([_data, updates]) => {
-  //           this.data_updates.push(updates)
-  //           return d
-  //         })
-  //     })
-  //       .then(() => {
-  //         return this.data
-  //       })
-  //   }
-  //   else {
-  //     return this._reload(this.data, options)
-  //       .then(([_data, updates]) => {
-  //         this.data_updates = updates
-  //         return this.data
-  //       })
-  //   }
-  // }
-
   async reload(options) {
     if (this._list) {
       return this.process(new Map(), this.data, (d, i) => {
@@ -481,6 +406,7 @@ export class BroadcastCommand extends FabrixGeneric {
             else {
               _current.attributes
                 .forEach(k => {
+                  this.previous(`${i}.${k}`, null)
                   this.apply(`${i}.${k}`, d[k])
                 })
             }
@@ -505,6 +431,7 @@ export class BroadcastCommand extends FabrixGeneric {
           else {
             _current.attributes
               .forEach(k => {
+                this.previous(`${k}`, null)
                 this.apply(`${k}`, this.data[k])
               })
           }
@@ -512,72 +439,6 @@ export class BroadcastCommand extends FabrixGeneric {
         })
     }
   }
-
-  // private _approvedUpdates (_data, _updates, approved = []) {
-  //   const applied = {}, previous = {}
-  //   Object.keys(_updates).forEach((k, i) => {
-  //     if (approved.indexOf(k) > -1) {
-  //
-  //       // Record the applied changes
-  //       if (_data[k] !== _updates[k]) {
-  //         applied[k] = _updates[k]
-  //         previous[k] = _data[k]
-  //       }
-  //
-  //       // Ugly sequelize hack
-  //       _data[k] = _updates[k]
-  //       _data.setDataValue(k, _updates[k])
-  //       _data.set(k, _updates[k])
-  //     }
-  //   })
-  //   return [previous, applied]
-  // }
-  //
-  // /**
-  //  * Allow data to be updates by keys
-  //  * @param approved
-  //  */
-  // approveUpdates(approved = []) {
-  //
-  //   if (!this.data_updates) {
-  //     throw new Error('command.approveUpdates was called before command.reload')
-  //   }
-  //
-  //   if (this._list) {
-  //     this.data.forEach((d, i) => {
-  //       const [ previous, applied ] = this._approvedUpdates(this.data[i], this.data_updates[i], approved)
-  //       this.data_applied[i] = applied
-  //       this.data_previous[i] = previous
-  //     })
-  //   }
-  //   else {
-  //     const [ previous, applied ] = this._approvedUpdates(this.data, this.data_updates, approved)
-  //     this.data_applied = applied
-  //     this.data_previous = previous
-  //   }
-  //
-  //   return this.data
-  // }
-
-  // private _approvedUpdates (_data, _updates, approved = []) {
-  //   const applied = {}, previous = {}
-  //   Object.keys(_updates).forEach((k, i) => {
-  //     if (approved.indexOf(k) > -1) {
-  //
-  //       // Record the applied changes
-  //       if (_data[k] !== _updates[k]) {
-  //         applied[k] = _updates[k]
-  //         previous[k] = _data[k]
-  //       }
-  //
-  //       // Ugly sequelize hack
-  //       _data[k] = _updates[k]
-  //       _data.setDataValue(k, _updates[k])
-  //       _data.set(k, _updates[k])
-  //     }
-  //   })
-  //   return [previous, applied]
-  // }
 
   private _approvedUpdates (_data, _updates, approved = []) {
     const applied = {}, previous = {}
@@ -618,15 +479,15 @@ export class BroadcastCommand extends FabrixGeneric {
 
   previous(path, value) {
     // Set the previous value for the field as the current value
-    set(this.data_previous, path, value)
+    return set(this.data_previous, path, value, null)
   }
   update(path, value) {
     // Set the updates value for the field
-    set(this.data_updates, path, value)
+    return set(this.data_updates, path, value)
   }
   change(path, value) {
     // Set the changed value
-    set(this.data_changed, path, value)
+    return set(this.data_changed, path, value, null)
   }
   /**
    * Apply data so it is detected in the changes after a reload
@@ -634,15 +495,12 @@ export class BroadcastCommand extends FabrixGeneric {
    * @param value
    */
   apply(path, value) {
-    const current = get(this.data, path, null)
+    const current = get(this.data_previous, path, null)
 
     // Set the value in change if changed
     if (current !== value) {
       this.change(path, current)
     }
-
-    // Set the previous value for the field as the current value
-    this.previous(path, current)
 
     // Set the data_updates value
     this.update(path, value)
@@ -652,56 +510,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
     // Set the data
     set(this.data, path, value)
-    //
-    // // Apply the value tot he model
-    // if (this._list) {
-    //   this.data.forEach((k, i) => {
-    //     // TODO, temporary fix to handle first level children for now
-    //     const split = path.split(`${i}.`).slice(1).join('')
-    //     // Ugly sequelize hack
-    //     this.data[i][split] = value
-    //     // this.data[i].setDataValue(split, value)
-    //     // this.data[i].set(split, value)
-    //   })
-    // }
-    // else {
-    //   // Ugly sequelize hack
-    //   this.data[path] = value
-    //   // this.data.setDataValue(path, value)
-    //   // this.data.set(path, value)
-    // }
   }
-  //
-  // private _combine (_data, _updates) {
-  //   _updates = _updates.toJSON ? _updates.toJSON() : _updates
-  //
-  //   Object.keys(_updates).forEach((k, i) => {
-  //     // Ugly sequelize hack
-  //     _data[k] = _updates[k]
-  //     _data.setDataValue(k, _updates[k])
-  //     _data.set(k, _updates[k])
-  //   })
-  //   return _data
-  // }
-  //
-  // combine(data) {
-  //
-  //   if (!data) {
-  //     throw new Error('command.combine was called with empty data')
-  //   }
-  //
-  //   if (this._list) {
-  //     this.data.forEach((d, i) => {
-  //       this._combine(this.data[i], data[i])
-  //     })
-  //   }
-  //   else {
-  //     this._combine(this.data, data)
-  //   }
-  //
-  //   return this.data
-  // }
-
   /**
    * Add a created_at value to the data
    */
@@ -775,13 +584,6 @@ export class BroadcastCommand extends FabrixGeneric {
         else if (this.data_changed && this.data_changed[i]) {
           return changes[i] = [...(changes[i] || []), ...Object.keys(this.data_changed[i])]
         }
-        // if (this.data_updates && this.data_updates[i]) {
-        //   //
-        // }
-        // if (d && typeof d.changed === 'function') {
-        //   const dChanges = d.changed() || []
-        //   return changes.push({[i]: dChanges})
-        // }
       })
     }
     else if (!this._list) {
@@ -791,13 +593,7 @@ export class BroadcastCommand extends FabrixGeneric {
       else if (Object.keys(this.data_changed || {}).length > 0) {
         changes = [...changes, ...Object.keys(this.data_changed)]
       }
-
-      // console.log('BRK non seq changes', changes, Object.keys(this.data_changed || {}))
-      // console.log('BRK seq changes', this.data.changed(), this.data.previous())
     }
-    // else if (this.data && typeof this.data.changed === 'function') {
-    //   changes = this.data.changed() || []
-    // }
 
     if (!isArray(changes)) {
       throw new Error('metadata changes should be an array')
@@ -813,9 +609,6 @@ export class BroadcastCommand extends FabrixGeneric {
       ...(this._metadata || {}),
       changes: this.changes()
     }
-    // const metadata = this._metadata || {}
-    // metadata.changes = this.changes()
-    // return metadata
   }
 
   set metadata (metadata) {
@@ -858,6 +651,7 @@ BroadcastCommand.prototype.toJSON = function(str) {
     object: `${this.object.constructor.name}${this._list ? '.list' : '' }`,
     data: JSON.parse(JSON.stringify(this.data)),
     data_changed: JSON.parse(JSON.stringify(this.data_changed)),
+    data_previous: JSON.parse(JSON.stringify(this.data_previous)),
     metadata: this.metadata,
     version: this.version,
     version_app: this.version_app,
@@ -877,6 +671,7 @@ BroadcastCommand.prototype.toEVENT = function(str) {
     object: this.object,
     data: this.data,
     data_changed: this.data_changed,
+    data_previous: this.data_previous,
     metadata: this.metadata,
     version: this.version,
     version_app: this.version_app,

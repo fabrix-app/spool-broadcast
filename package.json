@@ -1,6 +1,6 @@
 {
   "name": "@fabrix/spool-broadcast",
-  "version": "1.6.77.alpha-7",
+  "version": "1.6.77.alpha-8",
   "description": "Spool: broadcast for Fabrix to implement CQRS and Event Sourcing",
   "homepage": "https://fabrix.app",
   "author": {
