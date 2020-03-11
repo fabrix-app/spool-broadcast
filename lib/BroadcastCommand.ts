@@ -175,7 +175,7 @@ export class BroadcastCommand extends FabrixGeneric {
     // Set the data for the command
     this.data = data
     // Set the values that are wishing to update
-    this.data_updates = this._list ? data.map(d => d.toJSON()) : data.toJSON()
+    this.data_updates = this._list ? data.map(d => d.get({plain: true})) : data.get({plain: true})
     // Make a blank object for previous values of the model instance(s)
     this.data_previous = this._list ? [] : {}
     // Make a blank object for values of the model instance(s) that will change the generated event
@@ -183,7 +183,7 @@ export class BroadcastCommand extends FabrixGeneric {
     // The values that have actually changed from the last visit to the database and now
     this.data_changed = this._list ? [] : {}
     // Set the metadata provided
-    this._metadata = metadata
+    this._metadata = metadata || {}
 
     // Set the causation uuid, the event that spawned this command
     this.causation_uuid = causation_uuid
@@ -411,10 +411,6 @@ export class BroadcastCommand extends FabrixGeneric {
   private async _reload(_data, options) {
     if (_data && typeof _data.reload !== 'function') {
       throw new Error('Data does not have reload function')
-    }
-
-    if (_data && typeof _data.toJSON !== 'function') {
-      throw new Error('Data does not have toJSON function')
     }
 
     if (
@@ -814,9 +810,12 @@ export class BroadcastCommand extends FabrixGeneric {
 
   get metadata (): {[key: string]: any} {
     return {
-      ...this._metadata,
+      ...(this._metadata || {}),
       changes: this.changes()
     }
+    // const metadata = this._metadata || {}
+    // metadata.changes = this.changes()
+    // return metadata
   }
 
   set metadata (metadata) {
@@ -827,6 +826,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
 export interface Command {
   toJSON(): any
+  toEVENT(): any
   getDataValue(handler, command): any
   mergeData(method, handler, command): any
   mergeAs(method, handler, command): any
@@ -850,19 +850,42 @@ BroadcastCommand.prototype.changed = function(str?) {
 BroadcastCommand.prototype.toJSON = function(str) {
 
   const res = {
+    correlation_uuid: this.correlation_uuid,
+    causation_uuid: this.causation_uuid,
     command_type: `${this.command_type}`,
     pattern: `${this.pattern}`,
     pattern_raw: `${this.pattern_raw}`,
     object: `${this.object.constructor.name}${this._list ? '.list' : '' }`,
-    data: this.data.toJSON ? this.data.toJSON() : this.data,
-    data_updates: this.data_updates,
+    data: JSON.parse(JSON.stringify(this.data)),
+    data_changed: JSON.parse(JSON.stringify(this.data_changed)),
     metadata: this.metadata,
-    causation_uuid: this.causation_uuid,
     version: this.version,
     version_app: this.version_app,
     created_at: this.created_at
   }
+  return res
+}
 
+BroadcastCommand.prototype.toEVENT = function(str) {
+
+  const res = {
+    correlation_uuid: this.correlation_uuid,
+    causation_uuid: this.causation_uuid,
+    command_type: `${this.command_type}`,
+    pattern: this.pattern,
+    pattern_raw: `${this.pattern_raw}`,
+    object: this.object,
+    data: this.data,
+    data_changed: this.data_changed,
+    metadata: this.metadata,
+    version: this.version,
+    version_app: this.version_app,
+    created_at: this.created_at,
+    chain_before: this.chain_before,
+    chain_saga: this.chain_saga,
+    chain_after: this.chain_after,
+    chain_events: this.chain_events,
+  }
   return res
 }
 

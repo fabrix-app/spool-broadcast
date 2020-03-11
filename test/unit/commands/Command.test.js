@@ -5,7 +5,7 @@ const uuid = require('uuid/v4')
 const Validator = require('../../../dist/validator').Validator
 
 describe('Entry', () => {
-  let test_uuid, testCommand1, testCommand2, testCommand3
+  let test_uuid, testCommand1, testCommand2, testCommand3, testCommand4
 
   it('should have broadcasters in test', () => {
     assert(global.app.broadcaster)
@@ -572,6 +572,153 @@ describe('Entry', () => {
       })
   })
 
+
+  it('should test command with previously undefined value', (done) => {
+
+    const TestBroadcast = global.app.broadcasts.TestBroadcast2
+    const req = {}
+
+    let body = {
+      string: 'test',
+      keyvalue: { hello: 'world' },
+      array: ['hello', 'world'],
+      child: {
+        name: 'test'
+      },
+      children: [{
+        name: 'test'
+      }]
+    }
+
+    // Build a permission instance
+    body = global.app.models.TestChange.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID'],
+      stage: [
+        {
+          model: global.app.models.Test,
+          as: 'child',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        },
+        {
+          model: global.app.models.Test,
+          as: 'children',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        }
+      ]
+    })
+
+    testCommand4 = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'create.change',
+      object: global.app.models.TestChange,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    console.log('BRK command before',
+      'data', testCommand4.data,
+      'updates', testCommand4.data_updates,
+      'previous', testCommand4.data_previous,
+      'applied', testCommand4.data_applied,
+      'changed', testCommand4.data_changed
+    )
+
+    assert.equal(testCommand4.data.string, 'test')
+    assert.equal(testCommand4.data.string, testCommand4.data_updates.string)
+    // assert.equal(testCommand4.data.number, 0)
+    // assert.equal(testCommand4.data.number, testCommand4.data_updates.number)
+    assert.deepEqual(testCommand4.data.keyvalue, {hello: 'world'})
+    assert.deepEqual(testCommand4.data.keyvalue, testCommand4.data_updates.keyvalue)
+    assert.deepEqual(testCommand4.data.array, ['hello', 'world'])
+    assert.deepEqual(testCommand4.data.array, testCommand4.data_updates.array)
+    assert.ok(testCommand4.data.child)
+    assert.ok(testCommand4.data.children)
+
+
+    testCommand4.reload({})
+      .then(() => {
+        console.log('BRK command after reload',
+          'data', testCommand4.data,
+          'updates', testCommand4.data_updates,
+          'previous', testCommand4.data_previous,
+          'applied', testCommand4.data_applied,
+          'changed', testCommand4.data_changed
+        )
+
+        assert.equal(testCommand4.data.string, 'test')
+        assert.equal(testCommand4.data.string, testCommand4.data_applied.string)
+        assert.equal(testCommand4.data.string, testCommand4.data_updates.string)
+
+        // assert.equal(testCommand4.data.number, 0)
+        // assert.equal(testCommand4.data.number, testCommand4.data_applied.number)
+        // assert.equal(testCommand4.data.number, testCommand4.data_updates.number)
+
+        assert.deepEqual(testCommand4.data.keyvalue, {hello: 'world'})
+        assert.deepEqual(testCommand4.data.keyvalue, testCommand4.data_applied.keyvalue)
+        assert.deepEqual(testCommand4.data.keyvalue, testCommand4.data_updates.keyvalue)
+
+        assert.deepEqual(testCommand4.data.array, ['hello', 'world'])
+        assert.deepEqual(testCommand4.data.array, testCommand4.data_applied.array)
+        assert.deepEqual(testCommand4.data.array, testCommand4.data_updates.array)
+
+        assert.ok(testCommand4.data.child)
+        assert.ok(testCommand4.data.children)
+
+        testCommand4.apply('string', 'test1')
+        assert.equal(testCommand4.data.string, 'test1')
+        assert.equal(testCommand4.data.string, testCommand4.data_applied.string)
+        assert.equal(testCommand4.data_changed.string, 'test')
+        assert.equal(testCommand4.data_previous.string, 'test')
+
+        testCommand4.apply('number', 1)
+        assert.equal(testCommand4.data.number, 1)
+        assert.equal(testCommand4.data.number, testCommand4.data_applied.number)
+        assert.equal(testCommand4.data.number, testCommand4.data_updates.number)
+        assert.equal(testCommand4.data_changed.number, null)
+        assert.equal(testCommand4.data_previous.number, null)
+
+        testCommand4.apply('keyvalue', {hello: 'earth'})
+        assert.deepEqual(testCommand4.data.keyvalue, {hello: 'earth'})
+        assert.deepEqual(testCommand4.data.keyvalue, testCommand4.data_applied.keyvalue)
+        assert.deepEqual(testCommand4.data.keyvalue, testCommand4.data_updates.keyvalue)
+        assert.deepEqual(testCommand4.data_changed.keyvalue, {hello: 'world'})
+        assert.deepEqual(testCommand4.data_previous.keyvalue, {hello: 'world'})
+
+        testCommand4.apply('array', ['hello', 'earth'])
+        assert.deepEqual(testCommand4.data.array, ['hello', 'earth'])
+        assert.deepEqual(testCommand4.data.array, testCommand4.data_applied.array)
+        assert.deepEqual(testCommand4.data.array, testCommand4.data_updates.array)
+        assert.deepEqual(testCommand4.data_changed.array, ['hello', 'world'])
+        assert.deepEqual(testCommand4.data_previous.array, ['hello', 'world'])
+
+        console.log('BRK command changes', testCommand4.changes())
+        assert.deepEqual(testCommand4.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
+        assert.deepEqual(testCommand4.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
+
+        return testCommand4.data.save()
+      })
+      .then(() => {
+
+        // testCommand4.restage()
+        //
+        // console.log('BRK command after restage', testCommand4)
+
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
   it('should test command.broadcast', (done) => {
 
     const TestBroadcast = global.app.broadcasts.TestBroadcast2
@@ -639,6 +786,9 @@ describe('Entry', () => {
     testCommand3.broadcast(validator, {})
       .then(([_event, _options]) => {
         console.log('BRK broadcasted', _event.data, _options)
+
+
+        assert.deepEqual(_event.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
 
         assert.equal(_event.data.string, testCommand3.data_updates.string)
         assert.equal(_event.data.number, testCommand3.data_updates.number)

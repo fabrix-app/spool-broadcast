@@ -240,7 +240,7 @@ export class Broadcast extends FabrixGeneric {
       // report list of functions that ran before this event's saga (combined)
       chain_events: chain_events || command.chain_events,
       // All the information from the command
-      ...command,
+      ...command.toEVENT(),
       // The event_type that can override the command event_type
       event_type, // || command.event_type,
       // the event_type REGEX pattern
