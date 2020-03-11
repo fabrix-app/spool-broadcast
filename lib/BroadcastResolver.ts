@@ -207,7 +207,10 @@ export class BroadcastResolver extends SequelizeResolver {
     }
     // 1: This is already a staged DAO instance of this
     // TODO, validate keeping the isStaged check
-    else if (data instanceof this.instance && data._options.isStaged === true) {
+    else if (data instanceof this.instance) {
+    // else if (data instanceof this.instance && data._options.isStaged === true) {
+      // TODO, temp, just mark this as staged
+      data._options.isStaged = true
       return data
     }
     // 2: This is a DOA model instance and is being converted to an instance of this (Recursive)
@@ -255,6 +258,8 @@ export class BroadcastResolver extends SequelizeResolver {
     // All the previous steps should result in reaching here unless the data is null
     // Even arrays will be broken down to get here as singletons
     else {
+      // Mark this as a list or singleton, so we only have to run isArray once
+      const list = isArray(data)
 
       // If an array of pre configuration functions were supplied
       // ie. pre: [function]
@@ -264,7 +269,7 @@ export class BroadcastResolver extends SequelizeResolver {
             throw new Error(`Expected stage.options.pre configure ${fn} to be a function`)
           }
           try {
-            if (isArray(data)) {
+            if (list) {
               data.map(d => {
                 d = fn(d, options)
                 if (Promise.resolve(d) === d) {
@@ -300,7 +305,7 @@ export class BroadcastResolver extends SequelizeResolver {
       if (options.configure && isArray(options.configure)) {
         options.configure.forEach(fn => {
           try {
-            if (isArray(data)) {
+            if (list) {
               data.map((d, i) => {
                 if (typeof fn === 'string' && typeof d[fn] === 'function') {
                   d[fn](d, options)
@@ -348,7 +353,7 @@ export class BroadcastResolver extends SequelizeResolver {
       if (options.before && isArray(options.before)) {
         options.before.forEach(fn => {
           try {
-            if (isArray(data)) {
+            if (list) {
               data.map((d, i) => {
                 if (typeof fn === 'string' && typeof d[fn] === 'function') {
                   fn = d[fn]
@@ -396,7 +401,7 @@ export class BroadcastResolver extends SequelizeResolver {
       if (options.after && isArray(options.after)) {
         options.after.forEach(fn => {
           try {
-            if (isArray(data)) {
+            if (list) {
               data.map((d, i) => {
                 if (typeof fn === 'string' && typeof d[fn] === 'function') {
                   fn = d[fn]
@@ -434,7 +439,9 @@ export class BroadcastResolver extends SequelizeResolver {
       }
 
       // Mark this data as previously staged
-      data.isStaged = true
+      if (options.isStaged) {
+        data.isStaged = options.isStaged
+      }
 
       // If this is considered reloaded, then mark it
       if (options.isReloaded) {

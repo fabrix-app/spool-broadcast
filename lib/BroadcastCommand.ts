@@ -175,12 +175,12 @@ export class BroadcastCommand extends FabrixGeneric {
     // Set the data for the command
     this.data = data
     // Set the values that are wishing to update
-    this.data_updates = JSON.parse(JSON.stringify(data)) // this._list ? data.map(d => d.toJSON()) : data.toJSON()
+    this.data_updates = this._list ? data.map(d => d.toJSON()) : data.toJSON()
     // Make a blank object for previous values of the model instance(s)
     this.data_previous = this._list ? [] : {}
     // Make a blank object for values of the model instance(s) that will change the generated event
     this.data_applied = this._list ? [] : {}
-    // The values that changed
+    // The values that have actually changed from the last visit to the database and now
     this.data_changed = this._list ? [] : {}
     // Set the metadata provided
     this._metadata = metadata
@@ -423,17 +423,17 @@ export class BroadcastCommand extends FabrixGeneric {
       || _data._options.isNewRecord
       || _data._options.isReloaded
     ) {
-      return Promise.resolve([JSON.parse(JSON.stringify(_data)), null])
+      return Promise.resolve([_data, null])
     }
     else {
       // Call sequelize's reload function
       return _data.reload(options)
-        .then((previous) => {
+        .then((_previous) => {
           // TODO, deprecate one of these
           _data.isReloaded = true
           _data._options.isReloaded = true
 
-          return [JSON.parse(JSON.stringify(_data)), JSON.parse(JSON.stringify(previous))]
+          return [_data, _previous]
         })
         .catch(err => {
           this.app.log.error(`Command ${this.command_uuid} reload`, err)
@@ -473,18 +473,19 @@ export class BroadcastCommand extends FabrixGeneric {
     if (this._list) {
       return this.process(new Map(), this.data, (d, i) => {
         return this._reload(d, options)
-          .then(([_data, previous]) => {
+          .then(([_current, previous]) => {
+            // If there is previous data after the reload, then set it in the previous list an unapplied
             if (previous) {
-              Object.keys(previous)
+              previous.attributes
                 .forEach(k => {
-                  set(this.data_previous, `${i}.${k}`, previous[k])
+                  this.previous(`${i}.${k}`, previous[k])
                 })
             }
+            // If there is no previous data (new record), then we can mark everything as applied
             else {
-              Object.keys(_data)
+              _current.attributes
                 .forEach(k => {
                   this.apply(`${i}.${k}`, d[k])
-                  set(this.data_changed, `${i}.${k}`, null)
                 })
             }
             return d
@@ -496,18 +497,19 @@ export class BroadcastCommand extends FabrixGeneric {
     }
     else {
       return this._reload(this.data, options)
-        .then(([_data, previous]) => {
+        // If there is previous data after the reload, then set it in the previous list an unapplied
+        .then(([_current, previous]) => {
           if (previous) {
-            Object.keys(previous)
+            previous.attributes
               .forEach(k => {
-                set(this.data_previous, `${k}`, previous[k])
+                this.previous(`${k}`, previous[k])
               })
           }
+          // If there is no previous data (new record), then we can mark everything as applied
           else {
-            Object.keys(_data)
+            _current.attributes
               .forEach(k => {
                 this.apply(`${k}`, this.data[k])
-                set(this.data_changed, `${k}`, null)
               })
           }
           return this.data
@@ -604,10 +606,6 @@ export class BroadcastCommand extends FabrixGeneric {
         Object.keys(applied)
           .forEach(k => {
             this.apply(`${i}.${k}`, applied[k])
-            // Ugly Sequelize Hack
-            this.data[i][k] = applied[k]
-            this.data[k].setDataValue(k, applied[k])
-            this.data[k].set(k, applied[k])
           })
       })
     }
@@ -616,37 +614,45 @@ export class BroadcastCommand extends FabrixGeneric {
       Object.keys(applied)
         .forEach(k => {
           this.apply(`${k}`, applied[k])
-          // Ugly Sequelize Hack
-          this.data[k] = applied[k]
-          this.data.setDataValue(k, applied[k])
-          this.data.set(k, applied[k])
         })
     }
 
     return this.data
   }
 
+  previous(path, value) {
+    // Set the previous value for the field as the current value
+    set(this.data_previous, path, value)
+  }
+  update(path, value) {
+    // Set the updates value for the field
+    set(this.data_updates, path, value)
+  }
+  change(path, value) {
+    // Set the changed value
+    set(this.data_changed, path, value)
+  }
   /**
    * Apply data so it is detected in the changes after a reload
    * @param path
    * @param value
    */
   apply(path, value) {
-    const current = get(this.data, path)
+    const current = get(this.data, path, null)
 
     // Set the value in change if changed
     if (current !== value) {
-      set(this.data_changed, path, current)
+      this.change(path, current)
     }
 
     // Set the previous value for the field as the current value
-    set(this.data_previous, path, current)
+    this.previous(path, current)
+
     // Set the data_updates value
-    set(this.data_updates, path, value)
+    this.update(path, value)
+
     // Set the data_applied value
     set(this.data_applied, path, value)
-    // Set the data value with the applied value
-    // set(this.data, path, value)
 
     // Apply the value tot he model
     if (this._list) {

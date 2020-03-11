@@ -223,7 +223,6 @@ export class Broadcast extends FabrixGeneric {
 
     // Create the data for the Event Model
     const data = {
-      event_type, // || command.event_type,
       // This is the command uuid that started this event chain
       correlation_uuid,
       // This is the REGEX pattern that the command used
@@ -242,6 +241,8 @@ export class Broadcast extends FabrixGeneric {
       chain_events: chain_events || command.chain_events,
       // All the information from the command
       ...command,
+      // The event_type that can override the command event_type
+      event_type, // || command.event_type,
       // the event_type REGEX pattern
       pattern: pattern,
       // the event_type string pattern

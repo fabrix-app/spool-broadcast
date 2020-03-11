@@ -74,9 +74,14 @@ describe('Entry', () => {
       'changed', testCommand1.data_changed
     )
 
+    assert.equal(testCommand1.data.string, 'test')
     assert.equal(testCommand1.data.string, testCommand1.data_updates.string)
+    assert.equal(testCommand1.data.number, 0)
     assert.equal(testCommand1.data.number, testCommand1.data_updates.number)
+    assert.deepEqual(testCommand1.data.keyvalue, {hello: 'world'})
     assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
+    assert.deepEqual(testCommand1.data.array, ['hello', 'world'])
+    assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
     assert.ok(testCommand1.data.child)
     assert.ok(testCommand1.data.children)
 
@@ -91,11 +96,21 @@ describe('Entry', () => {
           'changed', testCommand1.data_changed
         )
 
+        assert.equal(testCommand1.data.string, 'test')
         assert.equal(testCommand1.data.string, testCommand1.data_applied.string)
         assert.equal(testCommand1.data.string, testCommand1.data_updates.string)
 
+        assert.equal(testCommand1.data.number, 0)
         assert.equal(testCommand1.data.number, testCommand1.data_applied.number)
         assert.equal(testCommand1.data.number, testCommand1.data_updates.number)
+
+        assert.deepEqual(testCommand1.data.keyvalue, {hello: 'world'})
+        assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_applied.keyvalue)
+        assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
+
+        assert.deepEqual(testCommand1.data.array, ['hello', 'world'])
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_applied.array)
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
 
         assert.ok(testCommand1.data.child)
         assert.ok(testCommand1.data.children)
@@ -119,6 +134,13 @@ describe('Entry', () => {
         assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
         assert.deepEqual(testCommand1.data_changed.keyvalue, {hello: 'world'})
         assert.deepEqual(testCommand1.data_previous.keyvalue, {hello: 'world'})
+
+        testCommand1.apply('array', ['hello', 'earth'])
+        assert.deepEqual(testCommand1.data.array, ['hello', 'earth'])
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_applied.array)
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
+        assert.deepEqual(testCommand1.data_changed.array, ['hello', 'world'])
+        assert.deepEqual(testCommand1.data_previous.array, ['hello', 'world'])
 
         console.log('BRK command changes', testCommand1.changes())
         assert.deepEqual(testCommand1.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
@@ -148,7 +170,8 @@ describe('Entry', () => {
       ...JSON.parse(JSON.stringify(testCommand1.data)),
       string: 'test2',
       number: 2,
-      keyvalue: {hello: 'mars'}
+      keyvalue: {hello: 'mars'},
+      array: ['hello', 'mars']
     }
 
     // Build a permission instance
@@ -230,7 +253,7 @@ describe('Entry', () => {
         assert.deepEqual(testCommand1.data_previous.keyvalue, {hello: 'earth'})
         assert.deepEqual(testCommand1.data_updates.keyvalue, {hello: 'mars'})
 
-        testCommand1.approveUpdates([ 'string', 'number', 'keyvalue' ])
+        testCommand1.approveUpdates([ 'string', 'number', 'keyvalue', 'array' ])
 
         assert.equal(testCommand1.data.string, 'test2')
         assert.equal(testCommand1.data_updates.string, 'test2')
@@ -250,12 +273,18 @@ describe('Entry', () => {
         assert.deepEqual(testCommand1.data_previous.keyvalue, {hello: 'earth'})
         assert.deepEqual(testCommand1.data_changed.keyvalue, {hello: 'earth'})
 
+        assert.deepEqual(testCommand1.data.array, ['hello', 'mars'])
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_applied.array)
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
+        assert.deepEqual(testCommand1.data_changed.array, ['hello', 'earth'])
+        assert.deepEqual(testCommand1.data_previous.array, ['hello', 'earth'])
+
         assert.ok(testCommand1.data.child)
         assert.ok(testCommand1.data.children)
 
         console.log('BRK command changes', testCommand1.changes())
-        assert.deepEqual(testCommand1.changes(), ['string', 'number', 'keyvalue'])
-        assert.deepEqual(testCommand1.metadata.changes, ['string', 'number', 'keyvalue'])
+        assert.deepEqual(testCommand1.changes(), ['string', 'number', 'keyvalue', 'array'])
+        assert.deepEqual(testCommand1.metadata.changes, ['string', 'number', 'keyvalue', 'array'])
 
 
         return testCommand1.data.save()
