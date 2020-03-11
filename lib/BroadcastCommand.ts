@@ -69,6 +69,8 @@ export class BroadcastCommand extends FabrixGeneric {
 
   // The metadata that will be sent to hooks as well events
   _metadata: {[key: string]: any}
+  _hooks: {[key: string]: any}
+  _changes: {[key: string]: any}
 
   // Timestamp for when this command was created, will become the event's timestamp as well
   created_at: string
@@ -108,6 +110,7 @@ export class BroadcastCommand extends FabrixGeneric {
       causation_uuid,
       data,
       metadata = {},
+      hooks =  [],
       version = 0,
       version_app,
       chain_events = []
@@ -179,6 +182,9 @@ export class BroadcastCommand extends FabrixGeneric {
     this.data_changed = this._list ? [] : {}
     // Set the metadata provided
     this._metadata = metadata || {}
+
+    // Set the saga hooks provided
+    this._hooks = hooks || []
 
     // Set the causation uuid, the event that spawned this command
     this.causation_uuid = causation_uuid
@@ -604,10 +610,19 @@ export class BroadcastCommand extends FabrixGeneric {
     return changes
   }
 
+  get hooks() {
+    return this._hooks || []
+  }
+
+  set hooks(values) {
+    this._hooks = values
+  }
+
   get metadata (): {[key: string]: any} {
     return {
       ...(this._metadata || {}),
-      changes: this.changes()
+      changes: this.changes(),
+      hooks: this.hooks
     }
   }
 

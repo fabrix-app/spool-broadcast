@@ -103,7 +103,7 @@ export class BroadcastResolver extends SequelizeResolver {
       // 'req_session_uuid?': 'string',
 
       // Broadcast Metadata types
-      'prehooks?': ['json'],
+      'hooks?': ['json'],
       'changes?': 'json',
       'annotations?': 'json'
     })

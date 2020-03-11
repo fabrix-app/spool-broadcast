@@ -63,10 +63,10 @@ export class Saga extends Generic  {
     }
   }
 
-  async prehookRunner(endpoint, command) {
+  async hookRunner(endpoint, command) {
     // This should be overriden by the subclass
     this.app.log.debug(
-      `${this.name}.prehookRunner is not running because it's not defined in the class`,
+      `${this.name}.hookRunner is not running because it's not defined in the class`,
       `returning [endpoint, command] by default`
     )
     this.app.log.silly(endpoint)
@@ -158,7 +158,7 @@ export class Saga extends Generic  {
     const ran = new Map()
     const cancelled = new Map()
 
-    const saga = new Map(command.metadata.prehooks || [])
+    const saga = new Map(command.hooks || [])
 
     const sagastart = process.hrtime()
     let hrstart = sagastart, useValidators = []
@@ -267,11 +267,11 @@ export class Saga extends Generic  {
   /**
    * Process the Request and fold the response data into the command data
    * @param command
-   * @param prehook
+   * @param hook
    * @param validators
    * @param options
    */
-  async processRequest(command, prehook, validators, options): Promise<any> {
+  async processRequest(command, hook, validators, options): Promise<any> {
 
     const manager = {
       lifecycle: 'during',
@@ -280,8 +280,8 @@ export class Saga extends Generic  {
       object: command.object,
     }
 
-    return this.prehookRunner(prehook, command.toJSON())
-      .then(([_prehook, _command]) => {
+    return this.hookRunner(hook, command.toJSON())
+      .then(([_hook, _command]) => {
         return command.broadcaster.validate(validators, _command, options)
       })
       .then(([data, _options]) => {
@@ -297,18 +297,18 @@ export class Saga extends Generic  {
   /**
    * TODO
    * @param command
-   * @param prehook
+   * @param hook
    * @param validators
    * @param options
    */
-  async processCancelRequest(command, prehook, validators, options): Promise<any> {
+  async processCancelRequest(command, hook, validators, options): Promise<any> {
     // This should be overriden by the subclass
     this.app.log.warn(
       `${this.name}.processCancelRequest is not running because it's not defined in the subclass`,
       `returning 200 by default`
     )
 
-    this.app.log.silly(prehook)
+    this.app.log.silly(hook)
     this.app.log.silly(command.toJSON())
 
     return Promise.resolve([{status: 200}])
@@ -328,9 +328,9 @@ export class Saga extends Generic  {
 
     let breakException
 
-    return this.mapSeries(Array.from(saga), ([k, prehook]) => {
+    return this.mapSeries(Array.from(saga), ([k, hook]) => {
       if (!breakException) {
-        return this.processRequest(command, prehook, validators, options)
+        return this.processRequest(command, hook, validators, options)
           .then(([_command, _options]) => {
             // Record the result of each step ran
             ran.set(k, _command)
@@ -356,8 +356,8 @@ export class Saga extends Generic  {
       })
       // Send the cancel request to all that ran
       .catch(err => {
-        return this.mapSeries(Array.from(ran), ([k, prehook]) => {
-          return this.processCancelRequest(command, prehook, validators, options)
+        return this.mapSeries(Array.from(ran), ([k, hook]) => {
+          return this.processCancelRequest(command, hook, validators, options)
             .then(([_command, _options]) => {
               // Record the result of each step ran
               cancelled.set(k, _command)

@@ -66,13 +66,19 @@ describe('Entry', () => {
       metadata: {}
     })
 
+    testCommand1.hooks = [{ prehook_url: 'example.com' }]
+
     console.log('BRK command before',
       'data', testCommand1.data,
       'updates', testCommand1.data_updates,
       'previous', testCommand1.data_previous,
       'applied', testCommand1.data_applied,
-      'changed', testCommand1.data_changed
+      'changed', testCommand1.data_changed,
+      'hooks', testCommand1.hooks
     )
+
+    assert.deepEqual(testCommand1.hooks, [{ prehook_url: 'example.com' }])
+    assert.deepEqual(testCommand1.metadata.hooks, testCommand1.hooks)
 
     assert.equal(testCommand1.data.string, 'test')
     assert.equal(testCommand1.data.string, testCommand1.data_updates.string)
