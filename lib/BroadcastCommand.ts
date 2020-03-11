@@ -654,23 +654,26 @@ export class BroadcastCommand extends FabrixGeneric {
     // Set the data_applied value
     set(this.data_applied, path, value)
 
-    // Apply the value tot he model
-    if (this._list) {
-      this.data.forEach((k, i) => {
-        // TODO, temporary fix to handle first level children for now
-        const split = path.split(`${i}.`).slice(1).join('')
-        // Ugly sequelize hack
-        this.data[i][split] = value
-        this.data[i].setDataValue(split, value)
-        this.data[i].set(split, value)
-      })
-    }
-    else {
-      // Ugly sequelize hack
-      this.data[path] = value
-      this.data.setDataValue(path, value)
-      this.data.set(path, value)
-    }
+    // Set the data
+    set(this.data, path, value)
+    //
+    // // Apply the value tot he model
+    // if (this._list) {
+    //   this.data.forEach((k, i) => {
+    //     // TODO, temporary fix to handle first level children for now
+    //     const split = path.split(`${i}.`).slice(1).join('')
+    //     // Ugly sequelize hack
+    //     this.data[i][split] = value
+    //     // this.data[i].setDataValue(split, value)
+    //     // this.data[i].set(split, value)
+    //   })
+    // }
+    // else {
+    //   // Ugly sequelize hack
+    //   this.data[path] = value
+    //   // this.data.setDataValue(path, value)
+    //   // this.data.set(path, value)
+    // }
   }
   //
   // private _combine (_data, _updates) {
