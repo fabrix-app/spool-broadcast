@@ -3,6 +3,7 @@
 const assert = require('assert')
 const uuid = require('uuid/v4')
 const Validator = require('../../../dist/validator').Validator
+const joi = require('@hapi/joi')
 
 describe('Entry', () => {
   let test_uuid, testCommand1, testCommand2, testCommand3, testCommand4

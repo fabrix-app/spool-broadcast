@@ -748,11 +748,11 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
     }
     // 2) Check type
     if (isArray(command.data) && !isArray(this.data)) {
-      throw new Error('expected command data to be an object to match data')
+      throw new Error('unhandled expected command data to be an object to match data')
     }
     // 3) Check type
     if (!isArray(command.data) && isArray(this.data)) {
-      throw new Error('expected command data to be an array to match data')
+      throw new Error('unhandled expected command data to be an array to match data')
     }
     // 4) Merge Arrays TODO
     if (isArray(this.data) && isArray(command.data)) {
@@ -769,9 +769,14 @@ BroadcastCommand.prototype.mergeData = function(method, handler, command) {
       )
 
       Object.keys(cleanData).forEach(k => {
-        this.data[k] = command.data[k] !== 'undefined'
+
+        this.apply(k, command.data[k] !== 'undefined'
           ? command.data[k]
-          : this.data[k]
+          : this.data[k])
+
+        // this.data[k] = command.data[k] !== 'undefined'
+        //   ? command.data[k]
+        //   : this.data[k]
       })
     }
 

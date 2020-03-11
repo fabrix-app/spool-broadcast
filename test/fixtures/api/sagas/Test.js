@@ -2,6 +2,8 @@ const joi = require('@hapi/joi')
 const Saga = require('../../../../dist').Saga
 const Validator = require('../../../../dist').Validator
 
+const sagaHook = require('../../utils/sagaHook')
+
 const validate = {
   'create.test': (data) => Validator.joiPromise(data, joi.object()),
   'test.eventual': (data) => Validator.joiPromise(data, joi.object()),
@@ -19,6 +21,7 @@ const validate = {
 module.exports = class Test extends Saga {
 
   beforeHooksTest(command, validator, options) {
+    // command.hooks = [sagaHook]
     return this.before(command, validator, options)
   }
 
