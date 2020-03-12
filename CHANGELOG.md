@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.77](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.76...v1.6.77) (2020-03-12)
+
+
+### Bug Fixes
+
+* fixes updated_at ([5eb8ecb](https://github.com/fabrix-app/spool-broadcast/commit/5eb8ecb))
+* validates commands ([9e25c85](https://github.com/fabrix-app/spool-broadcast/commit/9e25c85))
+
+
+### Features
+
+* fixes previous versus change ([7912ba6](https://github.com/fabrix-app/spool-broadcast/commit/7912ba6))
+* improves commands and testing ([8687e1a](https://github.com/fabrix-app/spool-broadcast/commit/8687e1a))
+* make command easier to reconcile ([4ac4dbd](https://github.com/fabrix-app/spool-broadcast/commit/4ac4dbd))
+* makes saga hooks apply changes ([4d3b9ef](https://github.com/fabrix-app/spool-broadcast/commit/4d3b9ef))
+* makes the command not call toJSON ([d93a216](https://github.com/fabrix-app/spool-broadcast/commit/d93a216))
+* records changes to data, fixes apply ([30f8d17](https://github.com/fabrix-app/spool-broadcast/commit/30f8d17))
+* removes no longer needed warning ([8c4bdde](https://github.com/fabrix-app/spool-broadcast/commit/8c4bdde)), closes [#8](https://github.com/fabrix-app/spool-broadcast/issues/8)
+* removes ugly sequelize hack ([ab4949e](https://github.com/fabrix-app/spool-broadcast/commit/ab4949e))
+* updates "prehooks" to "hooks" to better describe them as saga hooks ([e772447](https://github.com/fabrix-app/spool-broadcast/commit/e772447))
+
 ### [1.6.76](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.75...v1.6.76) (2020-03-05)
 
 
