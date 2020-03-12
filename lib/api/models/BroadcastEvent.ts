@@ -465,7 +465,7 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: true,
         binaryType: 'json'
       },
-      // The prehooks that were used
+      // The hooks that were used
       chain_saga: {
         type: Sequelize.JSONB,
         defaultValue: [],

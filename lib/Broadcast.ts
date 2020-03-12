@@ -223,7 +223,6 @@ export class Broadcast extends FabrixGeneric {
 
     // Create the data for the Event Model
     const data = {
-      event_type, // || command.event_type,
       // This is the command uuid that started this event chain
       correlation_uuid,
       // This is the REGEX pattern that the command used
@@ -241,7 +240,9 @@ export class Broadcast extends FabrixGeneric {
       // report list of functions that ran before this event's saga (combined)
       chain_events: chain_events || command.chain_events,
       // All the information from the command
-      ...command,
+      ...command.toEVENT(),
+      // The event_type that can override the command event_type
+      event_type, // || command.event_type,
       // the event_type REGEX pattern
       pattern: pattern,
       // the event_type string pattern
@@ -908,16 +909,28 @@ export class Broadcast extends FabrixGeneric {
       )
     }
 
-    // Send to the projectors
+    // Send to the projectors/processors
     return this.project(event, options)
       .then(([_event, _options]) => {
-        return event.save(options)
-          .then(() => {
-            return [event, options]
-          })
+        // Unless there is a specific option of save false set, then save the event
+        if (options.save !== false) {
+          return event.save(options)
+            .then(() => {
+              return [event, options]
+            })
+        }
+        // If this is an unsaved event but there is a transaction, then commit it
+        else if (options.transaction) {
+          // return options.transaction.commit()
+          //   .then((t) => {
+              return [event, options]
+            // })
+        }
+        // Otherwise, just relay the event
+        else {
+          return [event, options]
+        }
       })
-      // Send to the Channels // TODO, this should probably not be called directly after save, but after the validation?
-      .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
         this.app.log.error(`Unhandled failure while running ${event.event_type}`, err)
         // TODO reverse SAGA
@@ -928,7 +941,7 @@ export class Broadcast extends FabrixGeneric {
     //     // Send to the projectors
     //     return this.project(event, options)
     //       .catch(err => {
-    //         this.app.log.error(`Unhandeld failure while projecting ${event.event_type}`, err)
+    //         this.app.log.error(`Unhandled failure while projecting ${event.event_type}`, err)
     //         // TODO reverse SAGA SBW
     //         return [event, options]
     //       })
@@ -936,13 +949,19 @@ export class Broadcast extends FabrixGeneric {
       .then(([_e, _o]) => {
         // The processors/projectors should have returned the event
         if (!(_e instanceof this.app.models.BroadcastEvent.instance)) {
-          throw new Error(`${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`
+          )
         }
         if (_e.event_uuid !== event.event_uuid) {
-          throw new Error(`${event.event_type} Projection returned a different event uuid than origin - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned a different event uuid than origin - fatal`
+          )
         }
         if (_e.event_type !== event.event_type) {
-          throw new Error(`${event.event_type} Projection returned a different event type than origin - fatal`)
+          throw new this.app.errors.GenericError(
+            `${event.event_type} Projection returned a different event type than origin - fatal`
+          )
         }
         // if (_e.changed()) {
         //   console.log('BRK changes!', _e.changed())
@@ -954,12 +973,14 @@ export class Broadcast extends FabrixGeneric {
         // return the event tuple
         return [event, options]
       })
+      // Send to the Channels // TODO, this should probably not be called directly after save, but after the validation?
+      .then(([_event, _options]) => this.notify(_event, _options))
       .catch(err => {
         this.app.log.error(err)
         // return Promise.reject(err)
         return Promise.reject(new this.app.errors.GenericError(
           'E_UNPROCESSABLE_ENTITY',
-          `BroadcastEvent: ${event.event_type} was unable to save - fatal`
+          `BroadcastEvent: ${event.event_type} failed during broadcast - fatal`
         ))
       })
   }
@@ -1331,7 +1352,7 @@ export class Broadcast extends FabrixGeneric {
             )
           }
 
-          // See if the
+          // See if the event replied with a retry action
           if (_event.action && _event.action === 'retry') {
             this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
             projectend = process.hrtime(projectstart)
@@ -1352,7 +1373,6 @@ export class Broadcast extends FabrixGeneric {
         }
         // If a list of events were returned
         else {
-          console.log('BRK MANY', _event, _options)
           _event.forEach(_e => {
             if (!_e) {
               throw new this.app.errors.GenericError(
@@ -1372,7 +1392,10 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug.error(`${this.name} ${p.name} unhandled retry action for ${m} in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${isArray(_event)
+                ? _event.map(e => e.event_type)
+                : _event.event_type
+              } ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
 
             return [event, options]
@@ -1386,7 +1409,10 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug(`${m} to continue without data in list of ${_event.length} events`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${isArray(_event)
+                ? _event.map(e => e.event_type)
+                : _event.event_type
+              } ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
             return [event, options]
           }
@@ -1516,14 +1542,14 @@ export class Broadcast extends FabrixGeneric {
     })
 
     return this.app.broadcastSeries(patterns, (manager) => {
-      if (manager.type === 'processor') {
-        this.app.log.warn(
-          `${event.event_type} is publishing an "eventual" processor!`,
-          `Unless this processor has a projector listenting to the same event, and a later priority it will lock the que!`,
-          `see https://github.com/fabrix-app/spool-broadcast/issues/8 to track this issue`,
-          manager
-        )
-      }
+      // if (manager.type === 'processor') {
+      //   this.app.log.warn(
+      //     `${event.event_type} is publishing an "eventual" processor!`,
+      //     `Unless this processor has a projector listenting to the same event, and a later priority it will lock the que!`,
+      //     `see https://github.com/fabrix-app/spool-broadcast/issues/8 to track this issue`,
+      //     manager
+      //   )
+      // }
 
       // Publish the eventual events
       return this.app.broadcaster.publish({

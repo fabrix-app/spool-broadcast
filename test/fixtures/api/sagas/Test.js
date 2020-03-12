@@ -2,6 +2,8 @@ const joi = require('@hapi/joi')
 const Saga = require('../../../../dist').Saga
 const Validator = require('../../../../dist').Validator
 
+const sagaHook = require('../../utils/sagaHook')
+
 const validate = {
   'create.test': (data) => Validator.joiPromise(data, joi.object()),
   'test.eventual': (data) => Validator.joiPromise(data, joi.object()),
@@ -11,10 +13,17 @@ const validate = {
   'create.:test_uuid.test': (data) => Validator.joiPromise(data, joi.object()),
   'create.test.:test_uuid.test.:test_uuid': (data) => Validator.joiPromise(data, joi.object()),
   'update.test': (data) => Validator.joiPromise(data, joi.object()),
-  'destroy.test': (data) => Validator.joiPromise(data, joi.object())
+  'destroy.test': (data) => Validator.joiPromise(data, joi.object()),
+  'no.transaction.test': (data) => Validator.joiPromise(data, joi.object()),
+  'no.save.test': (data) => Validator.joiPromise(data, joi.object()),
 }
 
 module.exports = class Test extends Saga {
+
+  beforeHooksTest(command, validator, options) {
+    // command.hooks = [sagaHook]
+    return this.before(command, validator, options)
+  }
 
   create(req, body, options) {
     const TestBroadcast = this.app.broadcasts.Test
@@ -39,6 +48,68 @@ module.exports = class Test extends Saga {
       .then(([_command, _options]) => {
         const event = TestBroadcast.buildEvent({
           event_type: 'test.created',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
+  createNoTransaction(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'no.transaction.test',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'test.no.transaction',
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+
+        return TestBroadcast.broadcast(event, _options)
+      })
+  }
+
+  createNoSave(req, body, options) {
+    const TestBroadcast = this.app.broadcasts.Test
+
+    // Build a permission instance
+    body = this.app.models.Test.stage(body, {
+      isNewRecord: true,
+      configure: ['generateUUID']
+    })
+
+    const command = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'no.save.test',
+      object: this.app.models.Test,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    return this.before(command, validate, options)
+      .then(([_command, _options]) => {
+        const event = TestBroadcast.buildEvent({
+          event_type: 'test.no.save',
           correlation_uuid: _command.command_uuid,
           command: _command
         })
@@ -308,8 +379,9 @@ module.exports = class Test extends Saga {
   destroy(req, body, options) {
     const TestBroadcast = this.app.broadcasts.Test
 
+    console.log('BRK TIME TO DESTROY', body)
     // Build a permission instance
-    body = this.app.models.Test.stage(body, {isNewRecord: true})
+    body = this.app.models.Test.stage(body, { isNewRecord: false })
 
     const command = TestBroadcast.createCommand({
       req: req,

@@ -8,7 +8,9 @@ class Update extends Process {
 
     return this.app.entries.Test.update({
       ...this.metadata
-    }, test, { parent: this.options })
+    }, test, {
+      parent: this.options
+    })
   }
 }
 
@@ -18,7 +20,9 @@ class BulkUpdate extends Process {
 
     return this.app.entries.Test.bulkUpdate({
       ...this.metadata
-    }, test, { parent: this.options })
+    }, test, {
+      parent: this.options
+    })
   }
 }
 
@@ -28,7 +32,9 @@ class Destroy extends Process {
 
     return this.app.entries.Test.destroy({
       ...this.metadata
-    }, test, { parent: this.options })
+    }, test, {
+      parent: this.options
+    })
   }
 }
 
@@ -40,7 +46,9 @@ class Eventual extends Process {
 
     return this.app.entries.Test.createEventualProcessor({
       ...this.metadata
-    }, test, {parent: this.options})
+    }, test, {
+      parent: this.options
+    })
   }
 }
 
