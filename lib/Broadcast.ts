@@ -1542,14 +1542,14 @@ export class Broadcast extends FabrixGeneric {
     })
 
     return this.app.broadcastSeries(patterns, (manager) => {
-      if (manager.type === 'processor') {
-        this.app.log.warn(
-          `${event.event_type} is publishing an "eventual" processor!`,
-          `Unless this processor has a projector listenting to the same event, and a later priority it will lock the que!`,
-          `see https://github.com/fabrix-app/spool-broadcast/issues/8 to track this issue`,
-          manager
-        )
-      }
+      // if (manager.type === 'processor') {
+      //   this.app.log.warn(
+      //     `${event.event_type} is publishing an "eventual" processor!`,
+      //     `Unless this processor has a projector listenting to the same event, and a later priority it will lock the que!`,
+      //     `see https://github.com/fabrix-app/spool-broadcast/issues/8 to track this issue`,
+      //     manager
+      //   )
+      // }
 
       // Publish the eventual events
       return this.app.broadcaster.publish({
