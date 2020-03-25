@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.78](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.77...v1.6.78) (2020-03-25)
+
+
+### Features
+
+* adds better change detection in command ([c3d1a08](https://github.com/fabrix-app/spool-broadcast/commit/c3d1a08))
+
 ### [1.6.77](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.76...v1.6.77) (2020-03-12)
 
 
