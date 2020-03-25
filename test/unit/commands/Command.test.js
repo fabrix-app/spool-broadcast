@@ -92,6 +92,9 @@ describe('Entry', () => {
     assert.ok(testCommand1.data.child)
     assert.ok(testCommand1.data.children)
 
+    // console.log('BRK UNAPPLIED', testCommand1.unapplied())
+    // console.log('BRK UPDATED', testCommand1.updated())
+
 
     testCommand1.reload({})
       .then(() => {
@@ -127,6 +130,9 @@ describe('Entry', () => {
         assert.equal(testCommand1.data.string, testCommand1.data_applied.string)
         assert.equal(testCommand1.data_changed.string, null)
         assert.equal(testCommand1.data_previous.string, null)
+
+        // console.log('BRK UNAPPLIED', testCommand1.unapplied())
+        // console.log('BRK UPDATED', testCommand1.updated())
 
         testCommand1.apply('number', 1)
         assert.equal(testCommand1.data.number, 1)

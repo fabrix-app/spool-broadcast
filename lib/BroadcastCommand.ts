@@ -1,6 +1,6 @@
 import { FabrixApp } from '@fabrix/fabrix'
 import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
-import { set, get, isArray, isString, isObject } from 'lodash'
+import { set, get, isArray, isString, isObject, isEqual, differenceWith, xor } from 'lodash'
 import { regexdot } from '@fabrix/regexdot'
 import uuid from 'uuid/v4'
 
@@ -40,6 +40,17 @@ const replaceParams = function(type = '', keys: boolean | string[] = [], object:
   }
 
   return type
+}
+
+const raw = function(val) {
+  if (typeof val !== 'undefined' && val instanceof FabrixModel) {
+    // If this is a Model instance, then call it's JSON function to make it a plain object
+    val = JSON.parse(JSON.stringify(val))
+  }
+  else if (isObject(val)) {
+    val = JSON.parse(JSON.stringify(val))
+  }
+  return val
 }
 
 export class BroadcastCommand extends FabrixGeneric {
@@ -502,9 +513,12 @@ export class BroadcastCommand extends FabrixGeneric {
    */
   apply(path, value) {
     const current = get(this.data_previous, path, null)
+    // Create some raw comparison attributes
+    const rawCurrent = raw(current)
+    const rawValue = raw(value)
 
     // Set the value in change if changed
-    if (current !== value) {
+    if (!isEqual(rawCurrent, rawValue)) {
       this.change(path, current)
     }
 
@@ -516,6 +530,49 @@ export class BroadcastCommand extends FabrixGeneric {
 
     // Set the data
     set(this.data, path, value)
+  }
+
+  unapplied() {
+    let unapplied
+
+    if (this._list) {
+      unapplied = []
+      this.data.forEach((d, i) => {
+        const current = this.data[i].attributes
+        const applied = Object.keys(this.data_applied[i])
+        unapplied.push(xor(applied, current))
+      })
+    }
+    else {
+      //
+      const current = this.data.attributes
+      const applied = Object.keys(this.data_applied)
+      unapplied = xor(applied, current)
+    }
+
+    return unapplied
+  }
+
+  updated() {
+    let unapplied
+
+    if (this._list) {
+      unapplied = []
+      this.data.forEach((d, i) => {
+        const current = this.data[i].attributes
+        const applied = Object.keys(this.data_changed[i])
+        // unapplied.push(xor(applied, current))
+        unapplied.push(applied)
+      })
+    }
+    else {
+      //
+      const current = this.data.attributes
+      const applied = Object.keys(this.data_changed)
+      unapplied = applied // xor(applied, current)
+    }
+
+    return unapplied
   }
   /**
    * Add a created_at value to the data
@@ -584,7 +641,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (this._list) {
       this.data.forEach((d, i) => {
-        if (d.isNewRecord) {
+        if (d.isNewRecord || d._options.isNewRecord) {
           changes[i] = [...(changes[i] || []), ...d.attributes]
         }
         else if (this.data_changed && this.data_changed[i]) {
@@ -593,7 +650,7 @@ export class BroadcastCommand extends FabrixGeneric {
       })
     }
     else if (!this._list) {
-      if (this.data.isNewRecord) {
+      if (this.data.isNewRecord || this.data._options.isNewRecord) {
         changes = [...changes, ...this.data.attributes]
       }
       else if (Object.keys(this.data_changed || {}).length > 0) {
