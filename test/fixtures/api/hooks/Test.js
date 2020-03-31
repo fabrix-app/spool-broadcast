@@ -10,9 +10,6 @@ class Create extends Hook {
         this.command.createdAt()
         this.command.updatedAt()
 
-        // Log the changes to the command metadata
-        this.command.changes()
-
         return [this.command, this.options]
       })
   }
@@ -25,6 +22,7 @@ class Update extends Hook {
   async run() {
 
     const approvedUpdates = ['name']
+
     return this.command.reload(this.options)
       .then(() => {
 
@@ -32,12 +30,9 @@ class Update extends Hook {
 
         this.command.apply('test', 'testing 1234')
 
-        // Log the creation time
-        this.command.createdAt()
+        // Log the updated time
+        // this.command.createdAt()
         this.command.updatedAt()
-
-        // Log the changes to the command metadata
-        this.command.changes()
 
         console.log('brk test changes', this.command.data_applied, this.command.data_updates, this.command.data_previous)
         return [this.command, this.options]

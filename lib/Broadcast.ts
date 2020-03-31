@@ -257,6 +257,49 @@ export class Broadcast extends FabrixGeneric {
   }
 
   /**
+   * Build Event Projection from Broadcast Event information
+   * @param event_type
+   */
+  // TODO handle version
+  buildProjection({
+    event,
+    object,
+    data,
+    metadata,
+    options
+  }: {
+    event: BroadcastEvent,
+    object: any,
+    data: any,
+    metadata: any,
+    options: {[key: string]: any}
+  }) {
+    if (!event.event_type) {
+      throw new Error('Broadcast.buildProjection missing event_type')
+    }
+    if (!(event instanceof this.app.models.BroadcastEvent.instance)) {
+      throw new Error('Broadcast.buildProjection called with a non Event object')
+    }
+
+    // Make a JOSN version of the event
+    const __event = event.toJSON()
+
+    // Create the data for the Event Model
+    const _event = {
+      ...__event,
+      object: object || event.object, // We can use the original event's object here
+      data: data || __event.data,
+      metadata: metadata || __event.metadata,
+      is_projection: true
+    }
+
+    // Stage the Event as a new BroadcastEvent ready to be run
+    return this.app.models.BroadcastEvent.stage(_event, {
+      isNewRecord: event._options.isNewRecord || options.isNewRecord
+    })
+  }
+
+  /**
    * Utility to replace pattern variables with data values
    * @param type
    * @param keys

@@ -472,6 +472,10 @@ export class BroadcastCommand extends FabrixGeneric {
     return [previous, applied]
   }
 
+  /**
+   * Approve a list of values
+   * @param approved
+   */
   approveUpdates(approved = []) {
 
     if (this._list) {
@@ -494,14 +498,38 @@ export class BroadcastCommand extends FabrixGeneric {
     return this.data
   }
 
+  /**
+   * Approve a single value
+   * @param approved
+   */
+  approveUpdate(approved) {
+    return this.approveUpdates([approved])
+  }
+
+  /**
+   * Set Previous data value at path
+   * @param path
+   * @param value
+   */
   previous(path, value) {
     // Set the previous value for the field as the current value
     return set(this.data_previous, path, value, null)
   }
+  /**
+   * Set Updates data value at path
+   * @param path
+   * @param value
+   */
   update(path, value) {
     // Set the updates value for the field
     return set(this.data_updates, path, value)
   }
+
+  /**
+   * Set Change data value at path
+   * @param path
+   * @param value
+   */
   change(path, value) {
     // Set the changed value
     return set(this.data_changed, path, value, null)

@@ -238,7 +238,7 @@ but got ${event.getDataValue('object')} for ${event.event_type}`
       const device = { device_uuid: this.event.metadata.req_device_uuid || null }
       const application = { application_uuid: this.event.metadata.req_application_uuid || null }
       const causation_uuid = this.event.event_uuid || null
-      const ip = { ip: this.event.metadata.req_ip || null }
+      const ip = {ip: this.event.metadata.req_ip || null }
 
       return {
         channel,

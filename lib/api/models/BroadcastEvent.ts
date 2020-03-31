@@ -513,7 +513,15 @@ export class BroadcastEvent extends BroadcastModel {
         defaultValue: Sequelize.NOW,
         binaryOptional: false,
         binaryType: 'date'
-      }
+      },
+
+      // If the data in this event is a projection
+      is_projection: {
+        type: Sequelize.VIRTUAL(Sequelize.BOOLEAN),
+        defaultValue: false,
+        binaryOptional: true,
+        binaryType: 'boolean'
+      },
     }
   }
 
@@ -529,8 +537,10 @@ export class BroadcastEvent extends BroadcastModel {
 // BroadcastEvent.prototype = BroadcastModel.prototype
 
 export interface BroadcastEvent extends BroadcastModel {
-  toJSON(): any
-  generateUUID(config?, options?): any
+  toJSON(): {[key: string]: any}
+  generateUUID(config?, options?): BroadcastEvent
+
+  changes(key?): boolean | string[]
 
   handleData(method, manager, event): any
   handleMetadata(method, manager, event): any
@@ -550,6 +560,19 @@ export interface BroadcastEvent extends BroadcastModel {
 BroadcastEvent.prototype.handleData = function(method, manager, event) {
   helpers.handle(this.data, event.data, manager.data)
   return this
+}
+
+/**
+ * If the the metadata includes a change or all the change
+ * @param key
+ */
+BroadcastEvent.prototype.changes = function(key?) {
+  if (key) {
+    return this.metadata.changes.includes(key)
+  }
+  else {
+    return this.metadata.changes
+  }
 }
 
 BroadcastEvent.prototype.handleMetadata = function(method, manager, event) {
