@@ -95,6 +95,9 @@ module.exports = class Test extends Processor {
   eventual({event, options, consistency, message, manager}) {
     return new Eventual(this.app, event, options, consistency, message, manager)
   }
+  // eventual(args) {
+  //   return this.newProcessor(Eventual, args)
+  // }
 
   update({event, options, consistency, message, manager}) {
     return new Update(this.app, event, options, consistency, message, manager)

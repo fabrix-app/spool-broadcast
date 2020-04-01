@@ -24,7 +24,8 @@ export class BroadcastProject extends FabrixGeneric {
     public options: {[key: string]: any},
     consistency?: string,
     message?: string,
-    public manager?: any
+    public manager?: any,
+    public broadcaster?: Broadcast
   ) {
     super(app)
 
@@ -34,6 +35,7 @@ export class BroadcastProject extends FabrixGeneric {
 
     this.message = message
     this.manager = manager
+    this.broadcaster = broadcaster
 
     this.id = this.event.event_uuid
     this.isAcknowledged = false
@@ -240,7 +242,7 @@ export class BroadcastProjector extends BroadcastEntity {
     super(app, 'projectors')
   }
 
-  newProjector(func, ...vals): BroadcastProject {
+  newProjector(func, vals): BroadcastProject {
     return new func(this.app, ...vals)
   }
 

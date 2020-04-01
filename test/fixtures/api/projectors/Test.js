@@ -4,7 +4,17 @@ const Project = require('../../../../dist').BroadcastProject
 
 class Wild extends Project {
   async run() {
-    console.log('BRK WILDCARD!', this.event)
+
+
+    const project = this.broadcaster.buildProjection({
+      event: this.event,
+      object: this.app.models.Test,
+      data: this.event.data,
+      options: this.options
+    })
+
+    console.log('BRK WILDCARD!', this.event, project)
+
     return Promise.resolve([{action: false}, this.options])
   }
 }
@@ -30,8 +40,15 @@ class Logger extends Project {
     // return userRole.destroy(this.options)
     return test.save(this.options)
       .then(_e => {
-        console.log('BRK LOGGED Result!', _e)
-        return [this.event, this.options]
+        const project = this.broadcaster.buildProjection({
+          event: this.event,
+          object: this.app.models.TestLogger,
+          data: _e.toJSON(),
+          options: this.options
+        })
+        console.log('BRK LOGGED Result!', _e, project)
+        return [project, this.options]
+        // return [this.event, this.options]
       })
   }
 }
@@ -74,11 +91,14 @@ class Puff extends Project {
 }
 
 module.exports = class Test extends Projector {
-  wild({event, options, consistency, message, manager}) {
-    return new Wild(this.app, event, options, consistency, message, manager)
+  wild({event, options, consistency, message, manager, broadcaster}) {
+    return new Wild(this.app, event, options, consistency, message, manager, broadcaster)
   }
-  logger({event, options, consistency, message, manager}) {
-    return new Logger(this.app, event, options, consistency, message, manager)
+  // wild(args) {
+  //   return this.newProjector(Wild, ...args) // new Wild(this.app, event, options, consistency, message, manager)
+  // }
+  logger({event, options, consistency, message, manager, broadcaster}) {
+    return new Logger(this.app, event, options, consistency, message, manager, broadcaster)
   }
   failLogger({event, options, consistency, message, manager}) {
     return new FailLogger(this.app, event, options, consistency, message, manager)

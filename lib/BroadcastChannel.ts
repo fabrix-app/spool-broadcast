@@ -21,6 +21,7 @@ export class BroadcastSubscriber {
   public event: BroadcastEvent
   public options: {[key: string]: any}
   public broker: {[key: string]: any}
+  public broadcaster: Broadcast
   public isAcknowledged
 
   constructor(
@@ -28,7 +29,8 @@ export class BroadcastSubscriber {
     channel: BroadcastChannel,
     event: BroadcastEvent,
     options,
-    broker
+    broker,
+    broadcaster?
   ) {
 
     this.app = app
@@ -36,6 +38,7 @@ export class BroadcastSubscriber {
     this.event = event
     this.options = options
     this.broker = broker
+    this.broadcaster = broadcaster
 
     this.isAcknowledged = false
   }

@@ -269,10 +269,10 @@ export class Broadcast extends FabrixGeneric {
     options
   }: {
     event: BroadcastEvent,
-    object: any,
-    data: any,
-    metadata: any,
-    options: {[key: string]: any}
+    object?: any,
+    data?: any,
+    metadata?: any,
+    options?: {[key: string]: any}
   }) {
     if (!event.event_type) {
       throw new Error('Broadcast.buildProjection missing event_type')
@@ -286,13 +286,37 @@ export class Broadcast extends FabrixGeneric {
 
     // Create the data for the Event Model
     const _event = {
-      ...__event,
-      object: object || event.object, // We can use the original event's object here
+      // ...__event,
+      // This is the command uuid that started this event chain
+      correlation_uuid: __event.correlation_uuid,
+      // This is the REGEX pattern that the command used
+      correlation_pattern: __event.correlation_pattern,
+      // This is the string pattern that the command used
+      correlation_pattern_raw: __event.correlation_pattern_raw,
+      // The causation_uuid my have been part of a another new event (processor dispatched)
+      causation_uuid: __event.causation_uuid,
+      // report list of functions that ran before this event's saga (combined)
+      chain_before: __event.chain_before,
+      // report list of functions that ran during this event's saga (combined)
+      chain_saga: __event.chain_saga,
+      // report list of functions that ran after this event's saga (combined)
+      chain_after: __event.chain_after,
+      // report list of functions that ran before this event's saga (combined)
+      chain_events: __event.chain_events,
+      // The event_type that can override the command event_type
+      event_type: __event.event_type, // || command.event_type,
+      // the event_type REGEX pattern
+      pattern: __event.pattern,
+      // the event_type string pattern
+      pattern_raw: __event.pattern_raw,
+
+      object: object || __event.object, // We can use the original event's object here
       data: data || __event.data,
       metadata: metadata || __event.metadata,
       is_projection: true
     }
 
+    // return _event
     // Stage the Event as a new BroadcastEvent ready to be run
     return this.app.models.BroadcastEvent.stage(_event, {
       isNewRecord: event._options.isNewRecord || options.isNewRecord
@@ -513,7 +537,8 @@ export class Broadcast extends FabrixGeneric {
         command,
         options,
         lifecycle: 'before',
-        handler: handler
+        handler: handler,
+        broadcaster: this
       })
         .run()
         .then(([_command, _options]) => {
@@ -666,7 +691,8 @@ export class Broadcast extends FabrixGeneric {
         command,
         options,
         lifecycle: 'after',
-        handler: handler
+        handler: handler,
+        broadcaster: this
       })
         .run()
         .then(([_command, _options]) => {
@@ -905,7 +931,8 @@ export class Broadcast extends FabrixGeneric {
         event,
         options,
         lifespan: broker.lifespan,
-        broker: broker
+        broker: broker,
+        broadcaster: this
       })
         .run()
         .then((_p) => {
@@ -1377,7 +1404,8 @@ export class Broadcast extends FabrixGeneric {
       options,
       consistency: manager.consistency || 'strong',
       message: null,
-      manager: manager
+      manager: manager,
+      broadcaster: this
     })
       .run()
       .catch(err => {
@@ -1783,13 +1811,13 @@ export class Broadcast extends FabrixGeneric {
       .then(() => {
 
           try {
-
             p = project({
               event,
               options,
               consistency: 'eventual',
               message: message,
-              manager: manager
+              manager: manager,
+              broadcaster: this
             })
 
             this.app.log.debug(event.event_type, 'broadcasted from', this.name, '->', project.name, '->', p.name)

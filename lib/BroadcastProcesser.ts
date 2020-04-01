@@ -6,6 +6,7 @@ import { BroadcastEvent } from './api/models'
 import { Entry } from './Entry'
 import { BroadcastAction, BroadcastOptions } from './Interface'
 import { BroadcastEntity } from './BroadcastEntity'
+import { Broadcast } from './Broadcast'
 
 
 export class BroadcastProcess extends FabrixGeneric {
@@ -23,7 +24,8 @@ export class BroadcastProcess extends FabrixGeneric {
     public options: BroadcastOptions,
     consistency?: string,
     message?: string,
-    public manager?
+    public manager?,
+    public broadcaster?: Broadcast
   ) {
     super(app)
 
@@ -33,6 +35,7 @@ export class BroadcastProcess extends FabrixGeneric {
 
     this.message = message
     this.manager = manager
+    this.broadcaster = broadcaster
 
     this.id = this.event.event_uuid
     this.isAcknowledged = false
@@ -266,7 +269,7 @@ export class BroadcastProcessor extends BroadcastEntity {
     super(app, 'processors')
   }
 
-  newProcessor(func, ...vals): BroadcastProcess {
+  newProcessor(func, vals): BroadcastProcess {
     return new func(this.app, ...vals)
   }
 

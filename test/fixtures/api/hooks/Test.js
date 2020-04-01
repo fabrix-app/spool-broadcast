@@ -7,7 +7,7 @@ class Create extends Hook {
 
     assert.equal(this.command.data.isStaged, true)
     // assert.equal(this.command.data.isNewRecord, true)
-    assert.equal(this.command.data.isReloaded, false)
+    // assert.equal(this.command.data.isReloaded, false)
 
     return this.command.reload(this.options)
       .then(() => {

@@ -140,7 +140,7 @@ export class BroadcastEvent extends BroadcastModel {
       correlation_pattern: {
         type: Sequelize.VIRTUAL(Sequelize.STRING, ['correlation_pattern_raw']),
         get: function() {
-          const { pattern } = regexdot(this.correlation_pattern_raw)
+          const { pattern } = regexdot(this.correlation_pattern_raw || '')
           return pattern
         },
         binaryOptional: true,
@@ -164,7 +164,7 @@ export class BroadcastEvent extends BroadcastModel {
       pattern: {
         type: Sequelize.VIRTUAL(Sequelize.STRING, ['pattern_raw']),
         get: function() {
-          const { pattern } = regexdot(this.pattern_raw)
+          const { pattern } = regexdot(this.pattern_raw || '')
           return pattern
         },
         binaryOptional: true,
