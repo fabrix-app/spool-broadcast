@@ -177,8 +177,10 @@ export class BroadcastCommand extends FabrixGeneric {
       }
     }
     else {
-      // console.log('BRK COMMAND DATA OPTS', data._options)
-      if (!data._options && !data._options.isStaged) {
+      if (
+        !data._options
+        && !data._options.isStaged
+      ) {
         throw new Error(`Fatal: commands only accept staged data eg: ${object.constructor.name}.stage(data, { isNewRecord: false })`)
       }
     }
@@ -301,19 +303,20 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('Data does not have reload function')
     }
 
+    // If this is reloaded, return the data, and the data as previous (assumes that this was created in a projection?)
     if (
-      _data.isNewRecord
-      || _data._options.isNewRecord
-
-    ) {
-      return Promise.resolve([_data, null])
-    }
-    // TODO CULPRIT
-    else if (
       _data.isReloaded
-      || _data._options.isReloaded
+      // || _data._options.isReloaded
     ) {
       return Promise.resolve([_data, _data])
+    }
+    // If this is a new record, return the data, an empty previous
+    else if (
+      _data.isNewRecord
+      // || _data._options.isNewRecord
+    ) {
+      _data.isReloaded = true
+      return Promise.resolve([_data, null])
     }
     else {
       // Call sequelize's reload function
@@ -321,7 +324,7 @@ export class BroadcastCommand extends FabrixGeneric {
         .then((_previous) => {
           // TODO, deprecate one of these
           _data.isReloaded = true
-          _data._options.isReloaded = true
+          // _data._options.isReloaded = true
 
           return [_data, _previous]
         })
@@ -337,7 +340,7 @@ export class BroadcastCommand extends FabrixGeneric {
       return this.process(new Map(), this.data, (d, i) => {
         return this._reload(d, options)
           .then(([_current, previous]) => {
-            // If there is previous data after the reload, then set it in the previous list an unapplied
+            // If there is previous data after the reload, then set it in the previous list as un-applied
             if (previous) {
               previous.attributes
                 .forEach(k => {
@@ -361,7 +364,7 @@ export class BroadcastCommand extends FabrixGeneric {
     }
     else {
       return this._reload(this.data, options)
-        // If there is previous data after the reload, then set it in the previous list an unapplied
+        // If there is previous data after the reload, then set it in the previous list as un-applied
         .then(([_current, previous]) => {
           if (previous) {
             previous.attributes
@@ -382,6 +385,9 @@ export class BroadcastCommand extends FabrixGeneric {
     }
   }
 
+  /**
+   * Returns a tuple of the previous values, and the new values of a single data object
+   */
   private _approvedUpdates (_data, _updates, approved = []) {
     const applied = {}, previous = {}
 
@@ -389,7 +395,7 @@ export class BroadcastCommand extends FabrixGeneric {
       if (approved.indexOf(k) > -1) {
 
         // Record the applied changes
-        if (_data[k] !== _updates[k]) {
+        if (!isEqual(_data[k], _updates[k])) {
           applied[k] = _updates[k]
           previous[k] = _data[k]
         }
@@ -603,7 +609,10 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (this._list) {
       this.data.forEach((d, i) => {
-        if (d.isNewRecord || d._options.isNewRecord) {
+        if (
+          d.isNewRecord
+          // || d._options.isNewRecord
+        ) {
           changes[i] = [...(changes[i] || []), ...d.attributes]
         }
         else if (this.data_changed && this.data_changed[i]) {
@@ -612,7 +621,10 @@ export class BroadcastCommand extends FabrixGeneric {
       })
     }
     else if (!this._list) {
-      if (this.data.isNewRecord || this.data._options.isNewRecord) {
+      if (
+        this.data.isNewRecord
+        // || this.data._options.isNewRecord
+      ) {
         changes = [...changes, ...this.data.attributes]
       }
       else if (Object.keys(this.data_changed || {}).length > 0) {

@@ -13,6 +13,7 @@ class One extends Project {
       isNewRecord: true
     })
     // return userRole.destroy(this.options)
+    // return test.save({ fields: this.event.changes(), ...this.options})
     return test.save(this.options)
       .then(_e => {
         console.log('BRK LOGGED Result!', _e)
@@ -40,6 +41,7 @@ class Two extends Project {
       isNewRecord: true
     })
     // return userRole.destroy(this.options)
+    // return test.save({ fields: this.event.changes(), ...this.options})
     return test.save(this.options)
       .then(_e => {
         console.log('BRK LOGGED Result!', _e)
@@ -67,6 +69,7 @@ class Three extends Project {
       isNewRecord: true
     })
     // return userRole.destroy(this.options)
+    // return test.save({ fields: this.event.changes(), ...this.options})
     return test.save(this.options)
       .then(_e => {
         console.log('BRK LOGGED Result!', _e)

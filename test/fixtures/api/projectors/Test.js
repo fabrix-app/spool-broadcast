@@ -33,15 +33,6 @@ class Logger extends Project {
         console.log('BRK LOGGED Result!', _e)
         return [this.event, this.options]
       })
-      .catch(err => {
-        console.log('BRK LOGGED ERR!', err)
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{action: 'retry'}, this.options]
-        }
-      })
   }
 }
 
@@ -57,36 +48,21 @@ class FailLogger extends Project {
 class Created extends Project {
   async run() {
     const test = this.event.object.stage(this.event.data, { isNewRecord: true })
-    // return userRole.destroy(this.options)
-    return test.save(this.options)
+    // return test.save({ fields: this.event.changes(), ...this.options})
+    return test.save(this.saveOptions)
       .then(_e => {
         return [this.event, this.options]
-      })
-      .catch(err => {
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{action: 'retry'}, this.options]
-        }
       })
   }
 }
 class Updated extends Project {
   async run() {
     const test = this.event.object.stage(this.event.data, { isNewRecord: false })
-    // return userRole.destroy(this.options)
-    return test.save(this.options)
+    //
+    // return test.save({ fields: this.event.changes(), ...this.options})
+    return test.save(this.saveOptions)
       .then(_e => {
         return [this.event, this.options]
-      })
-      .catch(err => {
-        if (this.consistency === 'eventual') {
-          return Promise.reject(err)
-        }
-        else {
-          return [{action: 'retry'}, this.options]
-        }
       })
   }
 }

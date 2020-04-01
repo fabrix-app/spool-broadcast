@@ -5,12 +5,16 @@ const assert = require('assert')
 class Create extends Hook {
   async run() {
 
-    assert.equal(this.command.data._options.isNewRecord, true)
+    assert.equal(this.command.data.isStaged, true)
+    // assert.equal(this.command.data.isNewRecord, true)
+    assert.equal(this.command.data.isReloaded, false)
 
     return this.command.reload(this.options)
       .then(() => {
 
-        assert.equal(this.command.data._options.isNewRecord, true)
+        assert.equal(this.command.data.isStaged, true)
+        // assert.equal(this.command.data.isNewRecord, true)
+        assert.equal(this.command.data.isReloaded, true)
 
         // Log the creation time
         this.command.createdAt()
@@ -31,6 +35,7 @@ class Update extends Hook {
 
     console.log(
       'brk test changes before',
+      this.command.data._options,
       this.command.data,
       this.command.data_applied,
       this.command.data_updates,
@@ -38,15 +43,19 @@ class Update extends Hook {
       this.command.data_changed
     )
 
-    assert.equal(this.command.data._options.isNewRecord, false)
+    assert.equal(this.command.data.isNewRecord, false)
+    assert.equal(this.command.data.isStaged, true)
 
     return this.command.reload(this.options)
       .then(() => {
 
-        assert.equal(this.command.data._options.isNewRecord, false)
+        assert.equal(this.command.data.isNewRecord, false)
+        assert.equal(this.command.data.isStaged, true)
+        assert.equal(this.command.data.isReloaded, true)
 
         console.log(
           'brk test changes during',
+          this.command.data._options,
           this.command.data,
           this.command.data_applied,
           this.command.data_updates,
@@ -63,6 +72,7 @@ class Update extends Hook {
 
         console.log(
           'brk test changes after',
+          this.command.data._options,
           this.command.data,
           this.command.data_applied,
           this.command.data_updates,

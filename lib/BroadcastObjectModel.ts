@@ -11,6 +11,7 @@ export class BroadcastObjectModel extends Model {
 
 export interface BroadcastObjectModel {
   isReloaded: boolean
+  isStaged: boolean
   isSynced: boolean
   changes(options?): any
   toBinary(options?): any
@@ -19,6 +20,7 @@ export interface BroadcastObjectModel {
 }
 
 BroadcastObjectModel.prototype.isReloaded = false
+BroadcastObjectModel.prototype.isStaged = false
 BroadcastObjectModel.prototype.isSynced = false
 BroadcastObjectModel.prototype.changes = function (options) {
   return this.changed(options)

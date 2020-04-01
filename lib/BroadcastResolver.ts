@@ -210,7 +210,19 @@ export class BroadcastResolver extends SequelizeResolver {
     else if (data instanceof this.instance) {
     // else if (data instanceof this.instance && data._options.isStaged === true) {
       // TODO, temp, just mark this as staged
-      data._options.isStaged = true
+      // data._options.isStaged = true
+      // Mark options as "staged", that way we can always recreate what we are doing
+      // Want to make sure these are always set boolean
+      options =  {
+        isStaged: true,
+        isReloaded: typeof options.isReloaded !== 'undefined' ? options.isReloaded : false, // || !(options.isNewRecord || false) || false,
+        isNewRecord: typeof options.isNewRecord !== 'undefined' ? options.isNewRecord : true,
+        isSynced: typeof options.isSynced !== 'undefined' ? options.isSynced : false,
+        ...options
+      }
+
+      // Build the Instance
+      // data = this.build(data, options)
       return data
     }
     // 2: This is a DOA model instance and is being converted to an instance of this (Recursive)
@@ -295,7 +307,14 @@ export class BroadcastResolver extends SequelizeResolver {
       let raw = Object.assign({}, data)
 
       // Mark options as "staged", that way we can always recreate what we are doing
-      options =  { isStaged: true, ...options }
+      // Want to make sure these are always set boolean
+      options =  {
+        isStaged: true,
+        isReloaded: typeof options.isReloaded !== 'undefined' ? options.isReloaded : false,
+        isNewRecord: typeof options.isNewRecord !== 'undefined' ? options.isNewRecord : true,
+        isSynced: typeof options.isSynced !== 'undefined' ? options.isSynced : false,
+        ...options
+      }
 
       // Build the Instance
       data = this.build(data, options)
@@ -439,22 +458,27 @@ export class BroadcastResolver extends SequelizeResolver {
       }
 
       // Mark this data as previously staged
-      if (options.isStaged) {
-        data.isStaged = options.isStaged
-      }
+      // if (options.isStaged) {
+        data.isStaged = options.isStaged // Legacy
+        // data._options.isStaged = data.isStaged
+      // }
 
       // If this is considered reloaded, then mark it
-      if (options.isReloaded) {
-        data.isReloaded = options.isReloaded
-      }
+      // if (options.isReloaded) {
+        data.isReloaded = options.isReloaded // Legacy
+        // data.set('isReloaded', options.isReloaded)
+        // data._options.isReloaded = data.isReloaded
+      // }
       // If the options identified this as a new record, then mark it
-      if (options.isNewRecord) {
-        data.isNewRecord = options.isNewRecord
-      }
+      // if (options.isNewRecord) {
+        data.isNewRecord = options.isNewRecord // Legacy
+        // data._options.isNewRecord = data.isNewRecord
+      // }
       // If this is considered "synced", aka cross domain resolve, then mark it
-      if (options.isSynced) {
-        data.isSynced = options.isSynced
-      }
+      // if (options.isSynced) {
+        data.isSynced = options.isSynced // Legacy
+        // data._options.isSynced = data.isSynced
+      // }
 
       return data
     }
@@ -462,7 +486,7 @@ export class BroadcastResolver extends SequelizeResolver {
   /**
    * Resolve how to Build included Instance(s)
    */
-  stageIncludes(raw, data, { stage = [] }) {
+  stageIncludes(raw, data, { stage = [] }: {[key: string]: any}) {
     // if (this.model.constructor.name === 'Product') {
     //   console.log('brk ouch 4', stage, this.model.constructor.name, raw, data)
     // }
@@ -477,6 +501,7 @@ export class BroadcastResolver extends SequelizeResolver {
       if (model && as) {
         // Assign the staged instances to data
         const d = model.stage(raw[as] || def, opts)
+        // Ugly Sequelize Hack
         data[as] = d
         data.setDataValue(as, d)
         data.set(as, d)

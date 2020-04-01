@@ -5,6 +5,11 @@ const uuid = require('uuid/v4')
 
 
 describe('Broadcast', () => {
+
+  afterEach(() => {
+    console.log('---------------TEST END------------------')
+  })
+
   it('should exist', () => {
     assert(global.app.broadcaster)
     assert(global.app.broadcasts)

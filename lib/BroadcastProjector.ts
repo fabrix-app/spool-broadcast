@@ -8,6 +8,7 @@ import {Entry} from './Entry'
 
 import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 import { BroadcastEntity } from './BroadcastEntity'
+import { BroadcastProcess } from './BroadcastProcesser'
 
 export class BroadcastProject extends FabrixGeneric {
   public message: any
@@ -40,6 +41,14 @@ export class BroadcastProject extends FabrixGeneric {
 
     if (this.message && this.message.fields) {
       this.isRedelivered = this.message.fields.redelivered
+    }
+  }
+
+  get saveOptions () {
+    return {
+      transaction: this.options.transaction,
+      useMaster: this.options.useMaster,
+      fields: this.event.changes()
     }
   }
 
@@ -231,12 +240,17 @@ export class BroadcastProjector extends BroadcastEntity {
     super(app, 'projectors')
   }
 
+  newProjector(func, ...vals): BroadcastProject {
+    return new func(this.app, ...vals)
+  }
+
   /**
    * Returns the BroadcastManagers
    */
   get managers() {
     return this._managers
   }
+
   hasManager(name) {
     return this._managers.has(name)
   }

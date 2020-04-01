@@ -266,6 +266,10 @@ export class BroadcastProcessor extends BroadcastEntity {
     super(app, 'processors')
   }
 
+  newProcessor(func, ...vals): BroadcastProcess {
+    return new func(this.app, ...vals)
+  }
+
   /**
    * Returns the BroadcastManagers
    */

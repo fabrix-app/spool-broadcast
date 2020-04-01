@@ -5,13 +5,17 @@ const uuid = require('uuid/v4')
 const Validator = require('../../../dist/validator').Validator
 const joi = require('@hapi/joi')
 
-describe('Entry', () => {
+describe('Command', () => {
   let test_uuid, testCommand1, testCommand2, testCommand3, testCommand4, testCommand5
 
   it('should have broadcasters in test', () => {
     assert(global.app.broadcaster)
     assert(global.app.broadcasts)
     assert(global.app.broadcasts.TestBroadcast2)
+  })
+
+  afterEach(() => {
+    console.log('---------------TEST END------------------')
   })
 
 
@@ -349,30 +353,35 @@ describe('Entry', () => {
 
     let body = testCommand1.data
 
-    // Build a permission instance
-    body = global.app.models.TestChange.stage(body, {
-      isNewRecord: false,
-      isReloaded: true,
-      configure: ['generateUUID'],
-      stage: [
-        {
-          model: global.app.models.Test,
-          as: 'child',
-          options: {
-            isNewRecord: true,
-            configure: ['generateUUID'],
+    try {
+      // Build a permission instance
+      body = global.app.models.TestChange.stage(body, {
+        isNewRecord: false,
+        isReloaded: true,
+        configure: ['generateUUID'],
+        stage: [
+          {
+            model: global.app.models.Test,
+            as: 'child',
+            options: {
+              isNewRecord: true,
+              configure: ['generateUUID'],
+            }
+          },
+          {
+            model: global.app.models.Test,
+            as: 'children',
+            options: {
+              isNewRecord: true,
+              configure: ['generateUUID'],
+            }
           }
-        },
-        {
-          model: global.app.models.Test,
-          as: 'children',
-          options: {
-            isNewRecord: true,
-            configure: ['generateUUID'],
-          }
-        }
-      ]
-    })
+        ]
+      })
+    }
+    catch (err) {
+      done(err)
+    }
 
     testCommand1 = TestBroadcast.createCommand({
       req: req,

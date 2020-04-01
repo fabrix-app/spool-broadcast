@@ -26,6 +26,10 @@ describe('BroadcastChannel', () => {
     // Test = client.channel('Test')
   })
 
+  afterEach(() => {
+    console.log('---------------TEST END------------------')
+  })
+
   it('should do a test subscription', (done) => {
 
     let calls = 0

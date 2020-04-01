@@ -6,6 +6,10 @@ const uuid = require('uuid/v4')
 describe('Entry', () => {
   let test_uuid
 
+  afterEach(() => {
+    console.log('---------------TEST END------------------')
+  })
+
   it('should exist', () => {
     assert(global.app.entries)
     assert(global.app.entries.Test)
