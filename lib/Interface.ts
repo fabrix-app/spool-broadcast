@@ -1,5 +1,6 @@
 import { BroadcastEvent } from './api/models'
 import { BroadcastCommand } from './BroadcastCommand'
+import { Broadcast } from './Broadcast'
 
 export interface BroadcastAction {
   action: string | boolean
@@ -24,32 +25,36 @@ export interface IBroadcastModelResolve {
 
 export interface IProjectorParams {
   event: BroadcastEvent,
-  options,
-  consistency?,
+  options: {[key: string]: any},
+  consistency?: string,
   message?,
-  manager?
+  manager?: {[key: string]: any},
+  broadcaster?: Broadcast
 }
 
 export interface IProcessorParams {
   event: BroadcastEvent,
-  options,
-  consistency?,
+  options: {[key: string]: any},
+  consistency?: string,
   message?,
-  manager?
+  manager?: {[key: string]: any},
+  broadcaster?: Broadcast
 }
 
 
 export interface IHookInParams {
   command: BroadcastCommand,
-  options,
+  options: {[key: string]: any},
   lifecycle?: string,
-  handler?
+  handler?: {[key: string]: any},
+  broadcaster?: Broadcast
 }
 
 export interface IChannelParams {
   event: BroadcastEvent,
-  options,
-  broker?
+  options: {[key: string]: any},
+  broker?: {[key: string]: any},
+  broadcaster?: Broadcast
 }
 
 export interface IPipelineParams {
@@ -58,5 +63,6 @@ export interface IPipelineParams {
   runner,
   req,
   body,
-  options
+  options: string,
+  broadcaster?: Broadcast
 }
