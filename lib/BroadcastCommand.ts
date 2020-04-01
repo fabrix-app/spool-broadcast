@@ -43,11 +43,22 @@ const replaceParams = function(type = '', keys: boolean | string[] = [], object:
 }
 
 const raw = function(val) {
-  if (typeof val !== 'undefined' && val instanceof FabrixModel) {
+  if (typeof val !== 'undefined' && (
+    typeof val === 'string'
+    || typeof val === 'boolean'
+    || typeof val === 'number'
+    || typeof val === 'bigint'
+  )) {
+    // do nothing
+  }
+  else if (typeof val !== 'undefined' && val instanceof FabrixModel) {
     // If this is a Model instance, then call it's JSON function to make it a plain object
     val = JSON.parse(JSON.stringify(val))
   }
-  else if (isObject(val)) {
+  else if (typeof val !== 'undefined' && isObject(val)) {
+    val = JSON.parse(JSON.stringify(val))
+  }
+  else if (typeof val !== 'undefined' && isArray(val)) {
     val = JSON.parse(JSON.stringify(val))
   }
   return val
@@ -69,7 +80,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
   // The data
   data: {[key: string]: any} //  | {[key: string]: any}[]
-  //
+  // Set the data values that are wishing to update
   data_updates: {[key: string]: any} // | {[key: string]: any}[]
   // The data that was moved from updates to data
   data_applied: {[key: string]: any}
@@ -218,7 +229,7 @@ export class BroadcastCommand extends FabrixGeneric {
       this._event_type = event_type
     }
 
-    // Set the SAGA before function for the command
+    // Set the SAGA "before" function for this command if supplied
     if (options.beforeHooks) {
       if (typeof options.beforeHooks === 'string') {
         const saga = this.getSagaFromHandler(options.beforeHooks)
@@ -232,14 +243,16 @@ export class BroadcastCommand extends FabrixGeneric {
           this.beforeHooks = _saga.before
         }
         else {
+          // Otherwise, set it to default one we know exists
           this.beforeHooks = this.app.sagas.BroadcastSaga.before
         }
       }
     }
     else {
+      // Otherwise, set it to default one we know exists
       this.beforeHooks = this.app.sagas.BroadcastSaga.before
     }
-
+    // Set any options that were provided
     this.options = options
   }
 
@@ -266,10 +279,14 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   /**
-   * Return a list of all the chained events
+   * Return a list of all the chained events including the ones that were run before this command
    */
   get chain() {
-    return [...this.chain_before, ...this.chain_saga, ...this.chain_after]
+    return [
+      ...this.chain_before,
+      ...this.chain_saga,
+      ...this.chain_after
+    ]
   }
 
   generateUUID(correlationUUID?) {
@@ -279,104 +296,6 @@ export class BroadcastCommand extends FabrixGeneric {
     return uuid()
   }
 
-  // Re-stage the data
-  restage() {
-    if (this._list) {
-      this.data = this.data.map(d => {
-        return this.object.stage(d, d._options)
-      })
-    }
-    else {
-      this.data = this.object.stage(this.data, this.data._options)
-    }
-  }
-
-  /**
-   * UTILITY
-   * @description get app.sagas.<MySaga> returns MySaga
-   */
-  getSagaFromString(handler: string ): Saga  {
-    return get(this.app.sagas, handler)
-  }
-
-  /**
-   * UTILITY
-   * @description Eg MySaga.myMethod returns "MySaga"
-   */
-  getSagaFromHandler(handler: string): string {
-    return isString(handler) ? handler.split('.')[0] : handler
-  }
-
-  /**
-   * UTILITY
-   * @description Eg MySaga.myMethod returns "myMethod"
-   * @returns string
-   */
-  getSagaMethodFromHandler(handler: string): string {
-    return isString(handler) ? handler.split('.')[1] : handler
-  }
-
-  /**
-   * Run Serial or in Parallel TODO
-   * @param managers
-   * @param args
-   */
-  process(managers, ...args) {
-    // Make Serial True for now // TODO
-    let serial = true
-
-    if (serial) {
-      return this.broadcastSeries(...args)
-    }
-    else {
-      return this.broadcastParallel(...args)
-    }
-  }
-
-  /**
-   * Utlity to broadcast a series (mapSeries)
-   * @param args
-   */
-  broadcastSeries(...args) {
-    return this.app.broadcastSeries(...args)
-  }
-
-  /**
-   * Utlity to broadcast all at once (Promise.all)
-   * @param args
-   */
-  broadcastParallel(...args) {
-    return Promise.all([...args])
-  }
-  /**
-   * Broadcast the event
-   * @param validator
-   * @param options
-   */
-  broadcast(validator, options) {
-    if (!this.beforeHooks) {
-      throw new this.app.errors.GenericError(
-        'E_BAD_REQUEST',
-        'command.broadcast can not be used if not constructed with options.beforeHooks'
-      )
-    }
-    if (!this._event_type) {
-      throw new this.app.errors.GenericError(
-        'E_BAD_REQUEST',
-        'command.broadcast can not be used if not constructed with an event_type'
-      )
-    }
-    return this.beforeHooks(this, validator, options)
-      .then(([_command, _options]) => {
-        const event = this.broadcaster.buildEvent({
-          event_type: this._event_type,
-          correlation_uuid: _command.command_uuid,
-          command: _command
-        })
-        return this.broadcaster.broadcast(event, _options)
-      })
-  }
-
   private async _reload(_data, options) {
     if (_data && typeof _data.reload !== 'function') {
       throw new Error('Data does not have reload function')
@@ -384,11 +303,17 @@ export class BroadcastCommand extends FabrixGeneric {
 
     if (
       _data.isNewRecord
-      || _data.isReloaded
       || _data._options.isNewRecord
-      || _data._options.isReloaded
+
     ) {
       return Promise.resolve([_data, null])
+    }
+    // TODO CULPRIT
+    else if (
+      _data.isReloaded
+      || _data._options.isReloaded
+    ) {
+      return Promise.resolve([_data, _data])
     }
     else {
       // Call sequelize's reload function
@@ -459,6 +384,7 @@ export class BroadcastCommand extends FabrixGeneric {
 
   private _approvedUpdates (_data, _updates, approved = []) {
     const applied = {}, previous = {}
+
     Object.keys(JSON.parse(JSON.stringify(_updates))).forEach((k, i) => {
       if (approved.indexOf(k) > -1) {
 
@@ -540,7 +466,9 @@ export class BroadcastCommand extends FabrixGeneric {
    * @param value
    */
   apply(path, value) {
+    // Get the value that was here previously
     const current = get(this.data_previous, path, null)
+
     // Create some raw comparison attributes
     const rawCurrent = raw(current)
     const rawValue = raw(value)
@@ -560,7 +488,10 @@ export class BroadcastCommand extends FabrixGeneric {
     set(this.data, path, value)
   }
 
-  unapplied() {
+  /**
+   * Return keys in the current data object that are not in the applied data object
+   */
+  unapplied(): string[] {
     let unapplied
 
     if (this._list) {
@@ -581,7 +512,10 @@ export class BroadcastCommand extends FabrixGeneric {
     return unapplied
   }
 
-  updated() {
+  /**
+   * Return keys that are in the current data object and are in the changed data object
+   */
+  updated(): string[] {
     let unapplied
 
     if (this._list) {
@@ -695,14 +629,23 @@ export class BroadcastCommand extends FabrixGeneric {
     return changes
   }
 
+  /**
+   * Get the hooks that are running during this command
+   */
   get hooks() {
     return this._hooks || []
   }
 
+  /**
+   * Set the hooks that are running during this command
+   */
   set hooks(values) {
     this._hooks = values
   }
 
+  /**
+   * This makes sure that the metadata returned contains the changes and hooks and can not be overridden by others
+   */
   get metadata (): {[key: string]: any} {
     return {
       ...(this._metadata || {}),
@@ -711,9 +654,120 @@ export class BroadcastCommand extends FabrixGeneric {
     }
   }
 
+  /**
+   * Sets the underlying metadata to what the user wants
+   * @param metadata
+   */
   set metadata (metadata) {
     this._metadata = metadata
     return
+  }
+
+  /**
+   * UTILITY
+   * "Re-stage" the data, incase of corruption
+   */
+  restage() {
+    if (this._list) {
+      this.data = this.data.map(d => {
+        return this.object.stage(d, d._options)
+      })
+    }
+    else {
+      this.data = this.object.stage(this.data, this.data._options)
+    }
+  }
+
+  /**
+   * UTILITY
+   * @description get app.sagas.<MySaga> returns MySaga
+   */
+  getSagaFromString(handler: string ): Saga  {
+    return get(this.app.sagas, handler)
+  }
+
+  /**
+   * UTILITY
+   * @description Eg MySaga.myMethod returns "MySaga"
+   */
+  getSagaFromHandler(handler: string): string {
+    return isString(handler) ? handler.split('.')[0] : handler
+  }
+
+  /**
+   * UTILITY
+   * @description Eg MySaga.myMethod returns "myMethod"
+   * @returns string
+   */
+  getSagaMethodFromHandler(handler: string): string {
+    return isString(handler) ? handler.split('.')[1] : handler
+  }
+
+  /**
+   * UTILITY
+   * Run Serial or in Parallel TODO
+   * @param managers
+   * @param args
+   */
+  process(managers, ...args) {
+    // Make Serial True for now // TODO
+    let serial = true
+
+    if (serial) {
+      return this.broadcastSeries(...args)
+    }
+    else {
+      return this.broadcastParallel(...args)
+    }
+  }
+
+  /**
+   * UTILITY
+   * to broadcast a series (mapSeries)
+   * @param args
+   */
+  broadcastSeries(...args) {
+    return this.app.broadcastSeries(...args)
+  }
+
+  /**
+   * UTILITY
+   * to broadcast all at once (Promise.all)
+   * @param args
+   */
+  broadcastParallel(...args) {
+    return Promise.all([...args])
+  }
+  /**
+   * UTILITY
+   * Broadcast the event
+   * @param validator
+   * @param options
+   */
+  broadcast(validator, options) {
+    if (!this.beforeHooks) {
+      throw new this.app.errors.GenericError(
+        'E_BAD_REQUEST',
+        'command.broadcast can not be used if not constructed with options.beforeHooks',
+        `${this.name} Command Error`
+      )
+    }
+    if (!this._event_type) {
+      throw new this.app.errors.GenericError(
+        'E_BAD_REQUEST',
+        'command.broadcast can not be used if not constructed with an event_type',
+        `${this.name} Command Error`
+      )
+    }
+    return this.beforeHooks(this, validator, options)
+      .then(([_command, _options]) => {
+        const event = this.broadcaster.buildEvent({
+          event_type: this._event_type,
+          correlation_uuid: _command.command_uuid,
+          command: _command
+        })
+        return this.broadcaster.broadcast(event, _options)
+      })
   }
 }
 
@@ -729,9 +783,16 @@ export interface Command {
   // changes(key?): string[]
 }
 
-BroadcastCommand.prototype.changed = function(str?) {
+/**
+ * Mimics the Sequelize model's "changed" instance method
+ * @param str
+ */
+BroadcastCommand.prototype.changed = function(str?): boolean | string[] {
   if (str && this.metadata && this.metadata.changes) {
     return !!this.metadata.changes[str]
+  }
+  else if (!str && this.metadata && this.metadata.changes) {
+    return this.metadata.changes
   }
   return false
 }
@@ -740,7 +801,7 @@ BroadcastCommand.prototype.changed = function(str?) {
 //   return this.metadata.changes
 // }
 
-BroadcastCommand.prototype.toJSON = function(str) {
+BroadcastCommand.prototype.toJSON = function(str): {[key: string]: any} {
 
   const res = {
     correlation_uuid: this.correlation_uuid,
@@ -760,7 +821,7 @@ BroadcastCommand.prototype.toJSON = function(str) {
   return res
 }
 
-BroadcastCommand.prototype.toEVENT = function(str) {
+BroadcastCommand.prototype.toEVENT = function(str): {[key: string]: any} {
 
   const res = {
     correlation_uuid: this.correlation_uuid,

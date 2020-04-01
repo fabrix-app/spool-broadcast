@@ -6,7 +6,7 @@ const Validator = require('../../../dist/validator').Validator
 const joi = require('@hapi/joi')
 
 describe('Entry', () => {
-  let test_uuid, testCommand1, testCommand2, testCommand3, testCommand4
+  let test_uuid, testCommand1, testCommand2, testCommand3, testCommand4, testCommand5
 
   it('should have broadcasters in test', () => {
     assert(global.app.broadcaster)
@@ -69,14 +69,14 @@ describe('Entry', () => {
 
     testCommand1.hooks = [{ prehook_url: 'example.com' }]
 
-    console.log('BRK command before',
-      'data', testCommand1.data,
-      'updates', testCommand1.data_updates,
-      'previous', testCommand1.data_previous,
-      'applied', testCommand1.data_applied,
-      'changed', testCommand1.data_changed,
-      'hooks', testCommand1.hooks
-    )
+    console.log('*********************************')
+    console.log('BRK command create before reload')
+    console.log('data', testCommand1.data)
+    console.log('updates', testCommand1.data_updates)
+    console.log('previous', testCommand1.data_previous)
+    console.log('applied', testCommand1.data_applied)
+    console.log('changed', testCommand1.data_changed)
+    console.log('*********************************')
 
     assert.deepEqual(testCommand1.hooks, [{ prehook_url: 'example.com' }])
     assert.deepEqual(testCommand1.metadata.hooks, testCommand1.hooks)
@@ -92,35 +92,49 @@ describe('Entry', () => {
     assert.ok(testCommand1.data.child)
     assert.ok(testCommand1.data.children)
 
+    assert.deepEqual(testCommand1.data_previous, {})
+    assert.deepEqual(testCommand1.data_applied, {})
+    assert.deepEqual(testCommand1.data_changed, {})
+
     // console.log('BRK UNAPPLIED', testCommand1.unapplied())
     // console.log('BRK UPDATED', testCommand1.updated())
 
 
     testCommand1.reload({})
       .then(() => {
-        console.log('BRK command after reload',
-          'data', testCommand1.data,
-          'updates', testCommand1.data_updates,
-          'previous', testCommand1.data_previous,
-          'applied', testCommand1.data_applied,
-          'changed', testCommand1.data_changed
-        )
+
+        console.log('*********************************')
+        console.log('BRK command create after reload')
+        console.log('data', testCommand1.data)
+        console.log('updates', testCommand1.data_updates)
+        console.log('previous', testCommand1.data_previous)
+        console.log('applied', testCommand1.data_applied)
+        console.log('changed', testCommand1.data_changed)
+        console.log('*********************************')
 
         assert.equal(testCommand1.data.string, 'test')
         assert.equal(testCommand1.data.string, testCommand1.data_applied.string)
         assert.equal(testCommand1.data.string, testCommand1.data_updates.string)
+        assert.equal(testCommand1.data_previous.string, null)
+        assert.equal(testCommand1.data_changed.string, null)
 
         assert.equal(testCommand1.data.number, 0)
         assert.equal(testCommand1.data.number, testCommand1.data_applied.number)
         assert.equal(testCommand1.data.number, testCommand1.data_updates.number)
+        assert.equal(testCommand1.data_previous.number, null)
+        assert.equal(testCommand1.data_changed.number, null)
 
         assert.deepEqual(testCommand1.data.keyvalue, {hello: 'world'})
         assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_applied.keyvalue)
         assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
+        assert.equal(testCommand1.data_previous.keyvalue, null)
+        assert.equal(testCommand1.data_changed.keyvalue, null)
 
         assert.deepEqual(testCommand1.data.array, ['hello', 'world'])
         assert.deepEqual(testCommand1.data.array, testCommand1.data_applied.array)
         assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
+        assert.equal(testCommand1.data_previous.array, null)
+        assert.equal(testCommand1.data_changed.array, null)
 
         assert.ok(testCommand1.data.child)
         assert.ok(testCommand1.data.children)
@@ -156,8 +170,8 @@ describe('Entry', () => {
         assert.deepEqual(testCommand1.data_previous.array, null)
 
         console.log('BRK command changes', testCommand1.changes())
-        assert.deepEqual(testCommand1.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
-        assert.deepEqual(testCommand1.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
+        assert.deepEqual(testCommand1.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
+        assert.deepEqual(testCommand1.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
 
         return testCommand1.data.save()
       })
@@ -231,28 +245,35 @@ describe('Entry', () => {
     assert.deepEqual(testCommand1.data.keyvalue, {hello: 'mars'})
     assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
 
+    assert.deepEqual(testCommand1.data_previous, {})
+    assert.deepEqual(testCommand1.data_applied, {})
+    assert.deepEqual(testCommand1.data_changed, {})
+
+
     assert.ok(testCommand1.data.child)
     assert.ok(testCommand1.data.children)
 
 
-    console.log('BRK command before 2',
-      'data', testCommand1.data,
-      'updates', testCommand1.data_updates,
-      'previous', testCommand1.data_previous,
-      'applied', testCommand1.data_applied,
-      'changed', testCommand1.data_changed
-    )
+    console.log('*********************************')
+    console.log('BRK command update before reload')
+    console.log('data', testCommand1.data)
+    console.log('updates', testCommand1.data_updates)
+    console.log('previous', testCommand1.data_previous)
+    console.log('applied', testCommand1.data_applied)
+    console.log('changed', testCommand1.data_changed)
+    console.log('*********************************')
 
 
     testCommand1.reload({})
       .then(() => {
-        console.log('BRK command after reload 2',
-          'data', testCommand1.data,
-          'updates', testCommand1.data_updates,
-          'previous', testCommand1.data_previous,
-          'applied', testCommand1.data_applied,
-          'changed', testCommand1.data_changed
-        )
+        console.log('*********************************')
+        console.log('BRK command update after reload')
+        console.log('data', testCommand1.data)
+        console.log('updates', testCommand1.data_updates)
+        console.log('previous', testCommand1.data_previous)
+        console.log('applied', testCommand1.data_applied)
+        console.log('changed', testCommand1.data_changed)
+        console.log('*********************************')
 
         assert.equal(testCommand1.data.string, 'test1')
         assert.equal(testCommand1.data_updates.string, 'test2')
@@ -306,13 +327,163 @@ describe('Entry', () => {
 
         testCommand1.restage()
 
-        console.log('BRK command after restage',
-          'data', testCommand1.data,
-          'updates', testCommand1.data_updates,
-          'previous', testCommand1.data_previous,
-          'applied', testCommand1.data_applied,
-          'changed', testCommand1.data_changed
-        )
+        console.log('*********************************')
+        console.log('BRK command update after restage')
+        console.log('data', testCommand1.data)
+        console.log('updates', testCommand1.data_updates)
+        console.log('previous', testCommand1.data_previous)
+        console.log('applied', testCommand1.data_applied)
+        console.log('changed', testCommand1.data_changed)
+        console.log('*********************************')
+
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
+  it('should test command on update object that is already reloaded', (done) => {
+    const TestBroadcast = global.app.broadcasts.TestBroadcast2
+    const req = {}
+
+    let body = testCommand1.data
+
+    // Build a permission instance
+    body = global.app.models.TestChange.stage(body, {
+      isNewRecord: false,
+      isReloaded: true,
+      configure: ['generateUUID'],
+      stage: [
+        {
+          model: global.app.models.Test,
+          as: 'child',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        },
+        {
+          model: global.app.models.Test,
+          as: 'children',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        }
+      ]
+    })
+
+    testCommand1 = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'create.change',
+      object: global.app.models.TestChange,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+
+    assert.equal(testCommand1.data.string, 'test2')
+    assert.equal(testCommand1.data.string, testCommand1.data_updates.string)
+
+    assert.equal(testCommand1.data.number, 2)
+    assert.equal(testCommand1.data.number, testCommand1.data_updates.number)
+
+    assert.deepEqual(testCommand1.data.keyvalue, {hello: 'mars'})
+    assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
+
+    assert.deepEqual(testCommand1.data_previous, {})
+    assert.deepEqual(testCommand1.data_applied, {})
+    assert.deepEqual(testCommand1.data_changed, {})
+
+
+    assert.ok(testCommand1.data.child)
+    assert.ok(testCommand1.data.children)
+
+
+    console.log('*********************************')
+    console.log('BRK command double update before reload')
+    console.log('data', testCommand1.data)
+    console.log('updates', testCommand1.data_updates)
+    console.log('previous', testCommand1.data_previous)
+    console.log('applied', testCommand1.data_applied)
+    console.log('changed', testCommand1.data_changed)
+    console.log('*********************************')
+
+
+    testCommand1.reload({})
+      .then(() => {
+        console.log('*********************************')
+        console.log('BRK command double update after reload')
+        console.log('data', testCommand1.data)
+        console.log('updates', testCommand1.data_updates)
+        console.log('previous', testCommand1.data_previous)
+        console.log('applied', testCommand1.data_applied)
+        console.log('changed', testCommand1.data_changed)
+        console.log('*********************************')
+
+        assert.equal(testCommand1.data.string, 'test2')
+        assert.equal(testCommand1.data_updates.string, 'test2')
+        assert.equal(testCommand1.data_previous.string, 'test2')
+
+        assert.equal(testCommand1.data.number, 2)
+        assert.equal(testCommand1.data_updates.number, 2)
+        assert.equal(testCommand1.data_previous.number, 2)
+
+        assert.deepEqual(testCommand1.data.keyvalue, {hello: 'mars'})
+        assert.deepEqual(testCommand1.data_previous.keyvalue, {hello: 'mars'})
+        assert.deepEqual(testCommand1.data_updates.keyvalue, {hello: 'mars'})
+
+        testCommand1.approveUpdates([ 'string', 'number', 'keyvalue', 'array' ])
+
+        assert.equal(testCommand1.data.string, 'test2')
+        assert.equal(testCommand1.data_updates.string, 'test2')
+        assert.equal(testCommand1.data_applied.string, undefined)
+        assert.equal(testCommand1.data_previous.string, 'test2')
+        assert.equal(testCommand1.data_changed.string, undefined)
+
+        assert.equal(testCommand1.data.number, 2)
+        assert.equal(testCommand1.data_updates.number, 2)
+        assert.equal(testCommand1.data_applied.number, undefined)
+        assert.equal(testCommand1.data_previous.number, 2)
+        assert.equal(testCommand1.data_changed.number, undefined)
+
+        assert.deepEqual(testCommand1.data.keyvalue, {hello: 'mars'})
+        assert.deepEqual(testCommand1.data.keyvalue, testCommand1.data_updates.keyvalue)
+        assert.equal(testCommand1.data_applied.keyvalue, undefined)
+        assert.deepEqual(testCommand1.data_previous.keyvalue, {hello: 'mars'})
+        assert.equal(testCommand1.data_changed.keyvalue, undefined)
+
+        assert.deepEqual(testCommand1.data.array, ['hello', 'mars'])
+        assert.deepEqual(testCommand1.data.array, testCommand1.data_updates.array)
+        assert.equal(testCommand1.data_applied.array, undefined)
+        assert.deepEqual(testCommand1.data_previous.array, ['hello', 'mars'])
+        assert.equal(testCommand1.data_changed.array, undefined)
+
+        assert.ok(testCommand1.data.child)
+        assert.ok(testCommand1.data.children)
+
+        console.log('BRK command changes', testCommand1.changes())
+        assert.deepEqual(testCommand1.changes(), [])
+        assert.deepEqual(testCommand1.metadata.changes, [])
+
+
+        return testCommand1.data.save()
+      })
+      .then(() => {
+
+        testCommand1.restage()
+
+        console.log('*********************************')
+        console.log('BRK command double update after restage')
+        console.log('data', testCommand1.data)
+        console.log('updates', testCommand1.data_updates)
+        console.log('previous', testCommand1.data_previous)
+        console.log('applied', testCommand1.data_applied)
+        console.log('changed', testCommand1.data_changed)
+        console.log('*********************************')
 
         done()
       })
@@ -429,8 +600,8 @@ describe('Entry', () => {
         assert.deepEqual(testCommand2.data_previous[0].keyvalue, null)
 
         console.log('BRK command changes', testCommand2.changes())
-        assert.deepEqual(testCommand2.changes(), [['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt']])
-        assert.deepEqual(testCommand2.metadata.changes, [['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt']])
+        assert.deepEqual(testCommand2.changes(), [['test_uuid', 'string', 'number', 'keyvalue', 'array']])
+        assert.deepEqual(testCommand2.metadata.changes, [['test_uuid', 'string', 'number', 'keyvalue', 'array']])
 
         return testCommand2.broadcastSeries(testCommand2.data, (d) => { return d.save()})
       })
@@ -714,8 +885,8 @@ describe('Entry', () => {
         assert.deepEqual(testCommand4.data_previous.array, null)
 
         console.log('BRK command changes', testCommand4.changes())
-        assert.deepEqual(testCommand4.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
-        assert.deepEqual(testCommand4.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
+        assert.deepEqual(testCommand4.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
+        assert.deepEqual(testCommand4.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
 
         return testCommand4.data.save()
       })
@@ -801,7 +972,7 @@ describe('Entry', () => {
         console.log('BRK broadcasted', _event.data, _options)
 
 
-        assert.deepEqual(_event.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'createdAt', 'updatedAt'])
+        assert.deepEqual(_event.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
 
         assert.equal(_event.data.string, testCommand3.data_updates.string)
         assert.equal(_event.data.number, testCommand3.data_updates.number)

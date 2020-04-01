@@ -1,10 +1,16 @@
 const HookIn = require('../../../../dist').BroadcastHookIn
 const Hook = require('../../../../dist').BroadcastHook
+const assert = require('assert')
 
 class Create extends Hook {
   async run() {
+
+    assert.equal(this.command.data._options.isNewRecord, true)
+
     return this.command.reload(this.options)
       .then(() => {
+
+        assert.equal(this.command.data._options.isNewRecord, true)
 
         // Log the creation time
         this.command.createdAt()
@@ -23,18 +29,46 @@ class Update extends Hook {
 
     const approvedUpdates = ['name']
 
+    console.log(
+      'brk test changes before',
+      this.command.data,
+      this.command.data_applied,
+      this.command.data_updates,
+      this.command.data_previous,
+      this.command.data_changed
+    )
+
+    assert.equal(this.command.data._options.isNewRecord, false)
+
     return this.command.reload(this.options)
       .then(() => {
+
+        assert.equal(this.command.data._options.isNewRecord, false)
+
+        console.log(
+          'brk test changes during',
+          this.command.data,
+          this.command.data_applied,
+          this.command.data_updates,
+          this.command.data_previous,
+          this.command.data_changed
+        )
 
         this.command.approveUpdates(approvedUpdates)
 
         this.command.apply('test', 'testing 1234')
 
         // Log the updated time
-        // this.command.createdAt()
         this.command.updatedAt()
 
-        console.log('brk test changes', this.command.data_applied, this.command.data_updates, this.command.data_previous)
+        console.log(
+          'brk test changes after',
+          this.command.data,
+          this.command.data_applied,
+          this.command.data_updates,
+          this.command.data_previous,
+          this.command.data_changed
+        )
         return [this.command, this.options]
       })
   }

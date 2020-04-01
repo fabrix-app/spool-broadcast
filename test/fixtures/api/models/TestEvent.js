@@ -8,7 +8,7 @@ const BroadcastResolver = require('../../../../dist').BroadcastResolver
  *
  * @description A Test model
  */
-module.exports = class TestEventual extends BroadcastObjectModel {
+module.exports = class TestEvent extends BroadcastObjectModel {
 
   static get resolver() {
     return BroadcastResolver

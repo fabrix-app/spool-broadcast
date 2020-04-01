@@ -386,7 +386,8 @@ export class Broadcast extends FabrixGeneric {
     if (!(command instanceof BroadcastCommand)) {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'command is not an instance of Command'
+        'command is not an instance of Command',
+        `${this.name} Broadcast Error`
       )
     }
     return this.beforeCommand(command, options, validators)
@@ -429,7 +430,8 @@ export class Broadcast extends FabrixGeneric {
     if (!beforeHooks || !beforeHandlers) {
       const err = new this.app.errors.GenericError(
         'E_PRECONDITION_REQUIRED',
-        'Before Commands/Handlers are not defined'
+        'Before Commands/Handlers are not defined',
+        `${this.name} Broadcast Error`
       )
       return Promise.reject(err)
     }
@@ -450,7 +452,8 @@ export class Broadcast extends FabrixGeneric {
     if ( !afterHooks || !afterHandlers) {
       const err = new this.app.errors.GenericError(
         'E_PRECONDITION_REQUIRED',
-        'After Commands/Handler are not defined'
+        'After Commands/Handler are not defined',
+        `${this.name} Broadcast Error`
       )
       return Promise.reject(err)
     }
@@ -517,13 +520,15 @@ export class Broadcast extends FabrixGeneric {
           if (!_command) { // || !_command.data) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
-              `${this.name}: ${p.name} Hook returned invalid response for ${m}! - fatal`
+              `${this.name}: ${p.name} Hook returned invalid response for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
           if (!(_command instanceof BroadcastCommand)) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
-              `${this.name}: ${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
+              `${this.name}: ${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
           if (typeof _command.action !== 'undefined' && _command.action === 'retry') {
@@ -668,13 +673,15 @@ export class Broadcast extends FabrixGeneric {
           if (!_command) { // || !_command.data) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
-              `${p.name} Hook returned invalid response for ${m}! - fatal`
+              `${p.name} Hook returned invalid response for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
           if (!(_command instanceof BroadcastCommand)) {
             throw new this.app.errors.GenericError(
               'E_FAILED_DEPENDENCY',
-              `${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`
+              `${p.name} Hook returned a Command instead of an Command for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
           if (typeof _command.action !== 'undefined' && _command.action === 'retry') {
@@ -783,7 +790,8 @@ export class Broadcast extends FabrixGeneric {
     if (!subscribers || !brokers) {
       const err = new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'Eternal Subscribers/Brokers or Ephemeral Subscribers/Brokers are not defined'
+        'Eternal Subscribers/Brokers or Ephemeral Subscribers/Brokers are not defined',
+        `${this.name} Broadcast Error`
       )
       return Promise.reject(err)
     }
@@ -864,7 +872,8 @@ export class Broadcast extends FabrixGeneric {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
             `${m} subscriber expects_input ${broker.expects_input}
-            but got ${event.getDataValue('object')} for ${event.event_type}`
+            but got ${event.getDataValue('object')} for ${event.event_type}`,
+            `${this.name} Broadcast Error`
           )
         }
         else if (
@@ -874,7 +883,8 @@ export class Broadcast extends FabrixGeneric {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
             `${m} subscriber expects_input one of ${broker.expects_input.join(', ')}
-            but got ${event.getDataValue('object')} for ${event.event_type}`
+            but got ${event.getDataValue('object')} for ${event.event_type}`,
+            `${this.name} Broadcast Error`
           )
         }
       }
@@ -934,21 +944,24 @@ export class Broadcast extends FabrixGeneric {
     if (!(event instanceof this.app.models.BroadcastEvent.instance)) {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'event is not an instance of BroadcastEvent'
+        'event is not an instance of BroadcastEvent',
+        `${this.name} Broadcast Error`
       )
     }
     // Should by default have the ability to serialize its own data
     if (typeof event.object.toBinaryData === 'undefined') {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'Data object does not have a toBinaryData function'
+        'Data object does not have a toBinaryData function',
+        `${this.name} Broadcast Error`
       )
     }
     // Should by default have the ability to serialize its own metadata
     if (typeof event.object.toBinaryMetadata === 'undefined') {
       throw new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'Data object does not have a toBinaryMetadata function'
+        'Data object does not have a toBinaryMetadata function',
+        `${this.name} Broadcast Error`
       )
     }
 
@@ -993,17 +1006,23 @@ export class Broadcast extends FabrixGeneric {
         // The processors/projectors should have returned the event
         if (!(_e instanceof this.app.models.BroadcastEvent.instance)) {
           throw new this.app.errors.GenericError(
-            `${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`
+            'E_UNPROCESSABLE_ENTITY',
+            `${event.event_type} Projection returned an instance different than BroadcastEvent! - fatal`,
+            `${this.name} Broadcast Error`
           )
         }
         if (_e.event_uuid !== event.event_uuid) {
           throw new this.app.errors.GenericError(
-            `${event.event_type} Projection returned a different event uuid than origin - fatal`
+            'E_UNPROCESSABLE_ENTITY',
+            `${event.event_type} Projection returned a different event uuid than origin - fatal`,
+            `${this.name} Broadcast Error`
           )
         }
         if (_e.event_type !== event.event_type) {
           throw new this.app.errors.GenericError(
-            `${event.event_type} Projection returned a different event type than origin - fatal`
+            'E_UNPROCESSABLE_ENTITY',
+            `${event.event_type} Projection returned a different event type than origin - fatal`,
+            `${this.name} Broadcast Error`
           )
         }
         // if (_e.changed()) {
@@ -1023,7 +1042,8 @@ export class Broadcast extends FabrixGeneric {
         // return Promise.reject(err)
         return Promise.reject(new this.app.errors.GenericError(
           'E_UNPROCESSABLE_ENTITY',
-          `BroadcastEvent: ${event.event_type} failed during broadcast - fatal`
+          `BroadcastEvent: ${event.event_type} failed during broadcast - fatal`,
+          `${this.name} Broadcast Error`
         ))
       })
   }
@@ -1152,7 +1172,8 @@ export class Broadcast extends FabrixGeneric {
     if (!strong || !strongManagers || !eventual || !eventualManagers) {
       const err = new this.app.errors.GenericError(
         'E_FAILED_DEPENDENCY',
-        'Strong Events/Managers or Eventual Events/Manager are not defined'
+        'Strong Events/Managers or Eventual Events/Manager are not defined',
+        `${this.name} Broadcast Error`
       )
       return Promise.reject(err)
     }
@@ -1286,7 +1307,8 @@ export class Broadcast extends FabrixGeneric {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
             `${m} ${manager.type} expects_input ${manager.expects_input}
-            but got ${event.getDataValue('object')} for ${event.event_type}`
+            but got ${event.getDataValue('object')} for ${event.event_type}`,
+            `${this.name} Broadcast Error`
           )
         }
         else if (
@@ -1296,7 +1318,8 @@ export class Broadcast extends FabrixGeneric {
           throw new this.app.errors.GenericError(
             'E_PRECONDITION_FAILED',
             `${m} ${manager.type} expects one of ${manager.expects_input.join(', ')} as input,
-            but got ${event.getDataValue('object')} for ${event.event_type}`
+            but got ${event.getDataValue('object')} for ${event.event_type}`,
+            `${this.name} Broadcast Error`
           )
         }
       }
@@ -1375,7 +1398,8 @@ export class Broadcast extends FabrixGeneric {
         if (!_event) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `${p.name} Projection returned no event for ${m}! - fatal`
+            `${p.name} Projection returned no event for ${m}! - fatal`,
+            `${this.name} Broadcast Error`
           )
         }
         // If a single event was returned
@@ -1384,14 +1408,16 @@ export class Broadcast extends FabrixGeneric {
           if (!_event) {
             throw new this.app.errors.GenericError(
               'E_NOT_ACCEPTABLE',
-              `${p.name} Projection returned invalid response for ${m}! - fatal`
+              `${p.name} Projection returned invalid response for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
           // Make sure that it was not a command returned
           if (_event instanceof BroadcastCommand) {
             throw new this.app.errors.GenericError(
               'E_NOT_ACCEPTABLE',
-              `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`
+              `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`,
+              `${this.name} Broadcast Error`
             )
           }
 
@@ -1400,7 +1426,7 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
             return [event, options]
           }
@@ -1409,7 +1435,7 @@ export class Broadcast extends FabrixGeneric {
             this.app.log.debug(`${this.name} ${m} to continue without data`)
             projectend = process.hrtime(projectstart)
             this.app.log.debug(
-              `${this.name}.${m}: ${_event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
+              `${this.name}.${m}: ${event.event_type} ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
             return [event, options]
           }
@@ -1420,13 +1446,16 @@ export class Broadcast extends FabrixGeneric {
             if (!_e) {
               throw new this.app.errors.GenericError(
                 'E_UNPROCESSABLE_ENTITY',
-                `${p.name} Projection returned invalid response for ${m}! - fatal`
+                `${p.name} Projection returned invalid response for ${m}! - fatal`,
+                `${this.name} Broadcast Error`
               )
             }
             if (_e[0] instanceof BroadcastCommand) {
               throw new this.app.errors.GenericError(
                 'E_NOT_ACCEPTABLE',
-                `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`)
+                `${p.name} Projection returned a Command instead of an Event for ${m}! - fatal`,
+                `${this.name} Broadcast Error`
+              )
             }
           })
           // Check that all the returned events were successful
@@ -1889,7 +1918,9 @@ export class Broadcast extends FabrixGeneric {
         ) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `Neither app.channels.${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`)
+            `Neither app.channels.${channel.name}.${m} or app.entries.${m} are a function, check config/broadcast channels`,
+            `${this.name} Broadcast Error`
+          )
         }
 
         // const { error } = joi.validate(subscribers[m].config, subscriberConfig)
@@ -2202,7 +2233,9 @@ export class Broadcast extends FabrixGeneric {
         ) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `Neither ${pipeline.name}.${m} or app.entries.${m} are a function, check config/broadcast pipelines`)
+            `Neither ${pipeline.name}.${m} or app.entries.${m} are a function, check config/broadcast pipelines`,
+            `${this.name} Broadcast Error`
+          )
         }
 
         // const { error } = joi.validate(pipes[m].config, pipeConfig)
@@ -2297,7 +2330,8 @@ export class Broadcast extends FabrixGeneric {
     if (!(hookIn instanceof BroadcastHookIn)) {
       throw new this.app.errors.GenericError(
         'E_PRECONDITION_REQUIRED',
-        `${hookIn} is not an instance of HookIn`
+        `${hookIn} is not an instance of HookIn`,
+        `${this.name} Broadcast Error`
       )
     }
 
@@ -2314,7 +2348,8 @@ export class Broadcast extends FabrixGeneric {
         if (typeof hookIn[m] !== 'function') {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `HookIn ${hookIn.name}.${m} is not a function, check config/broadcast hooks`
+            `HookIn ${hookIn.name}.${m} is not a function, check config/broadcast hooks`,
+            `${this.name} Broadcast Error`
           )
         }
         if (!m) {
@@ -2606,7 +2641,8 @@ export class Broadcast extends FabrixGeneric {
         if (typeof projector[m] !== 'function') {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `Projector ${projector.name}.${m} is not a function, check config/broadcast projectors`
+            `Projector ${projector.name}.${m} is not a function, check config/broadcast projectors`,
+            `${this.name} Broadcast Error`
           )
         }
         if (!m) {
@@ -2618,7 +2654,8 @@ export class Broadcast extends FabrixGeneric {
         if (error) {
           throw new this.app.errors.GenericError(
             'E_BAD_CONFIG',
-            `${projector.name} config is invalid`
+            `${projector.name} config is invalid`,
+            `${this.name} Broadcast Error`
           )
         }
 
@@ -2665,13 +2702,15 @@ export class Broadcast extends FabrixGeneric {
         if (typeof processor[m] !== 'function') {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `Processor ${processor.name}.${m} is not a function, check config/broadcast processors`
+            `Processor ${processor.name}.${m} is not a function, check config/broadcast processors`,
+            `${this.name} Broadcast Error`
           )
         }
         if (!m) {
           throw new this.app.errors.GenericError(
             'E_FAILED_DEPENDENCY',
-            `${processor.name} method is undefined`
+            `${processor.name} method is undefined`,
+            `${this.name} Broadcast Error`
           )
         }
 
@@ -2679,8 +2718,10 @@ export class Broadcast extends FabrixGeneric {
         const {error} = processorConfig.validate(events[m].config)
 
         if (error) {
-          throw new this.app.errors.GenericError('E_BAD_CONFIG',
-            `${processor.name} config is invalid`
+          throw new this.app.errors.GenericError(
+            'E_BAD_CONFIG',
+            `${processor.name} config is invalid`,
+            `${this.name} Broadcast Error`
           )
         }
 

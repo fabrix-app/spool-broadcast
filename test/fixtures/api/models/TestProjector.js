@@ -18,7 +18,8 @@ module.exports = class TestProjector extends BroadcastObjectModel {
     return {
       //More information about supported models options here : http://docs.sequelizejs.com/en/latest/docs/models-definition/#configuration
       options: {
-        primaryKey: false
+        primaryKey: false,
+        timestamps: false
       }
     }
   }
