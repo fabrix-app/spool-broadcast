@@ -197,7 +197,7 @@ export class BroadcastProject extends FabrixGeneric {
     this.app.log.debug(`${this.name} Finalize:`, this.event.event_type)
   }
 
-  public entries(name): Entry {
+  public entries(name: string): Entry {
     if (!this.app.spools.broadcast) {
       throw new Error('Spool-broadcast is not loaded!')
     }

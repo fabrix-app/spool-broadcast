@@ -471,7 +471,11 @@ export class BroadcastCommand extends FabrixGeneric {
    * @param path
    * @param value
    */
-  apply(path, value) {
+  apply(path: string, value?): any {
+    // If the value wasn't passed, then assume we are setting the value as the current value in data
+    if (typeof value === 'undefined') {
+      value = get(this.data, path, null)
+    }
     // Get the value that was here previously
     const current = get(this.data_previous, path, null)
 
@@ -492,6 +496,8 @@ export class BroadcastCommand extends FabrixGeneric {
 
     // Set the data
     set(this.data, path, value)
+
+    return get(this.data, path)
   }
 
   /**

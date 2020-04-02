@@ -313,7 +313,7 @@ export class Entry extends Generic {
    * Get's a model by name
    * @param name
    */
-  models(name): FabrixModel {
+  models(name: string): FabrixModel {
     if (!this.app.spools.broadcast) {
       throw new Error('Spool-broadcast is not loaded!')
     }
@@ -324,7 +324,7 @@ export class Entry extends Generic {
    * Get's a model by name
    * @param name
    */
-  entries(name): Entry {
+  entries(name: string): Entry {
     if (!this.app.spools.broadcast) {
       throw new Error('Spool-broadcast is not loaded!')
     }

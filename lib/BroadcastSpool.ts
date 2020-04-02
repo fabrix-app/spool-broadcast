@@ -5,6 +5,7 @@ import { utils } from './utils/index'
 
 import * as config from './config/index'
 import * as api from './api/index'
+import * as pkg from '../package.json'
 import { FabrixApp } from '@fabrix/fabrix'
 import { Entry } from './Entry'
 import { FabrixModel } from '@fabrix/fabrix/dist/common'
@@ -22,9 +23,7 @@ export class BroadcastSpool extends ExtensionSpool {
   constructor(app) {
     super(app, {
       config: config,
-      pkg: {
-        name: 'spool-broadcast'
-      },
+      pkg: pkg,
       api: api
     })
 
