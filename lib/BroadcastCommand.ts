@@ -408,7 +408,7 @@ export class BroadcastCommand extends FabrixGeneric {
    * Approve a list of values
    * @param approved
    */
-  approveUpdates(approved = []) {
+  approveUpdates(approved: string[] = []) {
 
     if (this._list) {
       this.data.forEach((d, i) => {
@@ -434,8 +434,69 @@ export class BroadcastCommand extends FabrixGeneric {
    * Approve a single value
    * @param approved
    */
-  approveUpdate(approved) {
+  approveUpdate(approved: string) {
     return this.approveUpdates([approved])
+  }
+
+
+  /**
+   * Returns the new values of a single data object
+   */
+  private _approvedChanges (_data, _updates, approved = []) {
+    const applied = {}, updated = {}
+
+    Object.keys(JSON.parse(JSON.stringify(_data))).forEach((k, i) => {
+      if (approved.indexOf(k) > -1) {
+        applied[k] = _data[k]
+
+        // Record the applied changes
+        if (!isEqual(_data[k], _updates[k])) {
+          updated[k] = _data[k]
+        }
+      }
+    })
+    return [updated, applied]
+  }
+
+  /**
+   * When the command data is modified directly, it will be reset to previous values on "reload", unless they are applied.
+   * This function applies that data if it is not already applied
+   * @param approved string[]
+   */
+  approveChanges(approved: string[] = []) {
+    if (this._list) {
+      this.data.forEach((d, i) => {
+        const [ updated, applied ] = this._approvedChanges(this.data[i], this.data_updates[i], approved)
+        Object.keys(updated)
+          .forEach(k => {
+            this.update(`${i}.${k}`, applied[k])
+          })
+        Object.keys(applied)
+          .forEach(k => {
+            this.apply(`${i}.${k}`, applied[k])
+          })
+      })
+    }
+    else {
+      const [ updated, applied ] = this._approvedChanges(this.data, this.data_updates, approved)
+      Object.keys(updated)
+        .forEach(k => {
+          this.update(`${k}`, applied[k])
+        })
+      Object.keys(applied)
+        .forEach(k => {
+          this.apply(`${k}`, applied[k])
+        })
+    }
+    return this.data
+  }
+
+  /**
+   * Approve a single value
+   * @param approved
+   */
+  approveChange(approved) {
+    return this.approveChanges([approved])
   }
 
   /**

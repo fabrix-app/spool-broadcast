@@ -148,6 +148,7 @@ describe('Command', () => {
         assert.equal(testCommand1.data.string, testCommand1.data_applied.string)
         assert.equal(testCommand1.data_changed.string, null)
         assert.equal(testCommand1.data_previous.string, null)
+        testCommand1.approveChange('string')
 
         // console.log('BRK UNAPPLIED', testCommand1.unapplied())
         // console.log('BRK UPDATED', testCommand1.updated())
