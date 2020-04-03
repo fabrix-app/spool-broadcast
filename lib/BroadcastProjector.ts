@@ -3,12 +3,12 @@ import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { mapSeries, Promise } from 'bluebird'
 import { Broadcast } from './Broadcast'
 import { BroadcastEvent } from './api/models'
-import {Entry} from './Entry'
+import { Entry } from './Entry'
 // import uuid from 'uuid/v4'
 
 import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 import { BroadcastEntity } from './BroadcastEntity'
-import { BroadcastProcess } from './BroadcastProcesser'
+import { intersection } from 'lodash'
 
 export class BroadcastProject extends FabrixGeneric {
   public message: any
@@ -47,10 +47,17 @@ export class BroadcastProject extends FabrixGeneric {
   }
 
   get saveOptions () {
+    // Get the only the fields that change
+    let fields = this.event.changes()
+    // Guarantee that we have the schema and then use the intersection for sequelize safety
+    if (this.event.object && this.event.object.resolver && this.event.object.resolver.schema) {
+      fields = intersection(this.event.changes(), Object.keys(this.event.object.resolver.schema))
+    }
+
     return {
       transaction: this.options.transaction,
       useMaster: this.options.useMaster,
-      fields: this.event.changes()
+      fields: fields
     }
   }
 
