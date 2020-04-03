@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.85](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.84...v1.6.85) (2020-04-03)
+
+
+### Bug Fixes
+
+* fixes saveOptions to only return fields in the object schema ([2cc4965](https://github.com/fabrix-app/spool-broadcast/commit/2cc4965))
+
 ### [1.6.84](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.83...v1.6.84) (2020-04-02)
 
 
