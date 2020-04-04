@@ -175,6 +175,8 @@ describe('Command', () => {
         assert.deepEqual(testCommand1.data_previous.array, null)
 
         console.log('BRK command changes', testCommand1.changes())
+        assert.equal(testCommand1.changes('test_uuid'), 'test_uuid')
+        assert.equal(testCommand1.changes('array'), 'array')
         assert.deepEqual(testCommand1.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
         assert.deepEqual(testCommand1.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array'])
 

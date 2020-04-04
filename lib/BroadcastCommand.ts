@@ -671,7 +671,7 @@ export class BroadcastCommand extends FabrixGeneric {
   /**
    * Log Changes into the Metadata
    */
-  changes() {
+  changes(key?: string): boolean | string | string[] {
     let changes = []
 
     if (this._list) {
@@ -705,7 +705,24 @@ export class BroadcastCommand extends FabrixGeneric {
 
     this.app.log.silly(`${this.command_type} ${this.object.constructor.name} changes`, changes)
 
-    return changes
+    if (key) {
+      if (!this._list) {
+        if (changes.includes(key)) {
+          return key
+        }
+        else {
+          return false
+        }
+      }
+      else {
+        return this.data.map((d, i) => {
+          return changes[i].includes(key)
+        })
+      }
+    }
+    else {
+      return changes
+    }
   }
 
   /**

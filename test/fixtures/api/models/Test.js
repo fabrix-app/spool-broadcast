@@ -42,6 +42,30 @@ class Test extends BroadcastObjectModel {
         type: Sequelize.STRING,
         binaryOptional: true,
         binaryType: 'string'
+      },
+
+      boolean: {
+        type: Sequelize.BOOLEAN,
+        binaryOptional: true,
+        binaryType: 'boolean'
+      },
+
+      number: {
+        type: Sequelize.INTEGER,
+        binaryOptional: true,
+        binaryType: 'int'
+      },
+
+      array: {
+        type: Sequelize.JSONB,
+        binaryOptional: true,
+        binaryType: 'json'
+      },
+
+      json: {
+        type: Sequelize.JSONB,
+        binaryOptional: true,
+        binaryType: 'json'
       }
     }
   }

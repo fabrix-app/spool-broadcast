@@ -540,7 +540,7 @@ export interface BroadcastEvent extends BroadcastModel {
   toJSON(): {[key: string]: any}
   generateUUID(config?, options?): BroadcastEvent
 
-  changes(key?): boolean | string[]
+  changes(key?): boolean | string | string[]
 
   handleData(method, manager, event): any
   handleMetadata(method, manager, event): any
@@ -568,7 +568,18 @@ BroadcastEvent.prototype.handleData = function(method, manager, event) {
  */
 BroadcastEvent.prototype.changes = function(key?) {
   if (key) {
-    return this.metadata.changes.includes(key)
+    if (!isArray(this._data)) {
+      if (this.metadata.changes.includes(key)) {
+        return key
+      } else {
+        return false
+      }
+    }
+    else {
+      return this._data.map((d, i) => {
+        return this.metadata.changes[i].includes(key)
+      })
+    }
   }
   else {
     return this.metadata.changes

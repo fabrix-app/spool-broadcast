@@ -31,7 +31,13 @@ class Create extends Hook {
 class Update extends Hook {
   async run() {
 
-    const approvedUpdates = ['name']
+    const approvedUpdates = [
+      'name',
+      'boolean',
+      'number',
+      'array',
+      'json'
+    ]
 
     console.log(
       'brk test changes before',
