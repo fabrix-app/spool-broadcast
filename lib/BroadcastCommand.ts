@@ -687,7 +687,7 @@ export class BroadcastCommand extends FabrixGeneric {
         }
       })
     }
-    else if (!this._list) {
+    else {
       if (
         this.data.isNewRecord
         // || this.data._options.isNewRecord
@@ -703,21 +703,19 @@ export class BroadcastCommand extends FabrixGeneric {
       throw new Error('metadata changes should be an array')
     }
 
-    this.app.log.silly(`${this.command_type} ${this.object.constructor.name} changes`, changes)
-
     if (key) {
-      if (!this._list) {
+      if (this._list) {
+        return this.data.map((d, i) => {
+          return changes[i].includes(key)
+        })
+      }
+      else {
         if (changes.includes(key)) {
           return key
         }
         else {
           return false
         }
-      }
-      else {
-        return this.data.map((d, i) => {
-          return changes[i].includes(key)
-        })
       }
     }
     else {
@@ -727,8 +725,8 @@ export class BroadcastCommand extends FabrixGeneric {
 
   hasChanges(index?: number): boolean {
     const changes = (this.changes() as Array<String>)
-    if (index) {
-      if (changes[index].length > 0) {
+    if (this._list && typeof index !== 'undefined') {
+      if (changes[index] && changes[index].length > 0) {
         return true
       }
       else {
