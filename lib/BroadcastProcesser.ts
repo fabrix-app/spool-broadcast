@@ -1,5 +1,5 @@
 import { FabrixApp } from '@fabrix/fabrix'
-import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
+import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { Promise } from 'bluebird'
 
 import { BroadcastEvent } from './api/models'
@@ -16,6 +16,7 @@ export class BroadcastProcess extends FabrixGeneric {
   public consistency = 'strong'
   public versions = [1]
   public retries = 0
+  public processorModel: FabrixModel
   private _id: string
 
   constructor(

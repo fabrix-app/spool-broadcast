@@ -9,6 +9,7 @@ import { Entry } from './Entry'
 import { BroadcastAction, BroadcastOptions, IBroadcastTuple } from './Interface'
 import { BroadcastEntity } from './BroadcastEntity'
 import { intersection } from 'lodash'
+import { GenericError } from '@fabrix/spool-errors/dist/errors'
 
 export class BroadcastProject extends FabrixGeneric {
   public message: any
@@ -16,6 +17,7 @@ export class BroadcastProject extends FabrixGeneric {
   public isRedelivered = false
   public consistency = 'strong'
   public retries = 0
+  private _projectorModel: FabrixModel
   private _id: string
 
   constructor(
@@ -46,11 +48,17 @@ export class BroadcastProject extends FabrixGeneric {
     }
   }
 
+  // TODO, we need to handle projections that are not the same type as the event
   get saveOptions () {
     // Get the only the fields that change
     let fields = this.event.changes()
+
+    if (this.projectorModel && this.fields.length > 0) {
+      fields = intersection(this.event.changes(), this.fields)
+    }
     // Guarantee that we have the schema and then use the intersection for sequelize safety
-    if (this.event.object && this.event.object.resolver && this.event.object.resolver.schema) {
+    // This assumes that the projection is the same model type as the event
+    else if (this.event.object && this.event.object.resolver && this.event.object.resolver.schema) {
       fields = intersection(this.event.changes(), Object.keys(this.event.object.resolver.schema))
     }
 
@@ -74,6 +82,44 @@ export class BroadcastProject extends FabrixGeneric {
 
   get name() {
     return this.constructor.name
+  }
+
+  get projectorModel() {
+    return this._projectorModel
+  }
+
+  get fields(): string[] {
+    if (this.projectorModel && this.projectorModel.resolver && this.projectorModel.resolver.schema) {
+      return Object.keys(this.projectorModel.resolver.schema)
+    }
+    else {
+      return []
+    }
+  }
+
+  set projectorModel(model: any) {
+    if (typeof model === 'string') {
+      if (this.app.models[model]) {
+        this._projectorModel = this.app.models[model]
+      }
+      else {
+        throw new GenericError(
+          'E_NOT_VALID',
+          `${model} is not in app.models`
+        )
+      }
+    }
+    else {
+      if (this.app.models[model.constructor.name]) {
+        this._projectorModel = model
+      }
+      else {
+        throw new GenericError(
+          'E_NOT_VALID',
+          `${model.constructor.name} is not in app.models`
+        )
+      }
+    }
   }
 
   async run (): Promise<(BroadcastEvent | BroadcastAction | BroadcastOptions)[]> {

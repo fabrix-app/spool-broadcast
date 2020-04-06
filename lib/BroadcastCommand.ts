@@ -615,13 +615,13 @@ export class BroadcastCommand extends FabrixGeneric {
   createdAt() {
     if (this._list) {
       this.data.forEach((d, i) => {
-        if (d) {
+        if (d && d.isNewRecord) {
           // d.created_at = new Date(Date.now()).toISOString()
           this.apply(`${i}.created_at`, new Date(Date.now()).toISOString())
         }
       })
     }
-    else if (this.data) {
+    else if (this.data && this.data.isNewRecord) {
       // this.data.created_at = new Date(Date.now()).toISOString()
       this.apply(`created_at`, new Date(Date.now()).toISOString())
     }
@@ -635,13 +635,13 @@ export class BroadcastCommand extends FabrixGeneric {
     if (this._list) { // && this.changes().length > 0) {
       // TODO this doesn't look right, since there will be an array of data and an array of changes
       this.data.forEach((d, i) => {
-        if (d) {
+        if (d && this.hasChanges(i)) {
           // d.updated_at = new Date(Date.now()).toISOString()
           this.apply(`${i}.updated_at`, new Date(Date.now()).toISOString())
         }
       })
     }
-    else if (this.data) { //  && this.changes().length > 0) {
+    else if (this.data && this.hasChanges()) {
       // this.data.updated_at = new Date(Date.now()).toISOString()
       this.apply(`updated_at`, new Date(Date.now()).toISOString())
     }
@@ -722,6 +722,26 @@ export class BroadcastCommand extends FabrixGeneric {
     }
     else {
       return changes
+    }
+  }
+
+  hasChanges(index?: number): boolean {
+    const changes = (this.changes() as Array<String>)
+    if (index) {
+      if (changes[index].length > 0) {
+        return true
+      }
+      else {
+        return false
+      }
+    }
+    else {
+      if (changes && changes.length > 0) {
+        return true
+      }
+      else {
+        return false
+      }
     }
   }
 

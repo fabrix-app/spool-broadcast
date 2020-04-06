@@ -23,6 +23,8 @@ class Logger extends Project {
   async run() {
     console.log('BRK LOGGED!', this.event)
 
+    this.projectorModel = this.app.models.TestLogger
+
     const test = this.app.models.TestLogger.stage({
       event_type: this.event.event_type,
       event_uuid: this.event.event_uuid,
@@ -37,6 +39,7 @@ class Logger extends Project {
     }, {
       isNewRecord: true
     })
+    console.log('BRK LOGGER SAVE OPTIONS', this.saveOptions)
     // return userRole.destroy(this.options)
     return test.save(this.options)
       .then(_e => {

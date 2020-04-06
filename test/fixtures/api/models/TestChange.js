@@ -58,6 +58,24 @@ class TestChange extends BroadcastObjectModel {
         type: Sequelize.JSONB,
         binaryOptional: true,
         binaryType: 'json'
+      },
+
+      created_at: {
+        type: Sequelize.DATE,
+        binaryOptional: true,
+        binaryType: 'date'
+      },
+
+      updated_at: {
+        type: Sequelize.DATE,
+        binaryOptional: true,
+        binaryType: 'date'
+      },
+
+      deleted_at: {
+        type: Sequelize.DATE,
+        binaryOptional: true,
+        binaryType: 'date'
       }
     }
   }
