@@ -105,6 +105,7 @@ export class BroadcastResolver extends SequelizeResolver {
       // Broadcast Metadata types
       'hooks?': ['json'],
       'changes?': 'json',
+      'previous?': 'json',
       'annotations?': 'json'
     })
   }

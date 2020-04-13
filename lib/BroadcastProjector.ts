@@ -270,6 +270,7 @@ export class BroadcastProject extends FabrixGeneric {
   }
 
   get metadata(): { channel, channel_session, user, device, application, causation_uuid } {
+
     const channel = { channel_uuid: this.event.metadata.req_channel_uuid || null }
     const channel_session = { session_uuid: this.event.metadata.req_session_uuid  || null }
     const user = { user_uuid: this.event.metadata.req_user_uuid }

@@ -671,7 +671,7 @@ export class BroadcastCommand extends FabrixGeneric {
   /**
    * Log Changes into the Metadata
    */
-  changes(key?: string): boolean | string | string[] {
+  changes(key?: string): boolean | string | string[] | Array<string[]> {
     let changes = []
 
     if (this._list) {
@@ -743,6 +743,35 @@ export class BroadcastCommand extends FabrixGeneric {
     }
   }
 
+  changedPreviousData() {
+
+    let previous
+
+    if (this._list) {
+      const changes = (this.changes() as Array<Array<string>>)
+      previous = []
+      changes.forEach((d, i) => {
+        previous[i] = {}
+        d.forEach(_d => {
+          if (this.data_previous[i]) {
+            previous[i][_d] = this.data_previous[i][_d]
+          }
+          else {
+            previous[i][_d] = null
+          }
+        })
+      })
+    }
+    else {
+      const changes = (this.changes() as Array<string>)
+      previous = {}
+      changes.forEach((d, i) => {
+        previous[d] = this.data_previous[d]
+      })
+    }
+    return previous
+  }
+
   /**
    * Get the hooks that are running during this command
    */
@@ -764,6 +793,7 @@ export class BroadcastCommand extends FabrixGeneric {
     return {
       ...(this._metadata || {}),
       changes: this.changes(),
+      previous: this.changedPreviousData(),
       hooks: this.hooks
     }
   }

@@ -1,5 +1,5 @@
 // tslint:disable:max-line-length
-import { isArray, isObject } from 'lodash'
+import { isArray, isObject, get } from 'lodash'
 import { BroadcastModel } from '../../BroadcastModel'
 import { regexdot } from '@fabrix/regexdot'
 import { helpers } from '../../utils/helpers'
@@ -541,6 +541,7 @@ export interface BroadcastEvent extends BroadcastModel {
   generateUUID(config?, options?): BroadcastEvent
 
   changes(key?): boolean | string | string[]
+  previously(key?): boolean | any
 
   handleData(method, manager, event): any
   handleMetadata(method, manager, event): any
@@ -583,6 +584,26 @@ BroadcastEvent.prototype.changes = function(key?) {
   }
   else {
     return this.metadata.changes
+  }
+}
+
+BroadcastEvent.prototype.previously = function(key?) {
+  if (key) {
+    if (!isArray(this._data)) {
+      if (get(this._metadata.previous, key)) {
+        return key
+      } else {
+        return false
+      }
+    }
+    else {
+      return this._data.map((d, i) => {
+        return get(this._metadata.previous[i], key)
+      })
+    }
+  }
+  else {
+    return this._metadata.previous
   }
 }
 

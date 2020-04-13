@@ -240,6 +240,7 @@ describe('Command', () => {
     testCommand1 = TestBroadcast.createCommand({
       req: req,
       command_type: 'create.change',
+      event_type: 'change.created',
       object: global.app.models.TestChange,
       data: body,
       causation_uuid: req.causation_uuid,
@@ -331,9 +332,10 @@ describe('Command', () => {
         assert.ok(testCommand1.data.child)
         assert.ok(testCommand1.data.children)
 
-        console.log('BRK command changes', testCommand1.changes())
+        console.log('BRK command changes', testCommand1.changes(), 'dataPrevious', testCommand1.changedPreviousData())
         assert.deepEqual(testCommand1.changes(), ['string', 'number', 'keyvalue', 'array', 'updated_at'])
         assert.deepEqual(testCommand1.metadata.changes, ['string', 'number', 'keyvalue', 'array', 'updated_at'])
+        assert.deepEqual(testCommand1.changedPreviousData(), {string: 'test1', number: 1, keyvalue: {hello: 'earth'}, array: ['hello', 'earth'], updated_at: null})
 
         assert.equal(testCommand1.hasChanges(), true)
 
@@ -357,6 +359,19 @@ describe('Command', () => {
       .catch(err => {
         done(err)
       })
+  })
+
+  it('should test command on update object (toEvent)', (done) => {
+    const event = testCommand1.broadcaster.buildEvent({
+      event_type: testCommand1._event_type,
+      correlation_uuid: testCommand1.command_uuid,
+      command: testCommand1
+    })
+    console.log('BRK CREATED EVENT PREVIOUSLY', event.changes(), event.previously())
+    assert.deepEqual(event.changes(), ['string', 'number', 'keyvalue', 'array', 'updated_at'])
+    assert.deepEqual(event.previously(), {string: 'test1', number: 1, keyvalue: {hello: 'earth'}, array: ['hello', 'earth'], updated_at: null})
+
+    done()
   })
 
   it('should test command on update object that is already reloaded', (done) => {
@@ -397,6 +412,7 @@ describe('Command', () => {
     testCommand1 = TestBroadcast.createCommand({
       req: req,
       command_type: 'create.change',
+      event_type: 'change.created',
       object: global.app.models.TestChange,
       data: body,
       causation_uuid: req.causation_uuid,
@@ -485,7 +501,8 @@ describe('Command', () => {
         assert.ok(testCommand1.data.child)
         assert.ok(testCommand1.data.children)
 
-        console.log('BRK command changes', testCommand1.changes())
+        console.log('BRK command changes', testCommand1.changes(),
+          'previousData', testCommand1.changedPreviousData())
         assert.deepEqual(testCommand1.changes(), [])
         assert.deepEqual(testCommand1.metadata.changes, [])
 
@@ -514,6 +531,19 @@ describe('Command', () => {
       .catch(err => {
         done(err)
       })
+  })
+
+  it('should test command on no update object (toEvent)', (done) => {
+    const event = testCommand1.broadcaster.buildEvent({
+      event_type: testCommand1._event_type,
+      correlation_uuid: testCommand1.command_uuid,
+      command: testCommand1
+    })
+    console.log('BRK CREATED EVENT PREVIOUSLY', event.changes(), event.previously())
+    assert.deepEqual(event.changes(), [])
+    assert.deepEqual(event.previously(), {})
+
+    done()
   })
 
 
@@ -561,7 +591,8 @@ describe('Command', () => {
 
     testCommand2 = TestBroadcast.createCommand({
       req: req,
-      command_type: 'create.change',
+      command_type: 'create.change.list',
+      event_type: 'change.created.list',
       object: global.app.models.TestChange,
       data: body,
       causation_uuid: req.causation_uuid,
@@ -624,8 +655,10 @@ describe('Command', () => {
         assert.deepEqual(testCommand2.data_previous[0].keyvalue, null)
 
         testCommand1.createdAt()
+        testCommand1.updatedAt() // should do nothing because this is a new record
 
-        console.log('BRK command changes', testCommand2.changes())
+        console.log('BRK command changes', testCommand2.changes(),
+          'previousData', testCommand2.changedPreviousData())
         assert.deepEqual(testCommand2.changes(), [['test_uuid', 'string', 'number', 'keyvalue', 'array', 'created_at', 'updated_at', 'deleted_at']])
         assert.deepEqual(testCommand2.metadata.changes, [['test_uuid', 'string', 'number', 'keyvalue', 'array', 'created_at', 'updated_at', 'deleted_at']])
 
@@ -646,6 +679,19 @@ describe('Command', () => {
       .catch(err => {
         done(err)
       })
+  })
+
+  it('should test command on list create object (toEvent)', (done) => {
+    const event = testCommand2.broadcaster.buildEvent({
+      event_type: testCommand2._event_type,
+      correlation_uuid: testCommand2.command_uuid,
+      command: testCommand2
+    })
+    console.log('BRK CREATED EVENT PREVIOUSLY', event.changes(), event.previously())
+    assert.deepEqual(event.changes(), [['test_uuid', 'string', 'number', 'keyvalue', 'array']])
+    assert.deepEqual(event.previously(), [{ test_uuid: null, string: null, number: null, keyvalue: null, array: null }])
+
+    done()
   })
 
   it('should test command on update object list', (done) => {
@@ -684,7 +730,8 @@ describe('Command', () => {
 
     testCommand2 = TestBroadcast.createCommand({
       req: req,
-      command_type: 'create.change',
+      command_type: 'create.change.list',
+      event_type: 'change.created.list',
       object: global.app.models.TestChange,
       data: body,
       causation_uuid: req.causation_uuid,
@@ -722,7 +769,8 @@ describe('Command', () => {
           'updates', testCommand2.data_updates,
           'previous', testCommand2.data_previous,
           'applied', testCommand2.data_applied,
-          'changed', testCommand2.data_changed
+          'changed', testCommand2.data_changed,
+          'previousData', testCommand2.changedPreviousData()
         )
 
         assert.equal(testCommand2.data[0].string, 'test1')
@@ -760,13 +808,14 @@ describe('Command', () => {
         assert.ok(testCommand2.data[0].child)
         assert.ok(testCommand2.data[0].children)
 
-        testCommand2.createdAt() // Should do nothing
+        testCommand2.createdAt() // Should do nothing because this an update
         testCommand2.updatedAt()
 
-        console.log('BRK command changes', testCommand2.changes())
+        console.log('BRK command changes', testCommand2.changes(),
+          'previousData', testCommand2.changedPreviousData())
         assert.deepEqual(testCommand2.changes(), [['string', 'number', 'keyvalue', 'updated_at']])
         assert.deepEqual(testCommand2.metadata.changes, [['string', 'number', 'keyvalue', 'updated_at']])
-
+        assert.deepEqual(testCommand2.changedPreviousData(), [{string: 'test1', number: 1, keyvalue: {hello: 'earth'}, updated_at: null}])
 
         return testCommand2.broadcastSeries(testCommand2.data, (d) => {
           return d.save()
@@ -789,6 +838,19 @@ describe('Command', () => {
       .catch(err => {
         done(err)
       })
+  })
+
+  it('should test command on list update object (toEvent)', (done) => {
+    const event = testCommand2.broadcaster.buildEvent({
+      event_type: testCommand2._event_type,
+      correlation_uuid: testCommand2.command_uuid,
+      command: testCommand2
+    })
+    console.log('BRK CREATED EVENT PREVIOUSLY', event.changes(), event.previously())
+    assert.deepEqual(event.changes(), [['string', 'number', 'keyvalue', 'updated_at']])
+    assert.deepEqual(event.previously(), [{string: 'test1', number: 1, keyvalue: {hello: 'earth'}, updated_at: null}])
+
+    done()
   })
 
 
@@ -870,7 +932,8 @@ describe('Command', () => {
           'updates', testCommand4.data_updates,
           'previous', testCommand4.data_previous,
           'applied', testCommand4.data_applied,
-          'changed', testCommand4.data_changed
+          'changed', testCommand4.data_changed,
+          'previousData', testCommand4.changedPreviousData()
         )
 
         assert.equal(testCommand4.data.string, 'test')
@@ -919,7 +982,8 @@ describe('Command', () => {
         assert.deepEqual(testCommand4.data_changed.array, null)
         assert.deepEqual(testCommand4.data_previous.array, null)
 
-        console.log('BRK command changes', testCommand4.changes())
+        console.log('BRK command changes', testCommand4.changes(),
+          'previousData', testCommand4.changedPreviousData())
         assert.deepEqual(testCommand4.changes(), ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'created_at', 'updated_at', 'deleted_at'])
         assert.deepEqual(testCommand4.metadata.changes, ['test_uuid', 'string', 'number', 'keyvalue', 'array', 'created_at', 'updated_at', 'deleted_at'])
 
