@@ -13,6 +13,7 @@ export interface BroadcastObjectModel {
   isReloaded: boolean
   isStaged: boolean
   isSynced: boolean
+  isSynthetic: boolean
   changes(options?): any
   toBinary(options?): any
   toPlain(options?): any
@@ -22,6 +23,8 @@ export interface BroadcastObjectModel {
 BroadcastObjectModel.prototype.isReloaded = false
 BroadcastObjectModel.prototype.isStaged = false
 BroadcastObjectModel.prototype.isSynced = false
+BroadcastObjectModel.prototype.isSynthetic = false
+
 BroadcastObjectModel.prototype.changes = function (options) {
   return this.changed(options)
 }

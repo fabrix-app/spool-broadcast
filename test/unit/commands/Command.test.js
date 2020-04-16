@@ -371,6 +371,9 @@ describe('Command', () => {
     assert.deepEqual(event.changes(), ['string', 'number', 'keyvalue', 'array', 'updated_at'])
     assert.deepEqual(event.previously(), {string: 'test1', number: 1, keyvalue: {hello: 'earth'}, array: ['hello', 'earth'], updated_at: null})
 
+    assert.equal(event.changes('string'), true)
+    assert.equal(event.previously('string'), 'test1')
+
     done()
   })
 
@@ -849,6 +852,10 @@ describe('Command', () => {
     console.log('BRK CREATED EVENT PREVIOUSLY', event.changes(), event.previously())
     assert.deepEqual(event.changes(), [['string', 'number', 'keyvalue', 'updated_at']])
     assert.deepEqual(event.previously(), [{string: 'test1', number: 1, keyvalue: {hello: 'earth'}, updated_at: null}])
+
+    assert.equal(event.changes('0.string'), true)
+    assert.equal(event.changes('string'), true) // Did any list instance of string change
+    assert.equal(event.previously('0.string'), 'test1')
 
     done()
   })
@@ -1345,7 +1352,7 @@ describe('Command', () => {
         testCommand5.createdAt() // Should do nothing
         testCommand5.updatedAt()
 
-        assert.equal(testCommand5.hasChanges(), false)
+        // assert.equal(testCommand5.hasChanges(), false)
 
         return testCommand5.data.save()
       })
@@ -1353,6 +1360,157 @@ describe('Command', () => {
         // testCommand5.restage()
         //
         // console.log('BRK command after restage', testCommand5)
+
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
+  it('should test command on new synthetic object', (done) => {
+
+    const TestBroadcast = global.app.broadcasts.TestBroadcast2
+    const req = {}
+
+    let body = {
+      test: 'test'
+    }
+
+    // Build a permission instance
+    body = global.app.models.TestSynthetic.stage(body, {
+      isNewRecord: true,
+      stage: [
+        {
+          model: global.app.models.Test,
+          as: 'child',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        },
+        {
+          model: global.app.models.Test,
+          as: 'children',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        }
+      ]
+    })
+
+    testCommand6 = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'create.change',
+      object: global.app.models.TestSynthetic,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    testCommand6.hooks = [{prehook_url: 'example.com'}]
+
+    console.log('*********************************')
+    console.log('BRK command create before reload')
+    console.log('data', testCommand6.data)
+    console.log('updates', testCommand6.data_updates)
+    console.log('previous', testCommand6.data_previous)
+    console.log('applied', testCommand6.data_applied)
+    console.log('changed', testCommand6.data_changed)
+    console.log('*********************************')
+
+    assert.deepEqual(testCommand6.hooks, [{prehook_url: 'example.com'}])
+    assert.deepEqual(testCommand6.metadata.hooks, testCommand6.hooks)
+
+    testCommand6.reload({})
+      .then(() => {
+
+        console.log('*********************************')
+        console.log('BRK command create after reload')
+        console.log('data', testCommand6.data)
+        console.log('updates', testCommand6.data_updates)
+        console.log('previous', testCommand6.data_previous)
+        console.log('applied', testCommand6.data_applied)
+        console.log('changed', testCommand6.data_changed)
+        console.log('*********************************')
+
+        done()
+      })
+      .catch(err => {
+        done(err)
+      })
+  })
+
+
+  it('should test command on update synthetic object', (done) => {
+
+    const TestBroadcast = global.app.broadcasts.TestBroadcast2
+    const req = {}
+
+    let body = {
+      test: 'test'
+    }
+
+    // Build a permission instance
+    body = global.app.models.TestSynthetic.stage(body, {
+      isNewRecord: false,
+      stage: [
+        {
+          model: global.app.models.Test,
+          as: 'child',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        },
+        {
+          model: global.app.models.Test,
+          as: 'children',
+          options: {
+            isNewRecord: true,
+            configure: ['generateUUID'],
+          }
+        }
+      ]
+    })
+
+    testCommand6 = TestBroadcast.createCommand({
+      req: req,
+      command_type: 'create.change',
+      object: global.app.models.TestSynthetic,
+      data: body,
+      causation_uuid: req.causation_uuid,
+      correlation_uuid: req.correlation_uuid,
+      metadata: {}
+    })
+
+    testCommand6.hooks = [{prehook_url: 'example.com'}]
+
+    console.log('*********************************')
+    console.log('BRK command update before reload')
+    console.log('data', testCommand6.data)
+    console.log('updates', testCommand6.data_updates)
+    console.log('previous', testCommand6.data_previous)
+    console.log('applied', testCommand6.data_applied)
+    console.log('changed', testCommand6.data_changed)
+    console.log('*********************************')
+
+    assert.deepEqual(testCommand6.hooks, [{prehook_url: 'example.com'}])
+    assert.deepEqual(testCommand6.metadata.hooks, testCommand6.hooks)
+
+    testCommand6.reload({})
+      .then(() => {
+
+        console.log('*********************************')
+        console.log('BRK command update after reload')
+        console.log('data', testCommand6.data)
+        console.log('updates', testCommand6.data_updates)
+        console.log('previous', testCommand6.data_previous)
+        console.log('applied', testCommand6.data_applied)
+        console.log('changed', testCommand6.data_changed)
+        console.log('*********************************')
 
         done()
       })

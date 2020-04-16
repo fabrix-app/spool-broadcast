@@ -306,25 +306,29 @@ export class BroadcastCommand extends FabrixGeneric {
     // If this is reloaded, return the data, and the data as previous (assumes that this was created in a projection?)
     if (
       _data.isReloaded
-      // || _data._options.isReloaded
     ) {
       return Promise.resolve([_data, _data])
     }
-    // If this is a new record, return the data, an empty previous
+    // If this data object is synthetic (eg. not persisted in a database)...
+    // Then return object like it is a constant
+    else if (
+      _data.isSynthetic
+    ) {
+      return Promise.resolve([_data, _data])
+    }
+    // If this is a new record, return the data, and an empty previous
     else if (
       _data.isNewRecord
-      // || _data._options.isNewRecord
     ) {
       _data.isReloaded = true
       return Promise.resolve([_data, null])
     }
+    // Otherwise, we need to use the sequelize reload function to reload
     else {
       // Call sequelize's reload function
       return _data.reload(options)
         .then((_previous) => {
-          // TODO, deprecate one of these
           _data.isReloaded = true
-          // _data._options.isReloaded = true
 
           return [_data, _previous]
         })
@@ -339,12 +343,12 @@ export class BroadcastCommand extends FabrixGeneric {
     if (this._list) {
       return this.process(new Map(), this.data, (d, i) => {
         return this._reload(d, options)
-          .then(([_current, previous]) => {
+          .then(([_current, _previous]) => {
             // If there is previous data after the reload, then set it in the previous list as un-applied
-            if (previous) {
-              previous.attributes
+            if (_previous) {
+              _previous.attributes
                 .forEach(k => {
-                  this.previous(`${i}.${k}`, previous[k])
+                  this.previous(`${i}.${k}`, _previous[k])
                 })
             }
             // If there is no previous data (new record), then we can mark everything as applied
@@ -365,11 +369,11 @@ export class BroadcastCommand extends FabrixGeneric {
     else {
       return this._reload(this.data, options)
         // If there is previous data after the reload, then set it in the previous list as un-applied
-        .then(([_current, previous]) => {
-          if (previous) {
-            previous.attributes
+        .then(([_current, _previous]) => {
+          if (_previous) {
+            _previous.attributes
               .forEach(k => {
-                this.previous(`${k}`, previous[k])
+                this.previous(`${k}`, _previous[k])
               })
           }
           // If there is no previous data (new record), then we can mark everything as applied

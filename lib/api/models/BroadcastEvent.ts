@@ -540,7 +540,7 @@ export interface BroadcastEvent extends BroadcastModel {
   toJSON(): {[key: string]: any}
   generateUUID(config?, options?): BroadcastEvent
 
-  changes(key?): boolean | string | string[]
+  changes(key?): boolean | string[]
   previously(key?): boolean | any
 
   handleData(method, manager, event): any
@@ -568,18 +568,38 @@ BroadcastEvent.prototype.handleData = function(method, manager, event) {
  * @param key
  */
 BroadcastEvent.prototype.changes = function(key?) {
+  // If a key is given
   if (key) {
+    // If not a list, then just check the changes for the key
     if (!isArray(this._data)) {
       if (this.metadata.changes.includes(key)) {
-        return key
-      } else {
+        return true
+      }
+      else {
         return false
       }
     }
+    // If a list, then
     else {
-      return this._data.map((d, i) => {
-        return this.metadata.changes[i].includes(key)
-      })
+      // Check if we are given an index
+      const split = key.split('.')
+      let match = false
+      if (split[0] && split[1]) {
+        if (typeof Number(split[0]) === 'number' && this.metadata.changes[Number(split[0])]) {
+          if (this.metadata.changes[Number(split[0])].includes(split[1])) {
+            match = true
+          }
+        }
+      }
+      // Or check if any in the list has changed
+      else {
+        this._data.forEach((d, i) => {
+          if (this.metadata.changes[i].includes(key)) {
+            match = true
+          }
+        })
+      }
+      return match
     }
   }
   else {
@@ -591,15 +611,19 @@ BroadcastEvent.prototype.previously = function(key?) {
   if (key) {
     if (!isArray(this._data)) {
       if (get(this._metadata.previous, key)) {
-        return key
-      } else {
-        return false
+        return this._metadata.previous[key]
+      }
+      else {
+        return undefined
       }
     }
     else {
-      return this._data.map((d, i) => {
-        return get(this._metadata.previous[i], key)
-      })
+      if (get(this._metadata.previous, key)) {
+        return get(this._metadata.previous, key)
+      }
+      else {
+        return undefined
+      }
     }
   }
   else {

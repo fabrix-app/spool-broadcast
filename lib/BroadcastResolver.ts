@@ -219,6 +219,7 @@ export class BroadcastResolver extends SequelizeResolver {
         isReloaded: typeof options.isReloaded !== 'undefined' ? options.isReloaded : false, // || !(options.isNewRecord || false) || false,
         isNewRecord: typeof options.isNewRecord !== 'undefined' ? options.isNewRecord : true,
         isSynced: typeof options.isSynced !== 'undefined' ? options.isSynced : false,
+        isSynthetic: typeof options.isSynthetic !== 'undefined' ? options.isSynthetic : false,
         ...options
       }
 
@@ -314,6 +315,7 @@ export class BroadcastResolver extends SequelizeResolver {
         isReloaded: typeof options.isReloaded !== 'undefined' ? options.isReloaded : false,
         isNewRecord: typeof options.isNewRecord !== 'undefined' ? options.isNewRecord : true,
         isSynced: typeof options.isSynced !== 'undefined' ? options.isSynced : false,
+        isSynthetic: typeof options.isSynthetic !== 'undefined' ? options.isSynthetic : false,
         ...options
       }
 
@@ -480,6 +482,8 @@ export class BroadcastResolver extends SequelizeResolver {
         data.isSynced = options.isSynced // Legacy
         // data._options.isSynced = data.isSynced
       // }
+      // If this is considered a non save able object
+      data.isSynthetic = data.isSynthetic || options.isSynthetic
 
       return data
     }

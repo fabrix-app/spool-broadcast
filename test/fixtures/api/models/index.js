@@ -8,3 +8,5 @@ exports.TestProjector = require('./TestProjector')
 exports.TestProcessor = require('./TestProcessor')
 exports.TestChange = require('./TestChange')
 exports.TestEvent = require('./TestEvent')
+
+exports.TestSynthetic = require('./TestSynthetic')
