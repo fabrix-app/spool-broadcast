@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.90](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.89...v1.6.90) (2020-04-16)
+
+
+### Features
+
+* adds synthetic data types ([b78cf8e](https://github.com/fabrix-app/spool-broadcast/commit/b78cf8e))
+
 ### [1.6.89](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.88...v1.6.89) (2020-04-13)
 
 
