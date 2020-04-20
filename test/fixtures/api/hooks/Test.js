@@ -95,10 +95,10 @@ class Update extends Hook {
 
 
 module.exports = class Test extends HookIn {
-  create({command, options, lifecycle, handler}) {
-    return new Create(this.app, command, options, lifecycle, handler)
+  create({command, options, lifecycle, handler, broadcaster}) {
+    return new Create(this.app, { command, options, lifecycle, handler, broadcaster })
   }
-  update({command, options, lifecycle, handler}) {
-    return new Update(this.app, command, options, lifecycle, handler)
+  update({command, options, lifecycle, handler, broadcaster}) {
+    return new Update(this.app, { command, options, lifecycle, handler, broadcaster})
   }
 }

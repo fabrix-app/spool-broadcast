@@ -101,13 +101,15 @@ export class Broadcast extends FabrixGeneric {
     }
 
     return new PipelineEmitter(
-      this.app,
-      command,
-      this._pipes.get(command),
-      this._runners.get(command),
-      req,
-      body,
-      options
+      this.app, {
+        command,
+        broadcaster: this,
+        pipeline: this._pipes.get(command),
+        runner: this._runners.get(command),
+        req,
+        body,
+        options
+      }
     )
     // .setMaxListeners(1)
   }

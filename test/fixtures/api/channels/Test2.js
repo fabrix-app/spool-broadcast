@@ -10,12 +10,13 @@ class Crud2 extends BroadcastSubscriber {
 }
 
 module.exports = class Test2 extends BroadcastChannel {
-  created2({event, options, broker}) {
+  created2({event, options, broker, broadcaster}) {
     console.log('NOTIFIED', event, options)
-    return new Crud2(this.app, this, event, options, broker)
+    return new Crud2(this.app, {channel: this, event, options, broker, broadcaster})
   }
-  crud2({event, options, broker}) {
+
+  crud2({event, options, broker, broadcaster}) {
     console.log('NOTIFIED', event, options)
-    return new Crud2(this.app, this, event, options, broker)
+    return new Crud2(this.app, {channel: this, event, options, broker, broadcaster})
   }
 }

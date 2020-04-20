@@ -16,11 +16,14 @@ export const hookConfig = joi.object().keys({
 
   data: joi.object(),
   metadata: joi.object(),
+  options: joi.object(),
 
   // Retry rules
   retry_on_fail: joi.boolean(),
   retry_on_timeout: joi.boolean(),
   retry_max: joi.number(),
   retry_wait: joi.number(),
+
+  processing: joi.string(),
 
 }).unknown()

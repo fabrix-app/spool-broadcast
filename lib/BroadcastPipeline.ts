@@ -1,8 +1,6 @@
-import { Broadcast } from './Broadcast'
 import { FabrixApp } from '@fabrix/fabrix'
-import { FabrixGeneric as Generic } from '@fabrix/fabrix/dist/common'
-import { isEmpty } from 'lodash'
 import EventEmitter from 'events'
+import { isEmpty, get, set } from 'lodash'
 import { BroadcastEntity } from './BroadcastEntity'
 
 export function Pipeline({
@@ -35,12 +33,36 @@ export class PipelineEmitter extends EventEmitter {
   public pipeline: any
   public runner: any
 
-  constructor(public app: FabrixApp, command, pipeline, runner, req, body, options: {[key: string]: any} = {}) {
+  constructor(
+    public app: FabrixApp,
+    {
+      command,
+      broadcaster: Broadcaster,
+      pipeline,
+      runner,
+      req,
+      body,
+      options = {}
+    }: {
+      command,
+      broadcaster,
+      pipeline,
+      runner: {[key: string]: any},
+      req: {[key: string]: any},
+      body: any,
+      options: {[key: string]: any}
+    }
+  ) {
     super()
     this.app = app
     this.command = command
     this.pipeline = pipeline
     this.runner = runner
+
+    // Combine Options
+    if (runner && runner.options) {
+      options = Object.assign({}, options, runner.options)
+    }
 
     this.on(`${this.command}.progress`, this.progress)
     this.on(`${this.command}.failure`, this.failure)
@@ -89,6 +111,21 @@ export class PipelineEmitter extends EventEmitter {
         _body = body,
         _options = options
 
+      if (run[1].if && typeof run[1].if === 'function') {
+        let skip = true
+        try {
+          skip = !run[1].if(_req, _body, _options)
+        }
+        catch (e) {
+          this.app.log.error(`if ${this.command}.error`, e)
+        }
+        // If the function returns true, then we skip this process
+        if (skip) {
+          this.emit(`${this.command}.skipped`, `${this.command}.${name}`, i + 1, total)
+          return [_req, _body, _options]
+        }
+      }
+
       // Transform before request
       if (before && typeof before === 'function') {
         try {
@@ -131,17 +168,30 @@ export class PipelineEmitter extends EventEmitter {
           this.emit(`${this.command}.success`, _req, __body, __options)
 
           // TODO merge rules
-          if (zip && typeof zip !== 'function' && !isEmpty(zip)) {
+          // If we have a zip object, merge key value from right to left
+          if (
+            zip
+            && typeof zip !== 'function'
+            && !isEmpty(zip)
+          ) {
+
             const keys = Object.keys(zip)
 
             keys.forEach((key, _i) => {
-              const _key = keys[_i] || key
-              body[key] = __body[_key]
+              // const _key = keys[_i] || key
+              const _key = get(keys, _i, key)
+              // body[key] = __body[_key]
+              set(body, key, __body[_key])
             })
           }
-          else if (zip && typeof zip === 'function') {
+          // If we have a zip function
+          else if (
+            zip
+            && typeof zip === 'function'
+          ) {
             zip(_body, __body)
           }
+          // Otherwise, simply replace with merge
           else if (merge) {
             body = __body
             options = __options
@@ -247,52 +297,6 @@ export class BroadcastPipe {
   get name() {
     return this.constructor.name
   }
-
-  // async run (): Promise<any> {
-  //   throw new Error('Subclasses must override BroadcastProject.run')
-  // }
-
-  // /**
-  //  * Acknowledge the event
-  //  */
-  // async ack(): Promise<any> {
-  //   if (!this.isAcknowledged) {
-  //     this.isAcknowledged = true
-  //     return Promise.resolve([this.event, this.options])
-  //   }
-  //   else {
-  //     this.app.log.warn(`${this.name} attempting to ack a message that already responded`)
-  //     return Promise.resolve([this.event, this.options])
-  //   }
-  // }
-  //
-  // /**
-  //  * Don't Acknowledge the event
-  //  */
-  // async nack(): Promise<any> {
-  //   if (!this.isAcknowledged) {
-  //     this.isAcknowledged = true
-  //     return Promise.reject([this.event, this.options])
-  //   }
-  //   else {
-  //     this.app.log.warn(`${this.name} attempting to nack a message that already responded`)
-  //     return Promise.reject([this.event, this.options])
-  //   }
-  // }
-  //
-  // /**
-  //  * Reject the event
-  //  */
-  // async reject(): Promise<any> {
-  //   if (!this.isAcknowledged) {
-  //     this.isAcknowledged = true
-  //     return Promise.reject([this.event, this.options])
-  //   }
-  //   else {
-  //     this.app.log.warn(`${this.name} attempting to reject a message that already responded`)
-  //     return Promise.reject([this.event, this.options])
-  //   }
-  // }
 }
 
 

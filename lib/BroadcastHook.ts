@@ -1,6 +1,8 @@
 import { FabrixGeneric } from '@fabrix/fabrix/dist/common'
 import { FabrixApp } from '@fabrix/fabrix'
 import { BroadcastEntity } from './BroadcastEntity'
+import { Broadcast } from './Broadcast'
+import { BroadcastCommand } from './BroadcastCommand'
 
 /**
  * @module Hook
@@ -10,22 +12,30 @@ export class BroadcastHook extends FabrixGeneric {
   public app: FabrixApp
   public options
   public command
-  public message
+  public lifecycle = 'before'
   public handler
   public broadcaster
-  public isAcknowledged
-  public lifecycle = 'before'
-  public isCancelled
+
+  public message
+
+  public isAcknowledged: boolean
+  public isCancelled: boolean
   private _id
 
   constructor(
-    app: FabrixApp,
-    command,
-    options,
-    lifecycle?,
-    handler?,
-    broadcaster?
-  ) {
+    app: FabrixApp, {
+      command,
+      options,
+      lifecycle,
+      handler,
+      broadcaster
+  }: {
+      command: BroadcastCommand,
+      options: {[key: string]: any},
+      lifecycle?: string,
+      handler?: {[key: string]: any},
+      broadcaster?: Broadcast
+  }) {
     super(app)
 
     this.command = command

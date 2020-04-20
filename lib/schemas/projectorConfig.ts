@@ -14,6 +14,7 @@ export const projectorConfig = joi.object().keys({
 
   data: joi.object(),
   metadata: joi.object(),
+  options: joi.object(),
 
   priority: joi.number(),
 

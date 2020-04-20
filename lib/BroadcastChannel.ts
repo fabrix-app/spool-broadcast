@@ -13,7 +13,8 @@ export interface BroadcastSubscriberParams {
   channel: BroadcastChannel
   event: BroadcastEvent
   options: {[key: string]: any}
-  broker: {[key: string]: any}
+  broker: {[key: string]: any},
+  broadcaster?: Broadcast
 }
 
 export class BroadcastSubscriber {
@@ -22,15 +23,22 @@ export class BroadcastSubscriber {
   public options: {[key: string]: any}
   public broker: {[key: string]: any}
   public broadcaster: Broadcast
-  public isAcknowledged
+  public isAcknowledged: boolean
 
   constructor(
-    public app: FabrixApp,
-    channel: BroadcastChannel,
-    event: BroadcastEvent,
-    options,
-    broker,
-    broadcaster?
+    public app: FabrixApp, {
+      channel,
+      event,
+      options,
+      broker,
+      broadcaster
+    }: {
+      channel: BroadcastChannel,
+      event: BroadcastEvent,
+      options: {[key: string]: any},
+      broker: {[key: string]: any},
+      broadcaster?: Broadcast
+    }
   ) {
 
     this.app = app

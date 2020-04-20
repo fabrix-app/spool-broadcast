@@ -92,30 +92,32 @@ class BulkAside extends Process {
 
 module.exports = class Test extends Processor {
 
-  eventual({event, options, consistency, message, manager}) {
-    return new Eventual(this.app, event, options, consistency, message, manager)
-  }
-  // eventual(args) {
-  //   return this.newProcessor(Eventual, args)
+  // eventual({event, options, consistency, message, manager, broadcaster}) {
+  //   return new Eventual(this.app, {event, options, consistency, message, manager, broadcaster})
   // }
 
-  update({event, options, consistency, message, manager}) {
-    return new Update(this.app, event, options, consistency, message, manager)
+  // Test Shorthand
+  eventual(args) {
+    return this.newProcessor(Eventual, args)
+  }
+
+  update({event, options, consistency, message, manager, broadcaster}) {
+    return new Update(this.app, {event, options, consistency, message, manager, broadcaster})
   }
 
   bulkUpdate({event, options, consistency, message, manager}) {
-    return new BulkUpdate(this.app, event, options, consistency, message, manager)
+    return new BulkUpdate(this.app, {event, options, consistency, message, manager})
   }
 
   destroy({event, options, consistency, message, manager}) {
-    return new Destroy(this.app, event, options, consistency, message, manager)
+    return new Destroy(this.app, {event, options, consistency, message, manager})
   }
 
   createMany({event, options, consistency, message, manager}) {
-    return new CreateMany(this.app, event, options, consistency, message, manager)
+    return new CreateMany(this.app, {event, options, consistency, message, manager})
   }
 
   bulkAside({event, options, consistency, message, manager}) {
-    return new BulkAside(this.app, event, options, consistency, message, manager)
+    return new BulkAside(this.app, {event, options, consistency, message, manager})
   }
 }

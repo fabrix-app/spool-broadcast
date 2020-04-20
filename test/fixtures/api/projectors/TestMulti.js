@@ -89,12 +89,12 @@ class Three extends Project {
 
 module.exports = class TestMulti extends Projector {
   one({event, options, consistency, message, manager}) {
-    return new One(this.app, event, options, consistency, message, manager)
+    return new One(this.app, {event, options, consistency, message, manager})
   }
   two({event, options, consistency, message, manager}) {
-    return new Two(this.app, event, options, consistency, message, manager)
+    return new Two(this.app, {event, options, consistency, message, manager})
   }
   three({event, options, consistency, message, manager}) {
-    return new Three(this.app, event, options, consistency, message, manager)
+    return new Three(this.app, {event, options, consistency, message, manager})
   }
 }

@@ -21,8 +21,8 @@ export const processorConfig = joi.object().keys({
   ),
 
   data: joi.object(),
-
   metadata: joi.object(),
+  options: joi.object(),
 
   // The type of Object coming in
   expects_input: joi.alternatives().try(

@@ -8,13 +8,13 @@ class Update extends Process {
 
     return this.app.entries.TestEntry2.update({
       ...this.metadata
-    }, test, { parent: this.options })
+    }, test, {parent: this.options})
   }
 }
 
 module.exports = class TestProcessor2 extends Processor {
 
   update({event, options, consistency, message, manager}) {
-    return new Update(this.app, event, options, consistency, message, manager)
+    return new Update(this.app, {event, options, consistency, message, manager})
   }
 }

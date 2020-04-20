@@ -10,37 +10,68 @@ import { Broadcast } from './Broadcast'
 
 
 export class BroadcastProcess extends FabrixGeneric {
-  public message: any
-  public isAcknowledged: boolean
-  public isRedelivered = false
+  public event: BroadcastEvent
+  public options: {[key: string]: any}
   public consistency = 'strong'
+  public manager: {[key: string]: any}
+  public broadcaster: Broadcast
+
+  public message: any
+  public isAcknowledged = false
+  public isRedelivered = false
+
   public versions = [1]
   public retries = 0
   public processorModel: FabrixModel
   private _id: string
 
   constructor(
-    app: FabrixApp,
-    public event: BroadcastEvent,
-    public options: BroadcastOptions,
-    consistency?: string,
-    message?: string,
-    public manager?,
-    public broadcaster?: Broadcast
-  ) {
+    app: FabrixApp, {
+      event,
+      options,
+      consistency,
+      message,
+      manager,
+      broadcaster
+    }: {
+      event: BroadcastEvent,
+      options: BroadcastOptions,
+      consistency?: string,
+      message?: string,
+      manager?,
+      broadcaster?: Broadcast
+    }) {
+    // Meet the criteria of a Fabrix Generic
     super(app)
 
+    // Assign the event
     this.event = event
-    this.options = options
+
+    // Combine and Assign Options
+    if (manager && manager.options) {
+      this.options = Object.assign({}, options, manager.options)
+    }
+    else {
+      this.options = options
+    }
+
+    // Assign the manager
+    this.manager = manager
+
+    // Assign the consistency
     this.consistency = consistency || this.consistency
 
-    this.message = message
-    this.manager = manager
+    // Assign the broadcaster
     this.broadcaster = broadcaster
 
+    // Give this instance the ID of the event
     this.id = this.event.event_uuid
-    this.isAcknowledged = false
 
+    // Handle Eventual
+    // Assign the Message
+    this.message = message
+
+    // Assign the redelivered status
     if (this.message && this.message.fields) {
       this.isRedelivered = this.message.fields.redelivered
     }
@@ -271,7 +302,7 @@ export class BroadcastProcessor extends BroadcastEntity {
   }
 
   newProcessor(func, vals): BroadcastProcess {
-    return new func(this.app, ...vals)
+    return new func(this.app, vals)
   }
 
   /**

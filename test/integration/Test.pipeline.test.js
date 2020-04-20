@@ -27,19 +27,43 @@ describe('pipeline', () => {
     })
 
     sub.once('complete', (_req, _body, _options) => {
+      console.log('brk pipeline complete', _req, _body, _options)
+
+      assert.equal(_body.name, 'test')
+      assert.equal(_body.event_type, 'test.created')
+      assert.ok(_body.data.test_uuid)
+      assert.equal(_body.data.name, 'test')
+
       done()
-      // res.json({
-      //   event_type: _body.event_type,
-      //   object: _body.object,
-      //   data: _body.data,
-      //   url: `${this.prefix()}/channels/${req.params.channel_uuid}/carts/${_body.data.cart_uuid}`,
-      //   contains: _body.contains,
-      //   annotations: {
-      //     pii: {
-      //       customer: this.app.models.ChannelCustomer.resolver.options.pii
-      //     }
-      //   }
-      // })
+    })
+
+    sub.once('failure', (err) => {
+      done(err)
+    })
+  })
+
+
+  it('should skip emitters', (done) => {
+    const sub = global.app.broadcasts.Test.subscribe(
+      'Skip', {}, {
+        name: 'test'
+      }, {
+        useMaster: true
+      }
+    )
+
+    sub.on('progress', (name, step, total) => {
+      global.app.log.debug('Test.Skip progress', name, step, total)
+    })
+
+    sub.on('subprogress', (name, step, total) => {
+      global.app.log.debug('Test.Skip subprogress', name, step, total)
+    })
+
+    sub.once('complete', (_req, _body, _options) => {
+      console.log('brk pipeline complete', _req, _body, _options)
+      assert.equal(_body.name, 'test')
+      done()
     })
 
     sub.once('failure', (err) => {

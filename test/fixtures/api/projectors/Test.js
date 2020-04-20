@@ -94,28 +94,29 @@ class Puff extends Project {
 }
 
 module.exports = class Test extends Projector {
-  wild({event, options, consistency, message, manager, broadcaster}) {
-    return new Wild(this.app, event, options, consistency, message, manager, broadcaster)
-  }
-  // wild(args) {
-  //   return this.newProjector(Wild, ...args) // new Wild(this.app, event, options, consistency, message, manager)
+  // wild({event, options, consistency, message, manager, broadcaster}) {
+  //   return new Wild(this.app, {event, options, consistency, message, manager, broadcaster})
   // }
+  // Test Shorthand
+  wild(args) {
+    return this.newProjector(Wild, args)
+  }
   logger({event, options, consistency, message, manager, broadcaster}) {
-    return new Logger(this.app, event, options, consistency, message, manager, broadcaster)
+    return new Logger(this.app, {event, options, consistency, message, manager, broadcaster})
   }
   failLogger({event, options, consistency, message, manager}) {
-    return new FailLogger(this.app, event, options, consistency, message, manager)
+    return new FailLogger(this.app, {event, options, consistency, message, manager})
   }
   created({event, options, consistency, message, manager}) {
-    return new Created(this.app, event, options, consistency, message, manager)
+    return new Created(this.app, {event, options, consistency, message, manager})
   }
   created2({event, options, consistency, message, manager}) {
-    return new Created(this.app, event, options, consistency, message, manager)
+    return new Created(this.app, {event, options, consistency, message, manager})
   }
   updated({event, options, consistency, message, manager}) {
-    return new Updated(this.app, event, options, consistency, message, manager)
+    return new Updated(this.app, {event, options, consistency, message, manager})
   }
   puff({event, options, consistency, message, manager}) {
-    return new Puff(this.app, event, options, consistency, message, manager)
+    return new Puff(this.app, {event, options, consistency, message, manager})
   }
 }

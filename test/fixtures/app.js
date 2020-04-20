@@ -130,10 +130,14 @@ const App = {
       },
 
       pipelines: {
+        // Pipeline
         TestPipeline: {
           broadcasters: {
+            // Broadcaster
             Test: {
+              // Pipeline Name
               'CreateAndFindTest': {
+                // Entry function
                 'Test.create': {
                   // before: function (req, body, options) {
                   //   console.log('BRK pipeline before 1', body)
@@ -149,6 +153,7 @@ const App = {
                     data: 'data'
                   }
                 },
+                // Entry function
                 'Test.findByPk': {
                   before: function (req, body, options) {
                     body = {
@@ -166,6 +171,15 @@ const App = {
                   },
                   zip: {
                     data: 'data'
+                  }
+                }
+              },
+              // Pipeline Name
+              'Skip': {
+                // Entry function
+                'Test.create': {
+                  if: function(req, body, options) {
+                    return false
                   }
                 }
               }
@@ -465,7 +479,10 @@ const App = {
                     priority: 255,
                     expects_input: '*',
                     expects_response: '*',
-                    expects_output: '*'
+                    expects_output: '*',
+                    options: {
+                      save: false
+                    }
                   }
                 },
               },
