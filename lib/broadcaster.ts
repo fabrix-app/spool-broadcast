@@ -112,7 +112,7 @@ export const broadcaster = {
     broadcasterConfig = utils.configureExchangesAndQueues(profile, broadcasterConfig)
 
     // Setup the spool broadcaster
-    app.spools.broadcast.broadcaster = new Client(app, rabbit, broadcasterConfig.exchangeName)
+    app.spools.broadcast.broadcaster = new Client(app, rabbit, broadcasterConfig)
 
     // Register the profile broadcasters
     return utils.registerBroadcasts(app, rabbit, profile, broadcasterConfig)

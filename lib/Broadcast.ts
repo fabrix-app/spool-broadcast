@@ -506,6 +506,7 @@ export class Broadcast extends FabrixGeneric {
     beforeCommandsAsc.forEach((v, k) => slog.push(k))
 
     this.app.log.debug(
+      `${this.app.config.get('broadcast.profile')}:`,
       `Broadcaster ${this.name} running`,
       `${beforeCommandsAsc.size} before hooks for command ${command.command_type}`,
       `-> ${slog.map(k => k).join(' -> ')}`
@@ -523,7 +524,10 @@ export class Broadcast extends FabrixGeneric {
       const handler = beforeHandlers.get(m)
 
       if (this.trace) {
-        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, {
+          handler: m,
+          ...handler
+        })
       }
 
       // Check and promise commands
@@ -659,6 +663,7 @@ export class Broadcast extends FabrixGeneric {
     afterCommandsAsc.forEach((v, k) => slog.push(k))
 
     this.app.log.debug(
+      `${this.app.config.get('broadcast.profile')}:`,
       `Broadcaster ${this.name} running`,
       `${afterCommandsAsc.size} after hooks for command ${command.command_type}`,
       `-> ${slog.map(k => k).join(' -> ')}`
@@ -677,7 +682,10 @@ export class Broadcast extends FabrixGeneric {
       const handler = afterHandlers.get(m)
 
       if (this.trace) {
-        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, handler)
+        options.trace.set(`${handler.pattern_raw}::${handler.type}::${m}`, {
+          handler: m,
+          ...handler
+        })
       }
 
       // Check and promise commands
@@ -837,6 +845,7 @@ export class Broadcast extends FabrixGeneric {
       // Setup Transaction afterCommit Hook from the original options
       topLevelTransaction.afterCommit((transaction) => {
         this.app.log.debug(
+          `${this.app.config.get('broadcast.profile')}:`,
           `Broadcaster ${this.name}`,
           `${subscribers.size} subscribers will be notified for event ${event.event_type}`,
           `after transaction commit ${topLevelTransaction.id}`,
@@ -873,6 +882,7 @@ export class Broadcast extends FabrixGeneric {
     subscribersAsc.forEach((v, k) => slog.push(k))
 
     this.app.log.debug(
+      `${this.app.config.get('broadcast.profile')}:`,
       `Broadcaster ${this.name} notifying`,
       `${subscribersAsc.size} for event ${event.event_type}`,
       `: ${slog.map(k => k).join(' -> ')}`
@@ -1117,6 +1127,17 @@ export class Broadcast extends FabrixGeneric {
     })
     return trace
   }
+
+  unnestTraceParent(parent, caller) {
+    let trace = new Map([...(parent && parent.trace ? parent.trace : new Map())])
+    // children.forEach((v, k, map) => {
+    //   trace.set(`${parent ? parent + '->' : ''}${k}`, v)
+    //   if (v && v.children) {
+    //     trace = new Map([...trace, ...this.unnestTraceChildren(v.children, k)])
+    //   }
+    // })
+    return trace
+  }
   /**
    * Given an options argument with a trace tree, find the top most level trace
    * @param options
@@ -1127,9 +1148,14 @@ export class Broadcast extends FabrixGeneric {
     trace = new Map([...this.unnestTraceChildren(trace)])
 
     if (options && options.parent && options.parent.trace) {
-      const parent = this.unnestTraceChildren(options.parent.trace)
+      const parent = this.unnestTraceParent(options.parent, options)
       trace = new Map([...parent, ...trace])
     }
+
+    // if (options && options.parent && options.parent.trace) {
+    //   const parent = this.unnestTraceChildren(options.parent.trace)
+    //   trace = new Map([...parent, ...trace])
+    // }
 
     // trace.forEach((v: {[key: string]: any}, k, map) => {
     //   if (v.children) {
@@ -1227,7 +1253,10 @@ export class Broadcast extends FabrixGeneric {
           const manager = eventualManagers.get(e)
 
           if (this.trace) {
-            options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, manager)
+            options.trace.set(`${manager.pattern_raw}::${manager.type}::${e}`, {
+              handler: e,
+              ...manager
+            })
           }
 
           event.chain_events.push(e)
@@ -1245,6 +1274,7 @@ export class Broadcast extends FabrixGeneric {
           // Setup Transaction afterCommit Hook from the original options
           topLevelTransaction.afterCommit((transaction) => {
             this.app.log.debug(
+              `${this.app.config.get('broadcast.profile')}:`,
               `Broadcaster ${this.name} broadcasting`,
               `${eventual.size} eventual for event ${_event.event_type}`,
               `after transaction commit ${topLevelTransaction.id}`,
@@ -1323,7 +1353,10 @@ export class Broadcast extends FabrixGeneric {
       const manager = strongManagers.get(m)
 
       if (this.trace) {
-        options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
+        options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, {
+          handler: m,
+          ...manager
+        })
       }
 
       // Receiver Test
@@ -1563,7 +1596,10 @@ export class Broadcast extends FabrixGeneric {
             const parent = options.trace.get(`${manager.pattern_raw}::${manager.type}::${m}`, manager)
             const trace = isArray(_options) ? _options.map(_o => _o.trace) : _options.trace
             parent.children = new Map([...(parent.children || new Map()), ...(trace || new Map())])
-            options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, parent)
+            options.trace.set(`${manager.pattern_raw}::${manager.type}::${m}`, {
+              handler: m,
+              ...parent
+            })
           }
 
           if (isArray(_options)) {
@@ -1680,6 +1716,7 @@ export class Broadcast extends FabrixGeneric {
   }
 
   runEventual(client, eventualEvents, eventualManagers, message) {
+
     // Get the time for the start of the hook
     const eventualstart = process.hrtime()
 
@@ -1698,6 +1735,7 @@ export class Broadcast extends FabrixGeneric {
     eventualEventsAsc.forEach((v, k) => slog.push(k))
 
     this.app.log.debug(
+      `${this.app.config.get('broadcast.profile')}:`,
       `Broadcaster ${this.name} running`,
       `${eventualEventsAsc.size} eventual for event ${message.type}`,
       `: ${slog.map(k => k).join(' -> ')}`
@@ -1761,6 +1799,16 @@ export class Broadcast extends FabrixGeneric {
    * @param breakException
    */
   runEventualProcessor (client, project, key, manager, message, options, breakException) {
+
+    let consumerWork = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.work_queue_name') || 'broadcasts-work-q'))
+    let consumerInterrupt = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.interrupt_queue_name') || 'broadcasts-interrupt-q'))
+    let consumerPoison = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.poison_queue_name') || 'broadcasts-poison-q'))
+
+    // console.log('BRK DIST PROCESSOR', consumerWork, consumerInterrupt, consumerPoison)
+
     if (message.fields.redelivered) {
       this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
     }
@@ -1775,12 +1823,22 @@ export class Broadcast extends FabrixGeneric {
 
     // Set the trace
     if (this.trace) {
-      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, {
+        handler: key,
+        ...manager
+      })
     }
 
     return this.run(event, options, project, key, manager, breakException)
       .then(([_event, _options]) => {
         project.isAcknowledged = true
+
+        this.app.log.debug(
+          `Consumer Processor ${consumerWork.consumerTag}:`,
+          event.event_type,
+          'broadcasted from', this.name, '->', project.name, '->', key
+        )
+
         return [_event, _options]
       })
   }
@@ -1796,6 +1854,15 @@ export class Broadcast extends FabrixGeneric {
    */
   runEventualProjector (client, project, key, manager, message, options, breakException) {
 
+    let consumerWork = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.work_queue_name') || 'broadcasts-work-q'))
+    let consumerInterrupt = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.interrupt_queue_name') || 'broadcasts-interrupt-q'))
+    let consumerPoison = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.poison_queue_name') || 'broadcasts-poison-q'))
+
+    // console.log('BRK DIST PROJECTOR', consumerWork, consumerInterrupt, consumerPoison)
+
     let p
 
     if (message.fields.redelivered) {
@@ -1806,7 +1873,10 @@ export class Broadcast extends FabrixGeneric {
 
     // Set the trace
     if (this.trace) {
-      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, manager)
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, {
+        handler: key,
+        ...manager
+      })
     }
 
     return Promise.resolve()
@@ -1822,7 +1892,11 @@ export class Broadcast extends FabrixGeneric {
               broadcaster: this
             })
 
-            this.app.log.debug(event.event_type, 'broadcasted from', this.name, '->', project.name, '->', p.name)
+            this.app.log.debug(
+              `Consumer Projector ${consumerWork.consumerTag}:`,
+              event.event_type,
+              'broadcasted from', this.name, '->', project.name, '->', p.name
+            )
           }
           catch (err) {
             this.app.log.error('Broadcaster Utils.runProjector err - fatal', err)

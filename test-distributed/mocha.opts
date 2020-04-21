@@ -1,0 +1,9 @@
+--reporter spec
+--recursive
+--full-trace
+--no-exit
+--check-leaks
+--timeout 10000
+--globals app,app2,__core-js_shared__,__coverage__,$$bole,@@any-promise/REGISTRATION
+
+test-distributed/index.js test-distributed/**/*.test.js

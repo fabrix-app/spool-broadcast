@@ -50,6 +50,7 @@ export const utils = {
     const workQueueName = broadcasterConfig.work_queue_name || 'broadcasts-work-q'
     const interruptQueueName = broadcasterConfig.interrupt_queue_name || 'broadcasts-interrupt-q'
     const poisonQueueName = broadcasterConfig.poison_queue_name || 'broadcasts-poison-q'
+    const unique = broadcasterConfig.unique
 
     broadcasterConfig.exchangeName = exchangeName
 
@@ -62,7 +63,8 @@ export const utils = {
     broadcasterConfig.queues = [{
       name: workQueueName,
       autoDelete: false,
-      subscribe: true
+      subscribe: true,
+      unique: unique
     }, {
       name: interruptQueueName,
       autoDelete: false,
@@ -70,7 +72,8 @@ export const utils = {
     }, {
       name: poisonQueueName,
       autoDelete: false,
-      subscribe: true
+      subscribe: true,
+      poison: true
     }]
 
     broadcasterConfig.bindings = [{
@@ -270,6 +273,8 @@ export const utils = {
           return Promise.reject(err)
         }
 
+        // console.log('BRK DIST', broadcasterClient.messenger.configurations.default.queues)
+        // console.log('BRK DIST', broadcasterClient.messenger.configurations.default.bindings)
         return broadcaster.runEventual(broadcasterClient, types.eventual, managers, req)
       }) // , broadcaster.queue || 'broadcasts-work-q')
 

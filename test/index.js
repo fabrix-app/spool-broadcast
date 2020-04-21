@@ -14,3 +14,4 @@ after(function() {
   console.log('TEST DONE')
   return global.app.stop()
 })
+

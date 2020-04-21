@@ -9,7 +9,7 @@ export class Client extends FabrixGeneric {
   public exchange_name
   public active_broadcasts
 
-  constructor (app: FabrixApp, messenger, exchangeName) {
+  constructor (app: FabrixApp, messenger, { exchangeName, ...broadcasterConfig }) {
     super(app)
 
     app.log.debug('Rabbit Client created', exchangeName)

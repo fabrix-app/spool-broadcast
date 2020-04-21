@@ -13,6 +13,7 @@ export const broadcastConfig = joi.object().keys({
   profiles: joi.object().pattern(/^/, joi.array().items(joi.string())),
   exchange_name: joi.string().allow(null),
   connection: joi.object().keys({
+    unique: joi.string().allow(null),
     exchange: joi.string().allow(null),
     work_queue_name: joi.string().allow(null),
     interrupt_queue_name: joi.string().allow(null),

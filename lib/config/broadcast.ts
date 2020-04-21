@@ -17,6 +17,12 @@ export const broadcast = {
   default_publish_timeout: null,
 
   connection: {
+    // creates a unique queue name by including the client id or hash in the name
+    // hash - results in a unique positive integer per process. Use when queue recovery is not a concern.
+    // consistent - results in a unique positive integer based on machine name and process title. Use when queue recovery is required.
+    // id - creates a consumer tag consisting of the machine name, process title and process id. Use when readability is
+    //      desired and queue recovery is not a concern.
+    unique: null,
     // optional, defaults to `broadcasts-work-x`
     exchange: process.env.BROADCAST_EXCHANGE || null,
     // optional, defaults to `broadcasts-work-q`
