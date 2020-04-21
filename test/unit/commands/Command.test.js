@@ -1380,6 +1380,14 @@ describe('Command', () => {
     // Build a permission instance
     body = global.app.models.TestSynthetic.stage(body, {
       isNewRecord: true,
+      before: [function(d, opts) {
+        d.before = '1'
+        return d
+      }],
+      after: [function(d, opts) {
+        d.after = '1'
+        return d
+      }],
       stage: [
         {
           model: global.app.models.Test,
@@ -1399,6 +1407,9 @@ describe('Command', () => {
         }
       ]
     })
+
+    assert.equal(body.before, '1')
+    assert.equal(body.after, '1')
 
     testCommand6 = TestBroadcast.createCommand({
       req: req,
@@ -1456,6 +1467,14 @@ describe('Command', () => {
     // Build a permission instance
     body = global.app.models.TestSynthetic.stage(body, {
       isNewRecord: false,
+      before: [function(d, opts) {
+        d.before = '2'
+        return d
+      }],
+      after: [function(d, opts) {
+        d.after = '2'
+        return d
+      }],
       stage: [
         {
           model: global.app.models.Test,
@@ -1475,6 +1494,9 @@ describe('Command', () => {
         }
       ]
     })
+
+    assert.equal(body.before, '2')
+    assert.equal(body.after, '2')
 
     testCommand6 = TestBroadcast.createCommand({
       req: req,

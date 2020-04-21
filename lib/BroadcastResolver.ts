@@ -223,6 +223,16 @@ export class BroadcastResolver extends SequelizeResolver {
         ...options
       }
 
+      const raw = Object.assign({}, data.toJSON())
+
+      if (options.before && isArray(options.before)) {
+        this.stageBefore(raw, data, options, false)
+      }
+
+      if (options.after && isArray(options.after)) {
+        this.stageBefore(raw, data, options, false)
+      }
+
       // Build the Instance
       // data = this.build(data, options)
       return data
@@ -370,48 +380,52 @@ export class BroadcastResolver extends SequelizeResolver {
         })
       }
 
-      // If before supplied, run before functions before staging includes
-      // config: [function]
       if (options.before && isArray(options.before)) {
-        options.before.forEach(fn => {
-          try {
-            if (list) {
-              data.map((d, i) => {
-                if (typeof fn === 'string' && typeof d[fn] === 'function') {
-                  fn = d[fn]
-                }
-                if (typeof fn !== 'function') {
-                  throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
-                }
-
-                d = fn(d, options)
-                if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.before expects_response sync functions, promise was passed')
-                }
-                raw[i] = defaultsDeep(raw[i], d.toJSON())
-                return d
-              })
-            }
-            else {
-              if (typeof fn === 'string' && typeof data[fn] === 'function') {
-                fn = data[fn]
-              }
-              if (typeof fn !== 'function') {
-                throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
-              }
-
-              data = fn(data, options)
-              raw = defaultsDeep(raw, data.toJSON())
-              if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.before expects_response sync functions, promise was passed')
-              }
-            }
-          }
-          catch (err) {
-            throw new Error(err)
-          }
-        })
+        this.stageBefore(raw, data, options, list)
       }
+
+      // // If before supplied, run before functions before staging includes
+      // // config: [function]
+      // if (options.before && isArray(options.before)) {
+      //   options.before.forEach(fn => {
+      //     try {
+      //       if (list) {
+      //         data.map((d, i) => {
+      //           if (typeof fn === 'string' && typeof d[fn] === 'function') {
+      //             fn = d[fn]
+      //           }
+      //           if (typeof fn !== 'function') {
+      //             throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
+      //           }
+      //
+      //           d = fn(d, options)
+      //           if (Promise.resolve(d) === d) {
+      //             throw new Error('stage.options.before expects_response sync functions, promise was passed')
+      //           }
+      //           raw[i] = defaultsDeep(raw[i], d.toJSON())
+      //           return d
+      //         })
+      //       }
+      //       else {
+      //         if (typeof fn === 'string' && typeof data[fn] === 'function') {
+      //           fn = data[fn]
+      //         }
+      //         if (typeof fn !== 'function') {
+      //           throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
+      //         }
+      //
+      //         data = fn(data, options)
+      //         raw = defaultsDeep(raw, data.toJSON())
+      //         if (Promise.resolve(data) === data) {
+      //           throw new Error('stage.options.before expects_response sync functions, promise was passed')
+      //         }
+      //       }
+      //     }
+      //     catch (err) {
+      //       throw new Error(err)
+      //     }
+      //   })
+      // }
 
       // If this is a nested stage
       if (options.stage) {
@@ -421,44 +435,47 @@ export class BroadcastResolver extends SequelizeResolver {
       // If after supplied, run after functions after stage includes
       // config: [function]
       if (options.after && isArray(options.after)) {
-        options.after.forEach(fn => {
-          try {
-            if (list) {
-              data.map((d, i) => {
-                if (typeof fn === 'string' && typeof d[fn] === 'function') {
-                  fn = d[fn]
-                }
-                if (typeof fn !== 'function') {
-                  throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
-                }
-
-                d = fn(d, options)
-                if (Promise.resolve(d) === d) {
-                  throw new Error('stage.options.after expects_response sync functions, promise was passed')
-                }
-                raw[i] = defaultsDeep(raw[i], d.toJSON())
-                return d
-              })
-            }
-            else {
-              if (typeof fn === 'string' && typeof data[fn] === 'function') {
-                fn = data[fn]
-              }
-              if (typeof fn !== 'function') {
-                throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
-              }
-              data = fn(data, options)
-              raw = defaultsDeep(raw, data.toJSON())
-              if (Promise.resolve(data) === data) {
-                throw new Error('stage.options.after expects_response sync functions, promise was passed')
-              }
-            }
-          }
-          catch (err) {
-            throw new Error(err)
-          }
-        })
+        this.stageAfter(raw, data, options, list)
       }
+      // if (options.after && isArray(options.after)) {
+      //   options.after.forEach(fn => {
+      //     try {
+      //       if (list) {
+      //         data.map((d, i) => {
+      //           if (typeof fn === 'string' && typeof d[fn] === 'function') {
+      //             fn = d[fn]
+      //           }
+      //           if (typeof fn !== 'function') {
+      //             throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
+      //           }
+      //
+      //           d = fn(d, options)
+      //           if (Promise.resolve(d) === d) {
+      //             throw new Error('stage.options.after expects_response sync functions, promise was passed')
+      //           }
+      //           raw[i] = defaultsDeep(raw[i], d.toJSON())
+      //           return d
+      //         })
+      //       }
+      //       else {
+      //         if (typeof fn === 'string' && typeof data[fn] === 'function') {
+      //           fn = data[fn]
+      //         }
+      //         if (typeof fn !== 'function') {
+      //           throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
+      //         }
+      //         data = fn(data, options)
+      //         raw = defaultsDeep(raw, data.toJSON())
+      //         if (Promise.resolve(data) === data) {
+      //           throw new Error('stage.options.after expects_response sync functions, promise was passed')
+      //         }
+      //       }
+      //     }
+      //     catch (err) {
+      //       throw new Error(err)
+      //     }
+      //   })
+      // }
 
       // Mark this data as previously staged
       // if (options.isStaged) {
@@ -515,6 +532,98 @@ export class BroadcastResolver extends SequelizeResolver {
         this.app.log.debug(`stageIncludes property ${as} or model ${ name } does not exists on this raw ${this.model.constructor.name}`)
       }
     })
+    return data
+  }
+
+  stageBefore(raw, data, options, list) {
+    // If before supplied, run before functions before staging includes
+    // config: [function]
+    if (options.before && isArray(options.before)) {
+      options.before.forEach(fn => {
+        try {
+          if (list) {
+            data.map((d, i) => {
+              if (typeof fn === 'string' && typeof d[fn] === 'function') {
+                fn = d[fn]
+              }
+              if (typeof fn !== 'function') {
+                throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
+              }
+
+              d = fn(d, options)
+              if (Promise.resolve(d) === d) {
+                throw new Error('stage.options.before expects_response sync functions, promise was passed')
+              }
+              raw[i] = defaultsDeep(raw[i], d.toJSON())
+              return d
+            })
+          }
+          else {
+            if (typeof fn === 'string' && typeof data[fn] === 'function') {
+              fn = data[fn]
+            }
+            if (typeof fn !== 'function') {
+              throw new Error(`stage.options.before expected before configure ${fn} to be a function`)
+            }
+
+            data = fn(data, options)
+            raw = defaultsDeep(raw, data.toJSON())
+            if (Promise.resolve(data) === data) {
+              throw new Error('stage.options.before expects_response sync functions, promise was passed')
+            }
+          }
+        }
+        catch (err) {
+          throw new Error(err)
+        }
+      })
+    }
+
+    return data
+  }
+
+  stageAfter(raw, data, options, list) {
+    // If after supplied, run after functions after stage includes
+    // config: [function]
+    if (options.after && isArray(options.after)) {
+      options.after.forEach(fn => {
+        try {
+          if (list) {
+            data.map((d, i) => {
+              if (typeof fn === 'string' && typeof d[fn] === 'function') {
+                fn = d[fn]
+              }
+              if (typeof fn !== 'function') {
+                throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
+              }
+
+              d = fn(d, options)
+              if (Promise.resolve(d) === d) {
+                throw new Error('stage.options.after expects_response sync functions, promise was passed')
+              }
+              raw[i] = defaultsDeep(raw[i], d.toJSON())
+              return d
+            })
+          }
+          else {
+            if (typeof fn === 'string' && typeof data[fn] === 'function') {
+              fn = data[fn]
+            }
+            if (typeof fn !== 'function') {
+              throw new Error(`stage.options.after expected after configure ${fn} to be a function`)
+            }
+            data = fn(data, options)
+            raw = defaultsDeep(raw, data.toJSON())
+            if (Promise.resolve(data) === data) {
+              throw new Error('stage.options.after expects_response sync functions, promise was passed')
+            }
+          }
+        }
+        catch (err) {
+          throw new Error(err)
+        }
+      })
+    }
     return data
   }
 

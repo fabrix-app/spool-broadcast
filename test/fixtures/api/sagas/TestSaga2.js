@@ -15,7 +15,13 @@ module.exports = class Test extends Saga {
     // Build a permission instance
     body = this.app.models.Test.stage(body, {
       isNewRecord: true,
-      configure: ['generateUUID']
+      configure: ['generateUUID'],
+      before: [function(d, opts) {
+        return d
+      }],
+      after: [function(d, opts) {
+        return d
+      }]
     })
 
     const command = TestBroadcast.createCommand({

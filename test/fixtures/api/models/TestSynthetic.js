@@ -30,6 +30,16 @@ class TestSynthetic extends BroadcastObjectModel {
         type: Sequelize.STRING,
         binaryOptional: true,
         binaryType: 'string'
+      },
+      before: {
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
+      },
+      after: {
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
       }
     }
   }
