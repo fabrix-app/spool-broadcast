@@ -35,6 +35,7 @@ before(function(done) {
           }
           else {
             console.log('Unexpected message', message)
+            return reject()
           }
         })
 
@@ -55,7 +56,21 @@ before(function(done) {
 after(function(done) {
   Promise.all([
     global.app.stop(),
-    node2.send({stop: true})
+    new Promise((resolve, reject) => {
+
+      node2.on('message', (message) => {
+        console.log(`node2 message`, message)
+        if (message.stopped) {
+          return resolve()
+        }
+        else {
+          console.log('Unexpected message', message)
+          return reject()
+        }
+      })
+
+      node2.send({stop: true})
+    })
   ])
     .then(results => {
       node2.kill()

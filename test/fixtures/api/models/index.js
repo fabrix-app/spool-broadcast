@@ -10,3 +10,4 @@ exports.TestChange = require('./TestChange')
 exports.TestEvent = require('./TestEvent')
 
 exports.TestSynthetic = require('./TestSynthetic')
+exports.TestPrivate = require('./TestPrivate')
