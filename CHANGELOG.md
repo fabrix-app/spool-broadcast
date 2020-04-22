@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.94](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.93...v1.6.94) (2020-04-22)
+
+
+### Bug Fixes
+
+* fixes staging on private objects ([644f4da](https://github.com/fabrix-app/spool-broadcast/commit/644f4da))
+
 ### [1.6.93](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.92...v1.6.93) (2020-04-21)
 
 
