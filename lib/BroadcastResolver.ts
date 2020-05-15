@@ -470,6 +470,11 @@ export class BroadcastResolver extends SequelizeResolver {
     if (options.before && isArray(options.before)) {
       options.before.forEach(fn => {
         try {
+
+          if (!raw || !data) {
+            throw new Error('stage.options.before expects values')
+          }
+
           if (list) {
             data.map((d, i) => {
               if (typeof fn === 'string' && typeof d[fn] === 'function') {
@@ -501,6 +506,10 @@ export class BroadcastResolver extends SequelizeResolver {
               throw new Error('stage.options.before expects_response sync functions, promise was passed')
             }
           }
+
+          if (!raw || !data) {
+            throw new Error('stage.options.before expects results')
+          }
         }
         catch (err) {
           throw new Error(err)
@@ -517,6 +526,11 @@ export class BroadcastResolver extends SequelizeResolver {
     if (options.after && isArray(options.after)) {
       options.after.forEach(fn => {
         try {
+
+          if (!raw || !data) {
+            throw new Error('stage.options.after expects values')
+          }
+
           if (list) {
             data.map((d, i) => {
               if (typeof fn === 'string' && typeof d[fn] === 'function') {
@@ -546,6 +560,10 @@ export class BroadcastResolver extends SequelizeResolver {
             if (Promise.resolve(data) === data) {
               throw new Error('stage.options.after expects_response sync functions, promise was passed')
             }
+          }
+
+          if (!raw || !data) {
+            throw new Error('stage.options.after expects results')
           }
         }
         catch (err) {

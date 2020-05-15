@@ -3,13 +3,14 @@ import { FabrixGeneric, FabrixModel } from '@fabrix/fabrix/dist/common'
 import { get, isArray, uniq, uniqBy } from 'lodash'
 import joi from '@hapi/joi'
 import { regexdot } from '@fabrix/regexdot'
-import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig } from './schemas'
+import { projectorConfig, processorConfig, hookConfig, pipeConfig, subscriberConfig, dispatcherConfig } from './schemas'
 
 import { BroadcastHook, BroadcastHookIn } from './BroadcastHook'
 import { BroadcastPipeline, BroadcastPipe, PipelineEmitter } from './BroadcastPipeline'
 import { BroadcastChannel, BroadcastSubscriber } from './BroadcastChannel'
 import { BroadcastProject, BroadcastProjector } from './BroadcastProjector'
 import { BroadcastProcessor } from './BroadcastProcesser'
+import { BroadcastDispatcher } from './BroadcastDispatcher'
 import { BroadcastEvent } from './api/models'
 import { BroadcastCommand } from './BroadcastCommand'
 import { GenericError } from '@fabrix/spool-errors/dist/errors'
@@ -47,10 +48,11 @@ export class Broadcast extends FabrixGeneric {
   private _handlers: Map<any, { [key: string]: Map<string, any> }> = new Map()
 
   /**
-   * Processors/Projectors
+   * Processors/Projectors/Dispatchers
    */
   private _processors: Map<string, BroadcastProcessor> = new Map()
   private _projectors: Map<string, BroadcastProjector> = new Map()
+  private _dispatchers: Map<string, BroadcastDispatcher> = new Map()
   private _events: Map<any, { [key: string]: Map<string, any> }> = new Map()
   private _managers: Map<any, { [key: string]: Map<string, any> }> = new Map()
 
@@ -283,7 +285,7 @@ export class Broadcast extends FabrixGeneric {
       throw new Error('Broadcast.buildProjection called with a non Event object')
     }
 
-    // Make a JOSN version of the event
+    // Make a JSON version of the event
     const __event = event.toJSON()
 
     // Create the data for the Event Model
@@ -315,7 +317,8 @@ export class Broadcast extends FabrixGeneric {
       object: object || __event.object, // We can use the original event's object here
       data: data || __event.data,
       metadata: metadata || __event.metadata,
-      is_projection: true
+      is_projection: true,
+      is_dispatch: false
     }
 
     // return _event
@@ -1212,6 +1215,7 @@ export class Broadcast extends FabrixGeneric {
 
     return this.flattenTraceChildren(start)
   }
+
   /**
    * BroadcastProject the event that was persisted
    * @param event
@@ -1223,6 +1227,9 @@ export class Broadcast extends FabrixGeneric {
     const strongManagers = this.getStrongManagers(event.event_type)
     const eventual = this.getEventualEvents(event.event_type)
     const eventualManagers = this.getEventualManagers(event.event_type)
+
+    // const dispatcher = this.getStrongDispatchers(event.event_type)
+    // const eventualManagers = this.getEventualManagers(event.event_type)
 
     if (!strong || !strongManagers || !eventual || !eventualManagers) {
       const err = new this.app.errors.GenericError(
@@ -1433,7 +1440,7 @@ export class Broadcast extends FabrixGeneric {
     let projectend = process.hrtime(projectstart)
     let t = `${manager ? manager.type : 'unknown'}`
 
-    // Run the processor/projector
+    // Run the processor/projector/dispatcher
     return p({
       event,
       options,
@@ -1454,6 +1461,7 @@ export class Broadcast extends FabrixGeneric {
       })
       .then(([_event, _options]) => {
         // Marks the acknowledged state of the message
+        // Normally the Message Que will do this, but since we are doing it
         p.isAcknowledged = true
 
         // This Block makes sure that the response is manageable
@@ -1484,7 +1492,7 @@ export class Broadcast extends FabrixGeneric {
             )
           }
 
-          // See if the event replied with a retry action
+          // If a Single, See if the event replied with a retry action
           if (_event.action && _event.action === 'retry') {
             this.app.log.error(`${this.name} ${p.name} BRK unhandled retry action for ${m}`)
             projectend = process.hrtime(projectstart)
@@ -1503,7 +1511,7 @@ export class Broadcast extends FabrixGeneric {
             return [event, options]
           }
         }
-        // If a list of events were returned
+        // If a list of events were returned, check the actions
         else {
           _event.forEach(_e => {
             if (!_e) {
@@ -1521,6 +1529,7 @@ export class Broadcast extends FabrixGeneric {
               )
             }
           })
+
           // Check that all the returned events were successful
           if (_event.every(_e => _e[0] && typeof _e[0].action !== 'undefined' && _e[0].action === 'retry')) {
 
@@ -1618,6 +1627,10 @@ export class Broadcast extends FabrixGeneric {
               trace: _options.trace ? _options.trace : new Map()
             })
           }
+        }
+
+        if (t === 'dispatcher') {
+          // console.log('BRK hello dispatch')
         }
 
         projectend = process.hrtime(projectstart)
@@ -1763,6 +1776,9 @@ export class Broadcast extends FabrixGeneric {
         if (manager.type === 'processor') {
           return this.runEventualProcessor(client, projector, key, manager, message, options, breakException)
         }
+        else if (manager.type === 'dispatcher') {
+          return this.runEventualDispatcher(client, projector, key, manager, message, options, breakException)
+        }
         else {
           return this.runEventualProjector(client, projector, key, manager, message, options, breakException)
         }
@@ -1837,6 +1853,61 @@ export class Broadcast extends FabrixGeneric {
           `Consumer Processor ${consumerWork.consumerTag}:`,
           event.event_type,
           'broadcasted from', this.name, '->', project.name, '->', key
+        )
+
+        return [_event, _options]
+      })
+  }
+
+  /**
+   * Run an Eventual Dispatcher
+   * @param client
+   * @param dispatch
+   * @param key
+   * @param manager
+   * @param message
+   * @param options
+   * @param breakException
+   */
+  runEventualDispatcher (client, dispatch, key, manager, message, options, breakException) {
+
+    let consumerWork = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.work_queue_name') || 'broadcasts-work-q'))
+    let consumerInterrupt = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.interrupt_queue_name') || 'broadcasts-interrupt-q'))
+    let consumerPoison = client.messenger.configurations.default.queues
+      .find(d => d.name === (this.app.config.get('broadcast.connection.poison_queue_name') || 'broadcasts-poison-q'))
+
+    // console.log('BRK DIST PROCESSOR', consumerWork, consumerInterrupt, consumerPoison)
+
+    if (message.fields.redelivered) {
+      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+    }
+
+    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+
+
+    // // so we know who should handle an interrupt call
+    // client.active_broadcasts
+    //   .get(this.name)
+    //   .push(p)
+
+    // Set the trace
+    if (this.trace) {
+      options.trace.set(`${manager.pattern_raw}::${manager.type}::${key}`, {
+        handler: key,
+        ...manager
+      })
+    }
+
+    return this.run(event, options, dispatch, key, manager, breakException)
+      .then(([_event, _options]) => {
+        dispatch.isAcknowledged = true
+
+        this.app.log.debug(
+          `Consumer Dispatcher ${consumerWork.consumerTag}:`,
+          event.event_type,
+          'broadcasted from', this.name, '->', dispatch.name, '->', key
         )
 
         return [_event, _options]
@@ -2838,6 +2909,69 @@ export class Broadcast extends FabrixGeneric {
           consistency: events[m].consistency,
           name: `${processor.name}.${m}`,
           method: processor[m],
+          config: events[m].config,
+        })
+      })
+    })
+
+    return this
+  }
+
+  /**
+   * Add a BroadcastDispatcher
+   * @param dispatcher
+   */
+  addDispatcher (dispatcher: BroadcastDispatcher) {
+
+    if (!(dispatcher instanceof BroadcastDispatcher)) {
+      throw new Error(`${dispatcher} is not an instance of Dispatcher`)
+    }
+
+    this._dispatchers.set(dispatcher.name, dispatcher)
+
+    const config = this.app.config.get(`broadcast.dispatchers.${dispatcher.name}.broadcasters.${this.name}`)
+    const eventTypes = Object.keys(config || {})
+
+    eventTypes.forEach(eventType => {
+      const methods = Object.keys(config[eventType])
+      const events = config[eventType]
+
+      methods.forEach(m => {
+        if (typeof dispatcher[m] !== 'function') {
+          throw new this.app.errors.GenericError(
+            'E_FAILED_DEPENDENCY',
+            `Dispatcher ${dispatcher.name}.${m} is not a function, check config/broadcast dispatchers`,
+            `${this.name} Broadcast Error`
+          )
+        }
+        if (!m) {
+          throw new this.app.errors.GenericError(
+            'E_FAILED_DEPENDENCY',
+            `${dispatcher.name} method is undefined`,
+            `${this.name} Broadcast Error`
+          )
+        }
+
+        // const {error} = joi.validate(events[m].config, dispatcherConfig)
+        const {error} = dispatcherConfig.validate(events[m].config)
+
+        if (error) {
+          throw new this.app.errors.GenericError(
+            'E_BAD_CONFIG',
+            `${dispatcher.name} config is invalid`,
+            `${this.name} Broadcast Error`
+          )
+        }
+
+        dispatcher.managers.set(eventType, m)
+
+        this.app.log.silly(`Adding dispatcher ${dispatcher.name}.${m} to broadcaster ${this.name} for event ${eventType}`)
+        this.addEvent({
+          event_type: eventType,
+          type: 'dispatcher',
+          consistency: events[m].consistency,
+          name: `${dispatcher.name}.${m}`,
+          method: dispatcher[m],
           config: events[m].config,
         })
       })

@@ -235,6 +235,7 @@ export class BroadcastSpool extends ExtensionSpool {
       broadcaster.discoverHooks(this.app),
       broadcaster.discoverProjectors(this.app),
       broadcaster.discoverProcessors(this.app),
+      broadcaster.discoverDispatchers(this.app),
       broadcaster.buildBroadcaster(this.app),
       broadcaster.addModelHooks(this.app),
       broadcaster.copyDefaults(this.app)

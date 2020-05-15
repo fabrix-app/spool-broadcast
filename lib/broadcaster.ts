@@ -200,6 +200,23 @@ export const broadcaster = {
   },
 
   /**
+   * Discover Dispatchers for Broadcast
+   * @param app
+   */
+  discoverDispatchers: (app: FabrixApp) => {
+    Object.keys(app.broadcasts || {}).forEach(r => {
+      Object.keys(app.dispatchers || {}).forEach(p => {
+        if (app.dispatchers[p] && app.dispatchers[p].hasBroadcaster(app.broadcasts[r])) {
+          app.log.debug(`Adding ${app.dispatchers[p].name} dispatcher to ${app.broadcasts[r].name} broadcaster`)
+          app.broadcasts[r].addDispatcher(app.dispatchers[p])
+        }
+      })
+    })
+    //
+    return Promise.resolve()
+  },
+
+  /**
    * Discover Projectors for Broadcast
    * @param app
    */
@@ -289,6 +306,29 @@ export const broadcaster = {
       })
     })
     return app.spools.broadcast.processorMap
+  },
+
+  // Build a small non-functional map of all the dispatchers
+  makeDispatcherMap: (app: FabrixApp) => {
+    // Object.keys((app.broadcasts || {})).forEach(bk => {
+    //   app.spools.broadcast.dispatcherMap.set(
+    //     app.broadcasts[bk].constructor.name,
+    //     app.broadcasts[bk].dispatchers()
+    //   )
+    // })
+    // return app.spools.broadcast.projectorMap
+
+    Object.keys((app.broadcasts || {})).forEach(bk => {
+      app.spools.broadcast.dispatcherMap.set(
+        app.broadcasts[bk].constructor.name,
+        new Map()
+      )
+      const dispatchers = app.broadcasts[bk].dispatchers()
+      dispatchers.forEach(dispatcher => {
+        app.spools.broadcast.dispatcherMap.get(app.broadcasts[bk].constructor.name).set(dispatcher.name, dispatcher.managers)
+      })
+    })
+    return app.spools.broadcast.dispatcherMap
   },
 
   // Build a small non-functional map of all the hooks

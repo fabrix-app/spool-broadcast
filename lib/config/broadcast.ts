@@ -58,5 +58,7 @@ export const broadcast = {
   profiles: {},
   projectors: {},
   processors: {},
+  dispatchers: {},
+  channels: {},
   hooks: {}
 }

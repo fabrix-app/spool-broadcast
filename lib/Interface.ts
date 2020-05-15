@@ -41,6 +41,15 @@ export interface IProcessorParams {
   broadcaster?: Broadcast
 }
 
+export interface IDispatcherParams {
+  event: BroadcastEvent,
+  options: {[key: string]: any},
+  consistency?: string,
+  message?,
+  manager?: {[key: string]: any},
+  broadcaster?: Broadcast
+}
+
 
 export interface IHookInParams {
   command: BroadcastCommand,

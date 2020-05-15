@@ -839,6 +839,7 @@ BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
  * @param event
  */
 BroadcastEvent.prototype.pushOn = function(method, manager, event) {
+
   let push = event.data
 
   if (
@@ -874,7 +875,7 @@ BroadcastEvent.prototype.pushOn = function(method, manager, event) {
   this.data[on] = this.data[on] || []
 
   if (isArray(push)) {
-    // TODO check if unique by model primary keys
+    // TODO check if unique by model primary keys?
     push.forEach(i => {
       this.data[on].push(i)
     })

@@ -187,7 +187,39 @@ const App = {
           }
         }
       },
-
+      dispatchers: {
+        /**
+         * BroadcastChannels
+         */
+        Test: {
+          broadcasters: {
+            /**
+             * Broadcaster that the Test BroadcastChannel is listening to
+             */
+            Test: {
+              /**
+               * Events subscribed to
+               */
+              'test.created': {
+                somethingElse: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 3,
+                    expects_input: 'Test'
+                  }
+                },
+                multiSomethingElse: {
+                  consistency: 'strong',
+                  config: {
+                    priority: 3,
+                    expects_input: 'Test'
+                  }
+                },
+              },
+            }
+          }
+        }
+      },
       channels: {
         /**
          * BroadcastChannels

@@ -1,0 +1,1 @@
+exports.Test = require('./Test')

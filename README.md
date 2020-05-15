@@ -77,6 +77,9 @@ Event listeners that will trigger more events.  When an event is dispatched, the
 ### Projectors
 Event listener that will save data from an event into a projection. A projection are just an easy Read table(s) that make reading from aggregates faster and easier to understand.
 
+### Dispatchers
+Occasionally, you may need to multi-project when a projection is run and trigger side-events. Dispatchers let you trigger these without running a processor for a new event.  For example, an event happens and updates an aggregate or projection, but you have other listeners that don't need a fully new event to respond. This is different from a processor which will dispatch a new command, instead, a dispatcher is a "side effect" of an event that contains at least some data from the original event but has a different event id.
+
 ### Aggregates
 TODO
 

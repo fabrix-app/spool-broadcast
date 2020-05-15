@@ -17,6 +17,9 @@ export { BroadcastProjector, BroadcastProject } from './BroadcastProjector'
 // BroadcastProcessor Classes
 export { BroadcastProcessor, BroadcastProcess } from './BroadcastProcesser'
 
+// BroadcastDispatcher Classes
+export { BroadcastDispatcher, BroadcastDispatch } from './BroadcastDispatcher'
+
 // Hook Classes
 export { BroadcastHookIn, BroadcastHook } from './BroadcastHook'
 
@@ -57,6 +60,7 @@ export {
   IBroadcastModelResolve,
   IProjectorParams,
   IProcessorParams,
+  IDispatcherParams,
   IHookInParams,
   IChannelParams,
   IPipelineParams,
