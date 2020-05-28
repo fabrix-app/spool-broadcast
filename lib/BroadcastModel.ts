@@ -141,10 +141,12 @@ BroadcastModel.prototype.toJSON = function() {
 }
 
 BroadcastModel.prototype.generateUUID = function (config = {}, options = {}) {
-  if (this.isNewRecord) {
+
+  // if (this.isNewRecord) {
     if (!this.event_uuid) {
       this.event_uuid = uuid()
     }
-  }
+  // }
+
   return this
 }

@@ -130,6 +130,7 @@ export class BroadcastDispatch extends FabrixGeneric {
     if (!event_type || !this.event.event_type) {
       throw new Error('Broadcast.generateEvent missing event_type')
     }
+
     if (!(this.event instanceof this.app.models.BroadcastEvent.instance)) {
       throw new Error('Broadcast.buildProjection called with a non Event object')
     }
@@ -149,16 +150,14 @@ export class BroadcastDispatch extends FabrixGeneric {
       correlation_pattern_raw: __event.correlation_pattern_raw,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: __event.event_uuid, // __event.causation_uuid,
-      // // report list of functions that ran before this event's saga (combined)
+      // report list of functions that ran before this event's saga (combined)
       chain_before: [], // __event.chain_before,
-      // // report list of functions that ran during this event's saga (combined)
+      // report list of functions that ran during this event's saga (combined)
       chain_saga: [], // __event.chain_saga,
-      // // report list of functions that ran after this event's saga (combined)
+      // report list of functions that ran after this event's saga (combined)
       chain_after: [], // __event.chain_after,
-
+      // report list of functions that ran before this event's saga (combined)
       chain_events: [], // __event.chain_before,
-      // // report list of functions that ran before this event's saga (combined)
-      // chain_events: __event.chain_events,
       // The event_type that can override the command event_type
       event_type: event_type, // The new Event Type,
       // the event_type REGEX pattern
@@ -166,8 +165,12 @@ export class BroadcastDispatch extends FabrixGeneric {
       // the event_type string pattern
       pattern_raw: event_type,
 
+      // Version of the replay of this event
       version: __event.version,
+      // Version of the app of this event
+      version_app: __event.version_app,
 
+      // Use the supplied or fallback to the original
       object: object || __event.object, // We can use the original event's object here
       data: data || __event.data,
       metadata: metadata || __event.metadata,
@@ -176,10 +179,11 @@ export class BroadcastDispatch extends FabrixGeneric {
     }
 
     // return _event
-    // Stage the Event as a new BroadcastEvent ready to be run
+    // Stage the Event as a new BroadcastEvent ready to be run (if it is actually new)
     return this.app.models.BroadcastEvent.stage(_event, {
-      isNewRecord: this.options.isNewRecord
-    }).generateUUID()
+      isNewRecord: this.event.isNewRecord,
+      configure: ['generateUUID']
+    })
   }
 
   /**

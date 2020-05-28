@@ -167,7 +167,10 @@ export class Broadcast extends FabrixGeneric {
    * @param options
    */
   updateCommand(command, options) {
-    return new BroadcastCommand(this.app, this, {correlation_uuid: command.command_uuid, ...command}, options)
+    return new BroadcastCommand(this.app, this, {
+      correlation_uuid: command.command_uuid,
+      ...command}, options
+    )
   }
 
   /**
@@ -228,7 +231,7 @@ export class Broadcast extends FabrixGeneric {
     // Create the data for the Event Model
     const data = {
       // This is the command uuid that started this event chain
-      correlation_uuid,
+      correlation_uuid: correlation_uuid || command.command_uuid,
       // This is the REGEX pattern that the command used
       correlation_pattern: correlation_pattern || command.pattern,
       // This is the string pattern that the command used
@@ -255,9 +258,9 @@ export class Broadcast extends FabrixGeneric {
 
     // Stage the Event as a new BroadcastEvent ready to be run
     return this.app.models.BroadcastEvent.stage(data, {
-      isNewRecord: true
+      isNewRecord: true,
+      configure: ['generateUUID']
     })
-      .generateUUID()
   }
 
   /**
@@ -324,7 +327,8 @@ export class Broadcast extends FabrixGeneric {
     // return _event
     // Stage the Event as a new BroadcastEvent ready to be run
     return this.app.models.BroadcastEvent.stage(_event, {
-      isNewRecord: event._options.isNewRecord || options.isNewRecord
+      isNewRecord: event._options.isNewRecord || options.isNewRecord,
+      configure: ['generateUUID'] // SBW 200528
     })
   }
 
@@ -1530,11 +1534,22 @@ export class Broadcast extends FabrixGeneric {
             }
           })
 
+          // If this returned an empty array
+          if (_event.length === 0) {
+            this.app.log.warn(`${this.name} ${p.name} returned no actions for ${m} in list of ${_event.length} events`)
+            return [event, options]
+          }
           // Check that all the returned events were successful
-          if (_event.every(_e => _e[0] && typeof _e[0].action !== 'undefined' && _e[0].action === 'retry')) {
+          else if (_event.every(_e =>
+            _e[0]
+            && typeof _e[0].action !== 'undefined'
+            && _e[0].action === 'retry'
+          )) {
 
-            this.app.log.debug.error(`${this.name} ${p.name} unhandled retry action for ${m} in list of ${_event.length} events`)
+            this.app.log.error(`${this.name} ${p.name} unhandled retry action for ${m} in list of ${_event.length} events`)
+
             projectend = process.hrtime(projectstart)
+
             this.app.log.debug(
               `${this.name}.${m}: ${isArray(_event)
                 ? _event.map(e => e.event_type)
@@ -1544,20 +1559,28 @@ export class Broadcast extends FabrixGeneric {
 
             return [event, options]
           }
-          else {
-            // TODO handle some of the events that failed in the array of events returned
-          }
+          // else {
+          //   // TODO handle some of the events that failed in the array of events returned
+          // }
 
           // Check that all the returned events require no action
-          if (_event.every(_e => _e[0] && typeof _e[0].action !== 'undefined' && _e[0].action === false)) {
+          else if (_event.every(_e =>
+            _e[0]
+            && typeof _e[0].action !== 'undefined'
+            && _e[0].action === false
+          )) {
+
             this.app.log.debug(`${m} to continue without data in list of ${_event.length} events`)
+
             projectend = process.hrtime(projectstart)
+
             this.app.log.debug(
               `${this.name}.${m}: ${isArray(_event)
                 ? _event.map(e => e.event_type)
                 : _event.event_type
               } ${t} Execution time (hr): ${projectend[0]}s ${projectend[1] / 1000000}ms`
             )
+
             return [event, options]
           }
           else {
@@ -1829,7 +1852,9 @@ export class Broadcast extends FabrixGeneric {
       this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
     }
 
-    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+    const event = this.app.models.BroadcastEvent.stage(message.body, {
+      isNewRecord: false
+    })
 
 
     // // so we know who should handle an interrupt call
@@ -1884,7 +1909,9 @@ export class Broadcast extends FabrixGeneric {
       this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
     }
 
-    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+    const event = this.app.models.BroadcastEvent.stage(message.body, {
+      isNewRecord: false
+    })
 
 
     // // so we know who should handle an interrupt call
@@ -1940,7 +1967,9 @@ export class Broadcast extends FabrixGeneric {
       this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
     }
 
-    const event = this.app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
+    const event = this.app.models.BroadcastEvent.stage(message.body, {
+      isNewRecord: false
+    })
 
     // Set the trace
     if (this.trace) {

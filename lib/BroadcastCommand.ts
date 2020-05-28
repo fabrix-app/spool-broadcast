@@ -73,6 +73,7 @@ export class BroadcastCommand extends FabrixGeneric {
   beforeHooks: any
 
   command_uuid: string
+  correlation_uuid: string
   causation_uuid: string
 
   readonly object: FabrixModel
@@ -191,6 +192,10 @@ export class BroadcastCommand extends FabrixGeneric {
     this.req = req
     // Create a command uuid, or use the correlation_uuid if it is set
     this.command_uuid = this.generateUUID(correlation_uuid)
+    // The genesis command
+    this.correlation_uuid = correlation_uuid
+    // Set the causation uuid, the event that spawned this command
+    this.causation_uuid = causation_uuid
 
     // Set the object of the command
     this.object = object
@@ -210,8 +215,6 @@ export class BroadcastCommand extends FabrixGeneric {
     // Set the saga hooks provided
     this._hooks = hooks || []
 
-    // Set the causation uuid, the event that spawned this command
-    this.causation_uuid = causation_uuid
     // Set the Version of this command eg. 1, 2, 3 (it can be a re-issued event that's creating another command)
     this.version = version
     // Mark the Version of the Fabrix App that created this command Originally, or set to current app version
@@ -292,9 +295,14 @@ export class BroadcastCommand extends FabrixGeneric {
   }
 
   generateUUID(correlationUUID?) {
-    if (correlationUUID) {
+    if (
+      typeof correlationUUID !== 'undefined'
+      && correlationUUID !== ''
+      && correlationUUID
+    ) {
       return correlationUUID
     }
+    // Otherwise, generate a new uuid
     return uuid()
   }
 
@@ -912,6 +920,7 @@ export class BroadcastCommand extends FabrixGeneric {
         const event = this.broadcaster.buildEvent({
           event_type: this._event_type,
           correlation_uuid: _command.command_uuid,
+          // causation_uuid: _command.causation_uuid, // TODO, maybe we need this?
           command: _command
         })
         return this.broadcaster.broadcast(event, _options)
@@ -972,7 +981,7 @@ BroadcastCommand.prototype.toJSON = function(str): {[key: string]: any} {
 BroadcastCommand.prototype.toEVENT = function(str): {[key: string]: any} {
 
   const res = {
-    correlation_uuid: this.correlation_uuid,
+    correlation_uuid: this.correlation_uuid || this.command_uuid,
     causation_uuid: this.causation_uuid,
     command_type: `${this.command_type}`,
     pattern: this.pattern,
