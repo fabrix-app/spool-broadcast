@@ -120,14 +120,14 @@ export class BroadcastDispatch extends FabrixGeneric {
 
   /**
    * Generate new Event
-   * @param event_type
+   * @param event_pattern
    * @param object
    * @param data
    * @param metadata
    */
-  generateEvent (event_type, object?, data?, metadata?): BroadcastEvent {
+  generateEvent (event_pattern, object?, data?, metadata?): BroadcastEvent {
 
-    if (!event_type || !this.event.event_type) {
+    if (!event_pattern || !this.event.pattern_raw) {
       throw new Error('Broadcast.generateEvent missing event_type')
     }
 
@@ -135,10 +135,19 @@ export class BroadcastDispatch extends FabrixGeneric {
       throw new Error('Broadcast.buildProjection called with a non Event object')
     }
 
-    // Make a JOSN version of the event
+    // Make a JSON version of the event, so that it clears getter/setters
     const __event = this.event.toJSON()
 
-    const { keys, pattern } = regexdot(event_type)
+    // Reconcile the updates
+    event_pattern = event_pattern || this.event.pattern_raw
+    object = object || __event.object
+    data = data || __event.data
+    metadata = metadata || __event.metadata
+
+    const { keys, pattern } = regexdot(event_pattern)
+
+    // Replace any parameters in the event_pattern with the data
+    const event_type = this.broadcaster.replaceParams(event_pattern, keys, data)
 
     // Create the data for the Event Model
     const _event = {
@@ -163,7 +172,7 @@ export class BroadcastDispatch extends FabrixGeneric {
       // the event_type REGEX pattern
       pattern: pattern,
       // the event_type string pattern
-      pattern_raw: event_type,
+      pattern_raw: event_pattern,
 
       // Version of the replay of this event
       version: __event.version,
@@ -178,7 +187,6 @@ export class BroadcastDispatch extends FabrixGeneric {
       is_dispatch: true
     }
 
-    // return _event
     // Stage the Event as a new BroadcastEvent ready to be run (if it is actually new)
     return this.app.models.BroadcastEvent.stage(_event, {
       isNewRecord: this.event.isNewRecord,
