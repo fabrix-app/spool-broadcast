@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.98](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.97...v1.6.98) (2020-05-29)
+
+
+### Bug Fixes
+
+* fixes dispatchers event_type patterns ([73868bc](https://github.com/fabrix-app/spool-broadcast/commit/73868bc))
+
 ### [1.6.97](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.96...v1.6.97) (2020-05-28)
 
 
