@@ -201,16 +201,17 @@ export class BroadcastDispatch extends FabrixGeneric {
   generateEventMetadata(keys: string[] = []) {
     const rawMetadata = Object.assign({}, this.event.metadata)
 
-    const previously = keys.reduce((acc, curr) => {
+    const changes = keys.filter(c => rawMetadata.changes.includes(c))
+
+    const previously = changes.reduce((acc, curr) => {
       const prev = this.event.previously(curr)
       acc[curr] = prev
-
       return acc
     }, {})
 
     const metadata: {[key: string]: any} = {
       ...rawMetadata,
-      changes: keys.filter(c => rawMetadata.changes.includes(c)),
+      changes: changes,
       previous: previously
     }
 
