@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.99](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.98...v1.6.99) (2020-06-09)
+
+
+### Bug Fixes
+
+* only allow keys that have actually changed to be added to previous ([22b698f](https://github.com/fabrix-app/spool-broadcast/commit/22b698f))
+
+
+### Features
+
+* adds generateEventMetadata for dispatchers ([2d0cd86](https://github.com/fabrix-app/spool-broadcast/commit/2d0cd86))
+
 ### [1.6.98](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.97...v1.6.98) (2020-05-29)
 
 
