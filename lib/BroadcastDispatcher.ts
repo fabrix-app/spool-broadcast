@@ -125,7 +125,7 @@ export class BroadcastDispatch extends FabrixGeneric {
    * @param data
    * @param metadata
    */
-  generateEvent (event_pattern, object?, data?, metadata?): BroadcastEvent {
+  generateEvent (event_pattern, { object, data, metadata}: {object?, data?, metadata?} = {}): BroadcastEvent {
 
     if (!event_pattern || !this.event.pattern_raw) {
       throw new Error('Broadcast.generateEvent missing event_type')
@@ -192,6 +192,29 @@ export class BroadcastDispatch extends FabrixGeneric {
       isNewRecord: this.event.isNewRecord,
       configure: ['generateUUID']
     })
+  }
+
+  /**
+   * Give a list of keys and generate new meta
+   * @param keys
+   */
+  generateEventMetadata(keys: string[] = []) {
+    const rawMetadata = Object.assign({}, this.event.metadata)
+
+    const previously = keys.reduce((acc, curr) => {
+      const prev = this.event.previously(curr)
+      acc[curr] = prev
+
+      return acc
+    }, {})
+
+    const metadata: {[key: string]: any} = {
+      ...rawMetadata,
+      changes: keys.filter(c => rawMetadata.changes.includes(c)),
+      previous: previously
+    }
+
+    return metadata
   }
 
   /**

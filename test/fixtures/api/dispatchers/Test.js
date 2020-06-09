@@ -5,12 +5,19 @@ const Dispatch = require('../../../../dist').BroadcastDispatch
 class SomethingElse extends Dispatch {
   async run() {
     //
+    const newMeta = this.generateEventMetadata(['name'])
+
+    console.log('NEW META', newMeta)
+
     const newEvent = this.generateEvent('test.something.else')
+
 
     console.log('DISPATCHING', this.manager, newEvent)
 
     assert.ok(newEvent.event_uuid)
     assert.ok(newEvent.event_type)
+
+
 
     return this.broadcast(newEvent)
       .then(([event, options]) => {
@@ -23,7 +30,11 @@ class SomethingElse extends Dispatch {
 class MultiSomethingElse extends Dispatch {
   async run() {
     //
-    const newEvent = this.generateEvent('test.something.else')
+
+    const newMeta = this.generateEventMetadata(['name'])
+    console.log('NEW META MULTI', newMeta)
+
+    const newEvent = this.generateEvent('test.something.else', { metadata: newMeta })
     const newEvent2 = this.generateEvent('test.something.else.2')
 
     console.log('DISPATCHING MULTI', this.manager, newEvent, newEvent2)

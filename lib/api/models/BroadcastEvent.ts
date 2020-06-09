@@ -658,10 +658,16 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
 
     // If the manager expects_response certain data...
     if (manager.expects_response) {
-      if (typeof manager.expects_response === 'string' && object !== manager.expects_response) {
+      if (
+        typeof manager.expects_response === 'string'
+        && object !== manager.expects_response
+      ) {
         throw new Error(`${method} merge expected ${manager.expects_response} but got ${object} for ${event.event_type}`)
       }
-      else if (Array.isArray(manager.expects_response) && manager.expects_response.indexOf(object) === -1) {
+      else if (
+        Array.isArray(manager.expects_response)
+        && manager.expects_response.indexOf(object) === -1
+      ) {
         throw new Error(
           `${method} merge expected ${manager.expects_response.join(', ')} but got ${object} for ${event.event_type}`
         )
@@ -751,6 +757,7 @@ BroadcastEvent.prototype.mergeData = function(method, manager, event) {
 BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
   const object = isArray(event) ? event.map(e => e.getDataValue('object')) : event.getDataValue('object')
   const event_type = isArray(event) ? event.map(e => e.event_type) : event.event_type
+
   let merge = isArray(event) ? event.map(e => e.data) : event.data
 
   const expected = isArray(event)
@@ -787,7 +794,7 @@ BroadcastEvent.prototype.mergeAs = function(method, manager, event) {
   else {
     if (
       manager.expects_response
-      && event.every(o => o.getDataValue('object') !== manager.expects_response)
+      && !event.every(o => o.getDataValue('object') === manager.expects_response)
     ) {
       throw new Error(
         `${method} unhandled mergeAs expected ${manager.expects_response} but got ${object} for ${event.map(o => o.event_type)}`

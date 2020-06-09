@@ -10,6 +10,7 @@ import { FabrixApp } from '@fabrix/fabrix'
 import { Entry } from './Entry'
 import { FabrixModel } from '@fabrix/fabrix/dist/common'
 import { ConfigError } from './errors'
+import { GenericError } from '@fabrix/spool-errors/dist/errors'
 
 export class BroadcastSpool extends ExtensionSpool {
   public broadcaster
@@ -101,6 +102,28 @@ export class BroadcastSpool extends ExtensionSpool {
     return app.spools.sequelize._datastore
   }
 
+  action(func, req, body, options: {[key: string]: any} = {}) {
+    // const app = this.app || this
+
+    if (typeof func !== 'function') {
+      throw new Error(`action ${func} is not a function`)
+    }
+    return func(req, body, options)
+      .catch(err => {
+        if (!err.code) {
+          const error = new GenericError(
+            'E_NOT_FOUND',
+            'Not found',
+            `${func.constructor.name} Action Error`,
+            // [{query: query}]
+          )
+        }
+        else {
+          throw new err
+        }
+      })
+  }
+
   /**
    * Utility for wrapping
    * @param func
@@ -108,7 +131,7 @@ export class BroadcastSpool extends ExtensionSpool {
    * @param body
    * @param options
    */
-  transaction(func, req, body, options: {[key: string]: any} = {}) {
+  transaction(func, req, body, options: {[key: string]: any} = {}): Promise<any> {
     const app = this.app || this
     if (typeof func !== 'function') {
       throw new Error(`transaction ${func} is not a function`)
