@@ -331,7 +331,7 @@ export const utils = {
     let p
 
     if (message.fields.redelivered) {
-      app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+      app.log.warn('Rabbit Message', message.type, 'was redelivered!', message)
     }
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })
@@ -442,7 +442,7 @@ export const utils = {
     let p
 
     if (message.fields.redelivered) {
-      app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+      app.log.warn('Rabbit Message', message.type, 'was redelivered!', message)
     }
 
     const event = app.models.BroadcastEvent.stage(message.body, { isNewRecord: false })

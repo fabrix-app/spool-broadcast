@@ -171,6 +171,8 @@ export class Saga extends Generic  {
       }
     })
 
+    // TODO, add back up squelize to joi validator in case useValidators is empty
+
     if (!(command instanceof BroadcastCommand)) {
       return Promise.reject(
         new Error(`${this.name}: Command sent to before hook ${command.command_type} is not a command instance`)
