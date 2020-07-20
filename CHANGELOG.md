@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.103](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.102...v1.6.103) (2020-07-20)
+
+
+### Bug Fixes
+
+* disallows `null` in types, continues correlation and explain ([a0ed4ca](https://github.com/fabrix-app/spool-broadcast/commit/a0ed4ca))
+
 ### [1.6.102](https://github.com/fabrix-app/spool-broadcast/compare/v1.6.100...v1.6.102) (2020-07-20)
 
 
