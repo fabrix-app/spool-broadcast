@@ -47,6 +47,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -78,6 +80,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -109,6 +113,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -140,6 +146,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -171,6 +179,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -202,6 +212,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -233,6 +245,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -265,6 +279,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -296,6 +312,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {
         prehooks: [
           [1, {
@@ -336,6 +354,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -367,6 +387,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 
@@ -396,6 +418,8 @@ module.exports = class Test extends Saga {
       data: body,
       causation_uuid: req.causation_uuid,
       correlation_uuid: req.correlation_uuid,
+      correlation_type: req.correlation_type,
+      explain: req.explain,
       metadata: {}
     })
 

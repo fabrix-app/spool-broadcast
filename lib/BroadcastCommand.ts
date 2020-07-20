@@ -15,7 +15,7 @@ import { Saga } from './Saga'
  * @param keys
  * @param object
  */
-const replaceParams = function(type = '', keys: boolean | string[] = [], object: any = {}) {
+const replaceParams = function(type = '', keys: boolean | string[] = [], object: any = {}, previous: any = {}) {
   if (
     keys !== false
     && typeof keys !== 'boolean'
@@ -23,17 +23,26 @@ const replaceParams = function(type = '', keys: boolean | string[] = [], object:
   ) {
     if (!isArray(object)) {
       keys.forEach(k => {
-        if (k && object && object[k]) {
+        if (k && object && typeof object[k] !== 'undefined' && object[k] !== null) {
           type = type.replace(`:${k}`, `${object[k]}`)
+        }
+        // If not on the object, it may be in the previous values (like when a PK is unset)
+        else if (k && previous && typeof previous[k] !== 'undefined' && previous[k] !== null) {
+          type = type.replace(`:${k}`, `${previous[k]}`)
         }
       })
     }
     else if (isArray(object)) {
       // TODO
       const o = object[0]
+      const p = previous[0]
       keys.forEach(k => {
-        if (k && o && o[k]) {
+        if (k && o && typeof o[k] !== 'undefined' && o[k] !== null) {
           type = type.replace(`:${k}`, `${o[k]}`)
+        }
+        // If not on the object, it may be in the previous values (like when a PK is unset)
+        else if (k && p && typeof p[k] !== 'undefined' && p[k] !== null) {
+          type = type.replace(`:${k}`, `${p[k]}`)
         }
       })
     }
@@ -104,6 +113,8 @@ export class BroadcastCommand extends FabrixGeneric {
   // TODO? What is this?
   action
 
+  explain = {}
+
   chain_before = []
   chain_saga = []
   chain_after = []
@@ -120,6 +131,7 @@ export class BroadcastCommand extends FabrixGeneric {
   options: {[key: string]: any}
   _event_type?: string
   // _changes: string[]
+  correlation_type?: string
 
   constructor(
     app: FabrixApp,
@@ -136,7 +148,9 @@ export class BroadcastCommand extends FabrixGeneric {
       hooks =  [],
       version = 0,
       version_app,
-      chain_events = []
+      chain_events = [],
+      correlation_type,
+      explain = {}
     },
     options: {[key: string]: any} = {}
   ) {
@@ -228,6 +242,21 @@ export class BroadcastCommand extends FabrixGeneric {
     // Use the Setter to set the command_type and also the pattern used
     this.command_type = command_type
 
+    this.explain = explain
+
+    this.correlation_type = correlation_type
+
+    // If this command is because of another command,
+    if (correlation_type) {
+      this.explain[this.correlation_type] = this.explain[this.correlation_type] || {}
+
+      this.explain[this.correlation_type][this.command_type] = this.explain[this.correlation_type][this.command_type] || {}
+    }
+    // Otherwise, begin the explanation
+    else {
+      this.explain[this.command_type] = {}
+    }
+
     // If an event_type was passed as well
     if (event_type) {
       // the initial (root) event this command expects_response to dispatch as a result of the command
@@ -280,7 +309,7 @@ export class BroadcastCommand extends FabrixGeneric {
     this.pattern_raw = pattern_raw
 
     // Set the command type, and replace the pattern params with data.
-    this._command_type = replaceParams(command_type, keys, this.data)
+    this._command_type = replaceParams(command_type, keys, this.data, this.data_previous)
   }
 
   /**

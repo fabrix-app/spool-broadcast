@@ -78,7 +78,7 @@ Event listeners that will trigger more events.  When an event is dispatched, the
 Event listener that will save data from an event into a projection. A projection are just an easy Read table(s) that make reading from aggregates faster and easier to understand.
 
 ### Dispatchers
-Occasionally, you may need to multi-project when a projection is run and trigger side-events. Dispatchers let you trigger these without running a processor for a new event.  For example, an event happens and updates an aggregate or projection, but you have other listeners that don't need a fully new event to respond. This is different from a processor which will dispatch a new command, instead, a dispatcher is a "side effect" of an event that contains at least some data from the original event but has a different event id.
+A dispatcher creates a secondary event from a primary event without running through the normal processes.
 
 ### Aggregates
 TODO
@@ -500,6 +500,8 @@ Processors are useful when you want to dispatch a subsequent command when an eve
 ### BroadcastProjector
 Projectors are useful for saving event data in a useable way.  For example, a "User Created" event was dispatched, so now it might be nice to save their PII encrypted in one table, and their other details in a different table.  You can easily do this with multiple projectors on the same event.
 
+### BroadcastDispatcher
+Occasionally, you may need to multi-project when a projection is run and trigger side-events. Dispatchers let you trigger these without running a processor for a new event.  For example, an event happens and updates an aggregate or projection, but you have other listeners that don't need a fully new event to respond. This is different from a processor which will dispatch a new command, instead, a dispatcher is a "side effect" of an event that contains at least some data from the original event but has a different event id.
 
 ## Contributing
 We love contributions! Please check out our [Contributor's Guide](https://github.com/fabrix-app/fabrix/blob/master/CONTRIBUTING.md) for more information on how our projects are organized and how to get started.

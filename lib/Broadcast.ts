@@ -362,11 +362,11 @@ export class Broadcast extends FabrixGeneric {
     ) {
       if (!isArray(object)) {
         keys.forEach(k => {
-          if (k && object && typeof object[k] !== 'undefined') {
+          if (k && object && typeof object[k] !== 'undefined' && object[k] !== null) {
             type = type.replace(`:${k}`, `${object[k]}`)
           }
           // If not on the object, it may be in the previous values (like when a PK is unset)
-          else if (k && previous && typeof previous[k] !== 'undefined') {
+          else if (k && previous && typeof previous[k] !== 'undefined' && previous[k] !== null) {
             type = type.replace(`:${k}`, `${previous[k]}`)
           }
         })
@@ -376,11 +376,11 @@ export class Broadcast extends FabrixGeneric {
         const o = object[0]
         const p = previous[0]
         keys.forEach(k => {
-          if (k && o && typeof o[k] !== 'undefined') {
+          if (k && o && typeof o[k] !== 'undefined' && o[k] !== null) {
             type = type.replace(`:${k}`, `${o[k]}`)
           }
           // If not on the object, it may be in the previous values (like when a PK is unset)
-          else if (k && p && typeof p[k] !== 'undefined') {
+          else if (k && p && typeof p[k] !== 'undefined' && p[k] !== null) {
             type = type.replace(`:${k}`, `${p[k]}`)
           }
         })

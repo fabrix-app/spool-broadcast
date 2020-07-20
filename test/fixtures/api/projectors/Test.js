@@ -15,6 +15,8 @@ class Wild extends Project {
 
     console.log('BRK WILDCARD!', this.event, project)
 
+    console.log('BRK explain', this.event.explain)
+
     return Promise.resolve([{action: false}, this.options])
   }
 }

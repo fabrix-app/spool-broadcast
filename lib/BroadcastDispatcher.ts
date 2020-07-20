@@ -391,7 +391,7 @@ but got ${event.getDataValue('object')} for ${event.event_type}`
     return this.app.broadcastSeries(...args)
   }
 
-  get metadata(): { channel, channel_session, user, device, application, causation_uuid, correlation_uuid, ip } {
+  get metadata(): { channel, channel_session, user, device, application, causation_uuid, correlation_uuid, correlation_type, explain, ip } {
     try {
       const channel = { channel_uuid: this.event.metadata.req_channel_uuid || null }
       const channel_session = { session_uuid: this.event.metadata.req_session_uuid  || null }
@@ -400,6 +400,8 @@ but got ${event.getDataValue('object')} for ${event.event_type}`
       const application = { application_uuid: this.event.metadata.req_application_uuid || null }
       const causation_uuid = this.event.event_uuid || null
       const correlation_uuid = this.event.correlation_uuid || null
+      const correlation_type = this.event.correlation_type || null
+      const explain = this.event.explain || {}
       const ip = {ip: this.event.metadata.req_ip || null }
 
       return {
@@ -410,6 +412,8 @@ but got ${event.getDataValue('object')} for ${event.event_type}`
         application,
         causation_uuid,
         correlation_uuid,
+        correlation_type,
+        explain,
         ip
       }
     }
