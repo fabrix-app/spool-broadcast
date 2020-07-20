@@ -45,7 +45,13 @@ export class BroadcastEvent extends BroadcastModel {
           },
           {
             name: 'broadcast_event_artifact_patterns_index',
-            fields: ['pattern_raw', 'correlation_pattern_raw']
+            fields: ['pattern_raw', 'correlation_type', 'correlation_pattern_raw']
+          },
+          {
+            name: 'broadcast_event_explain_index',
+            fields: ['explain'],
+            using: 'GIN',
+            operator: 'jsonb_path_ops'
           }
         ],
         hooks: {
@@ -148,6 +154,13 @@ export class BroadcastEvent extends BroadcastModel {
       },
       // The command string pattern raw
       correlation_pattern_raw: {
+        type: Sequelize.STRING,
+        binaryOptional: true,
+        binaryType: 'string'
+      },
+
+      // The computed command correlation_type string
+      correlation_type: {
         type: Sequelize.STRING,
         binaryOptional: true,
         binaryType: 'string'
@@ -430,14 +443,14 @@ export class BroadcastEvent extends BroadcastModel {
         binaryOptional: true,
         binaryType: 'json'
       },
-
+      // The version of this Event
       version: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
         binaryOptional: true,
         binaryType: 'int'
       },
-
+      // The Application Version that generated this Event
       version_app: {
         type: Sequelize.STRING,
         defaultValue: app.pkg.version,
@@ -499,6 +512,13 @@ export class BroadcastEvent extends BroadcastModel {
         },
         binaryOptional: true,
         binaryType: 'json'
+      },
+      explain: {
+        type: Sequelize.JSONB,
+        defaultValue: {},
+        binaryOptional: true,
+        binaryType: 'json',
+        description: 'The explanation for how this event was created'
       },
       // Live Mode
       live_mode: {

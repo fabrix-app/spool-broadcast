@@ -157,8 +157,12 @@ export class BroadcastDispatch extends FabrixGeneric {
       correlation_pattern: __event.correlation_pattern,
       // This is the string pattern that the command used
       correlation_pattern_raw: __event.correlation_pattern_raw,
+      // This is the string that the command used
+      correlation_type: __event.correlation_type,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: __event.event_uuid, // __event.causation_uuid,
+      // Why this is happening
+      explain: __event.explain,
       // report list of functions that ran before this event's saga (combined)
       chain_before: [], // __event.chain_before,
       // report list of functions that ran during this event's saga (combined)

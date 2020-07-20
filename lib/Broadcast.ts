@@ -179,6 +179,8 @@ export class Broadcast extends FabrixGeneric {
    * @param correlation_uuid
    * @param correlation_pattern,
    * @param correlation_pattern_raw,
+   * @param correlation_type
+   * @param explain
    * @param causation_uuid
    * @param command
    * @param chain_before
@@ -193,6 +195,8 @@ export class Broadcast extends FabrixGeneric {
      correlation_uuid,
      correlation_pattern,
      correlation_pattern_raw,
+     correlation_type,
+     explain,
      causation_uuid,
      chain_before,
      chain_saga,
@@ -206,6 +210,8 @@ export class Broadcast extends FabrixGeneric {
     causation_uuid?: string,
     correlation_pattern?: RegExp,
     correlation_pattern_raw?: string,
+    correlation_type?: string,
+    explain?: {[key: string]: any},
     chain_before?: string[],
     chain_saga?: string[],
     chain_after?: string[],
@@ -226,7 +232,7 @@ export class Broadcast extends FabrixGeneric {
     const pattern_raw = event_type
 
     // Replace any parameters in the event_type with the data
-    event_type = this.replaceParams(event_type, keys, command.data)
+    event_type = this.replaceParams(event_type, keys, command.data, command.data_previous)
 
     // Create the data for the Event Model
     const data = {
@@ -236,8 +242,12 @@ export class Broadcast extends FabrixGeneric {
       correlation_pattern: correlation_pattern || command.pattern,
       // This is the string pattern that the command used
       correlation_pattern_raw: correlation_pattern_raw || command.pattern_raw,
+      // THis is the computed command type
+      correlation_type: correlation_type || command.command_type,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: causation_uuid || command.causation_uuid,
+      // explanation of why this is happening
+      explain: explain || command.explain,
       // report list of functions that ran before this event's saga (combined)
       chain_before: chain_before || command.chain_before,
       // report list of functions that ran during this event's saga (combined)
@@ -300,8 +310,12 @@ export class Broadcast extends FabrixGeneric {
       correlation_pattern: __event.correlation_pattern,
       // This is the string pattern that the command used
       correlation_pattern_raw: __event.correlation_pattern_raw,
+      // This is the string pattern that the command used
+      correlation_type: __event.correlation_type,
       // The causation_uuid my have been part of a another new event (processor dispatched)
       causation_uuid: __event.causation_uuid,
+      // Why this is happening
+      explain: __event.explain,
       // report list of functions that ran before this event's saga (combined)
       chain_before: __event.chain_before,
       // report list of functions that ran during this event's saga (combined)
@@ -336,9 +350,10 @@ export class Broadcast extends FabrixGeneric {
    * Utility to replace pattern variables with data values
    * @param type
    * @param keys
-   * @param object
+   * @param object the current object
+   * @param previous A previous version of the object if any
    */
-  replaceParams(type = '', keys: boolean | string[] = [], object: any = {}) {
+  replaceParams(type = '', keys: boolean | string[] = [], object: any = {}, previous: any = {}) {
 
     if (
       keys !== false
@@ -347,17 +362,26 @@ export class Broadcast extends FabrixGeneric {
     ) {
       if (!isArray(object)) {
         keys.forEach(k => {
-          if (k && object && object[k]) {
+          if (k && object && typeof object[k] !== 'undefined') {
             type = type.replace(`:${k}`, `${object[k]}`)
+          }
+          // If not on the object, it may be in the previous values (like when a PK is unset)
+          else if (k && previous && typeof previous[k] !== 'undefined') {
+            type = type.replace(`:${k}`, `${previous[k]}`)
           }
         })
       }
       else if (isArray(object)) {
         // TODO
         const o = object[0]
+        const p = previous[0]
         keys.forEach(k => {
-          if (k && o && o[k]) {
+          if (k && o && typeof o[k] !== 'undefined') {
             type = type.replace(`:${k}`, `${o[k]}`)
+          }
+          // If not on the object, it may be in the previous values (like when a PK is unset)
+          else if (k && p && typeof p[k] !== 'undefined') {
+            type = type.replace(`:${k}`, `${p[k]}`)
           }
         })
       }
@@ -524,6 +548,9 @@ export class Broadcast extends FabrixGeneric {
     // confirm the tracer
     options.trace = options.trace ? options.trace : new Map()
 
+    // confirm the explain
+    // options.explain = options.explain ? options.explain : {}
+
     return this.process(beforeHandlers, promises, ([m, p], i) => {
       if (breakException) {
         return Promise.reject(breakException)
@@ -536,6 +563,8 @@ export class Broadcast extends FabrixGeneric {
           ...handler
         })
       }
+
+      // options.explain[handler.command_type] = {}
 
       // Check and promise commands
       if (!p || typeof p !== 'function') {
@@ -591,6 +620,9 @@ export class Broadcast extends FabrixGeneric {
         .then(([_command, _options]) => {
 
           command.chain_before.push(m)
+
+          // TODO
+          // command.explain[_command.command_type] = {}
 
           // const handler = beforeHandlers.get(m)
 
@@ -681,6 +713,9 @@ export class Broadcast extends FabrixGeneric {
 
     // confirm the tracer
     options.trace = options.trace ? options.trace : new Map()
+
+    // confirm the explain
+    // options.explain[command.command_type] = options.explain[command.command_type] ? options.explain[command.command_type] : {}
 
     return this.process(afterHandlers, promises, ([m, p], i) => {
       if (breakException) {
@@ -1251,6 +1286,8 @@ export class Broadcast extends FabrixGeneric {
 
     options.trace = options.trace ? options.trace : new Map()
 
+    // options.explain = options.explain ? options.explain : {}
+
     // Publish the strong events
     return this.projectStrong(strong, strongManagers, event, options)
       .then(([_event, _options]) => {
@@ -1269,6 +1306,9 @@ export class Broadcast extends FabrixGeneric {
               ...manager
             })
           }
+
+          // TODO, serial versus parallel
+          // options.explain[event.command_type][event.event_type] = {}
 
           event.chain_events.push(e)
         })
@@ -1849,7 +1889,7 @@ export class Broadcast extends FabrixGeneric {
     // console.log('BRK DIST PROCESSOR', consumerWork, consumerInterrupt, consumerPoison)
 
     if (message.fields.redelivered) {
-      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!', message)
     }
 
     const event = this.app.models.BroadcastEvent.stage(message.body, {
@@ -1906,7 +1946,7 @@ export class Broadcast extends FabrixGeneric {
     // console.log('BRK DIST PROCESSOR', consumerWork, consumerInterrupt, consumerPoison)
 
     if (message.fields.redelivered) {
-      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!')
+      this.app.log.warn('Rabbit Message', message.type, 'was redelivered!', message)
     }
 
     const event = this.app.models.BroadcastEvent.stage(message.body, {
