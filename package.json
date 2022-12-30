@@ -62,7 +62,7 @@
     "@fabrix/spool-sequelize": "1.6.18",
     "@types/node": "~10.3.4",
     "express": "^4.17.1",
-    "mocha": "^6",
+    "mocha": "^10",
     "nyc": "^14.1.1",
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
